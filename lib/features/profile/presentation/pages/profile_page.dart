@@ -99,6 +99,15 @@ class ProfilePage extends ConsumerWidget {
         _ProfileSection(title: 'Interests', values: user.interests),
         _ProfileSection(title: 'Music', values: user.musicPreferences),
         const SizedBox(height: 18),
+        if (user.isHost || hosted > 0) ...[
+          FilledButton.icon(
+            key: const Key('open-host-space'),
+            onPressed: () => context.push('/host'),
+            icon: const Icon(Icons.home_work_outlined),
+            label: const Text('Open host space'),
+          ),
+          const SizedBox(height: 10),
+        ],
         FilledButton.icon(
           onPressed: () => context.push('/safety'),
           icon: const Icon(Icons.health_and_safety_rounded),

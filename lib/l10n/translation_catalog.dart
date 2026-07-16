@@ -3,12 +3,14 @@ import 'translations_account.dart';
 import 'translations_core.dart';
 import 'translations_discovery.dart';
 import 'translations_events.dart';
+import 'translations_host.dart';
 import 'translations_services.dart';
 
 const _translationRows = <String, TranslationRow>{
   ...coreTranslationRows,
   ...accountTranslationRows,
   ...eventTranslationRows,
+  ...hostTranslationRows,
   ...discoveryTranslationRows,
   ...serviceTranslationRows,
 };

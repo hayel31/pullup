@@ -186,7 +186,10 @@ class WelcomePage extends ConsumerWidget {
     final controller = ref.read(appControllerProvider.notifier);
     return WelcomeExperience(
       onExploreGuest: () => controller.signInDemo(),
-      onOpenHost: () => controller.signInDemo(asHost: true),
+      onOpenHost: () async {
+        await controller.signInDemo(asHost: true);
+        if (context.mounted) context.go('/host');
+      },
       onSignIn: () => context.go('/login'),
       onCreateAccount: () => context.go('/register'),
     );

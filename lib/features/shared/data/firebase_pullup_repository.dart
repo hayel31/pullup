@@ -44,8 +44,11 @@ class FirebasePullupRepository implements PullupRepository {
   Future<void> passEvent(String userId, String eventId) => _notConfigured();
 
   @override
-  Future<EventRequest> rejectRequest(String hostId, String requestId) =>
-      _notConfigured();
+  Future<EventRequest> rejectRequest(
+    String hostId,
+    String requestId, {
+    String? reason,
+  }) => _notConfigured();
 
   @override
   Future<Report> reportContent({
@@ -87,6 +90,14 @@ class FirebasePullupRepository implements PullupRepository {
 
   @override
   Future<void> undoSwipe(String userId, String eventId) => _notConfigured();
+
+  @override
+  Future<PartyEvent> updateEventAccess(
+    String hostId,
+    String eventId, {
+    required String exactAddress,
+    required String accessInstructions,
+  }) => _notConfigured();
 
   @override
   Future<EventRequest> withdrawRequest(String userId, String requestId) =>

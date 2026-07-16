@@ -335,10 +335,27 @@ class AppController extends StateNotifier<PullupState> {
     });
   }
 
-  Future<void> rejectRequest(String requestId) async {
+  Future<void> rejectRequest(String requestId, {String? reason}) async {
     final user = _requireUser();
     await _run(() async {
-      await _repository.rejectRequest(user.id, requestId);
+      await _repository.rejectRequest(user.id, requestId, reason: reason);
+      _sync(currentUserId: user.id);
+    });
+  }
+
+  Future<void> updateEventAccess({
+    required String eventId,
+    required String exactAddress,
+    required String accessInstructions,
+  }) async {
+    final user = _requireUser();
+    await _run(() async {
+      await _repository.updateEventAccess(
+        user.id,
+        eventId,
+        exactAddress: exactAddress,
+        accessInstructions: accessInstructions,
+      );
       _sync(currentUserId: user.id);
     });
   }

@@ -441,15 +441,23 @@ class DemoPullupRepository implements PullupRepository {
   }
 
   @override
-  Future<EventRequest> rejectRequest(String hostId, String requestId) async {
+  Future<EventRequest> rejectRequest(
+    String hostId,
+    String requestId, {
+    String? reason,
+  }) async {
     final request = _requestById(requestId);
     final event = _eventById(request.eventId);
     if (event.hostId != hostId) {
       throw const AppException('Only the host can reject this request.');
     }
+    if (request.status != RequestStatus.pending) {
+      throw const AppException('This request is no longer pending.');
+    }
     final updated = request.copyWith(
       status: RequestStatus.rejected,
       decidedAt: DateTime.now(),
+      decisionReason: reason?.trim(),
     );
     _replaceRequest(updated);
     _replaceEvent(
@@ -476,6 +484,44 @@ class DemoPullupRepository implements PullupRepository {
         eventId: event.id,
       ),
     );
+    return updated;
+  }
+
+  @override
+  Future<PartyEvent> updateEventAccess(
+    String hostId,
+    String eventId, {
+    required String exactAddress,
+    required String accessInstructions,
+  }) async {
+    final event = _eventById(eventId);
+    if (event.hostId != hostId) {
+      throw const AppException('Only the host can update private access.');
+    }
+    if (exactAddress.trim().isEmpty) {
+      throw const AppException('Add an exact address before saving access.');
+    }
+    final now = DateTime.now();
+    final updated = event.copyWith(
+      exactAddress: exactAddress.trim(),
+      accessInstructions: accessInstructions.trim(),
+      updatedAt: now,
+    );
+    _replaceEvent(updated);
+    for (final guestId in event.acceptedParticipantIds) {
+      _notifications.add(
+        NotificationItem(
+          id: 'notification-${_nextId()}',
+          userId: guestId,
+          type: NotificationType.addressUnlocked,
+          title: 'Access updated',
+          body: 'Private access details changed for ${event.title}.',
+          createdAt: now,
+          read: false,
+          eventId: event.id,
+        ),
+      );
+    }
     return updated;
   }
 

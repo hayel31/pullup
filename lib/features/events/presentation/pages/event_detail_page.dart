@@ -37,6 +37,15 @@ class EventDetailPage extends ConsumerWidget {
     }
     final canReveal = event.canRevealAddressTo(user.id);
     final isHost = event.hostId == user.id;
+    final pendingHostRequests = isHost
+        ? state.requests
+              .where(
+                (request) =>
+                    request.eventId == event.id &&
+                    request.status == RequestStatus.pending,
+              )
+              .length
+        : 0;
     final userRequests =
         state.requests
             .where(
@@ -218,7 +227,9 @@ class EventDetailPage extends ConsumerWidget {
           const SizedBox(height: 18),
           if (isHost)
             GradientButton(
-              label: 'Review requests',
+              label: pendingHostRequests > 0
+                  ? 'Review requests ($pendingHostRequests)'
+                  : 'Manage guest list',
               icon: Icons.how_to_reg_rounded,
               onPressed: () => context.push('/events/${event.id}/requests'),
             )

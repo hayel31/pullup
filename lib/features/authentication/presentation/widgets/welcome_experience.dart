@@ -287,6 +287,7 @@ class _WelcomeActions extends StatelessWidget {
         ),
         const SizedBox(height: 11),
         FilledButton.icon(
+          key: const Key('open-host-view'),
           onPressed: onOpenHost,
           style: FilledButton.styleFrom(
             backgroundColor: AppColors.surfaceElevated.withValues(alpha: 0.9),

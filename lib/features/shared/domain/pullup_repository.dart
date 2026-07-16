@@ -68,7 +68,18 @@ abstract class PullupRepository {
 
   Future<PullupMatch> acceptRequest(String hostId, String requestId);
 
-  Future<EventRequest> rejectRequest(String hostId, String requestId);
+  Future<EventRequest> rejectRequest(
+    String hostId,
+    String requestId, {
+    String? reason,
+  });
+
+  Future<PartyEvent> updateEventAccess(
+    String hostId,
+    String eventId, {
+    required String exactAddress,
+    required String accessInstructions,
+  });
 
   Future<ChatMessage> sendMessage(
     String userId,

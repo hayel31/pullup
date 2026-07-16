@@ -344,6 +344,53 @@ class DemoSeed {
       status: RequestStatus.pending,
       createdAt: now.subtract(const Duration(minutes: 12)),
     );
+    final pendingSolo = EventRequest(
+      id: 'request-003',
+      eventId: 'event-001',
+      hostId: 'host-001',
+      requesterId: 'user-004',
+      note: 'I am in Paris tonight and can arrive before the DJ starts.',
+      groupSize: 1,
+      companionNames: const [],
+      status: RequestStatus.pending,
+      createdAt: now.subtract(const Duration(minutes: 26)),
+    );
+    final pendingGroup = EventRequest(
+      id: 'request-004',
+      eventId: 'event-001',
+      hostId: 'host-001',
+      requesterId: 'user-006',
+      note: 'Three of us, respectful and happy to bring ice and soft drinks.',
+      groupSize: 3,
+      companionNames: const ['Nora', 'Yanis'],
+      status: RequestStatus.pending,
+      createdAt: now.subtract(const Duration(minutes: 41)),
+    );
+    final acceptedRooftop = EventRequest(
+      id: 'request-005',
+      eventId: 'event-001',
+      hostId: 'host-001',
+      requesterId: 'user-002',
+      note: 'Coming solo, I already know the Bastille area.',
+      groupSize: 1,
+      companionNames: const [],
+      status: RequestStatus.accepted,
+      createdAt: now.subtract(const Duration(hours: 2)),
+      decidedAt: now.subtract(const Duration(hours: 1, minutes: 35)),
+    );
+    final declinedRooftop = EventRequest(
+      id: 'request-006',
+      eventId: 'event-001',
+      hostId: 'host-001',
+      requesterId: 'user-005',
+      note: 'We would be a group of four coming from Nice.',
+      groupSize: 4,
+      companionNames: const ['Lou', 'Sarah', 'Tom'],
+      status: RequestStatus.rejected,
+      createdAt: now.subtract(const Duration(hours: 3)),
+      decidedAt: now.subtract(const Duration(hours: 2, minutes: 20)),
+      decisionReason: 'Guest list balance',
+    );
     final accepted = EventRequest(
       id: 'request-002',
       eventId: 'event-006',
@@ -364,6 +411,14 @@ class DemoSeed {
       lastMessagePreview: 'Exact address unlocked. See you soon.',
       updatedAt: now.subtract(const Duration(minutes: 40)),
       unreadByUserIds: const ['user-001'],
+    );
+    final rooftopConversation = ChatConversation(
+      id: 'conversation-002',
+      eventId: 'event-001',
+      memberIds: const ['user-002', 'host-001'],
+      lastMessagePreview: 'Access unlocked for Rooftop near Bastille.',
+      updatedAt: now.subtract(const Duration(hours: 1, minutes: 34)),
+      unreadByUserIds: const ['user-002'],
     );
     final messages = [
       ChatMessage(
@@ -393,6 +448,15 @@ class DemoSeed {
         createdAt: now.subtract(const Duration(minutes: 40)),
         readByUserIds: const ['host-001'],
       ),
+      ChatMessage(
+        id: 'message-004',
+        conversationId: rooftopConversation.id,
+        senderId: 'system',
+        type: MessageType.system,
+        text: 'Access unlocked for Rooftop near Bastille.',
+        createdAt: now.subtract(const Duration(hours: 1, minutes: 34)),
+        readByUserIds: const ['host-001'],
+      ),
     ];
 
     final djs = [
@@ -416,8 +480,25 @@ class DemoSeed {
     return PullupSnapshot(
       users: users,
       events: events,
-      requests: [pending, accepted],
+      requests: [
+        pending,
+        pendingSolo,
+        pendingGroup,
+        acceptedRooftop,
+        declinedRooftop,
+        accepted,
+      ],
       matches: [
+        PullupMatch(
+          id: 'match-002',
+          userId: 'user-002',
+          hostId: 'host-001',
+          eventId: 'event-001',
+          conversationId: rooftopConversation.id,
+          status: MatchStatus.active,
+          createdAt: now.subtract(const Duration(hours: 1, minutes: 35)),
+          isNew: false,
+        ),
         PullupMatch(
           id: 'match-001',
           userId: 'user-001',
@@ -429,7 +510,7 @@ class DemoSeed {
           isNew: true,
         ),
       ],
-      conversations: [conversation],
+      conversations: [conversation, rooftopConversation],
       messages: messages,
       notifications: [
         NotificationItem(
@@ -574,9 +655,15 @@ class DemoSeed {
       ageRequirement: 18,
       maxParticipants: max,
       availableSpots: spots,
-      acceptedParticipantIds: id == 'event-006' ? const ['user-001'] : const [],
-      waitingParticipantIds: id == 'event-001' ? const ['user-003'] : const [],
-      rejectedParticipantIds: const [],
+      acceptedParticipantIds: id == 'event-006'
+          ? const ['user-001']
+          : id == 'event-001'
+          ? const ['user-002']
+          : const [],
+      waitingParticipantIds: id == 'event-001'
+          ? const ['user-003', 'user-004', 'user-006']
+          : const [],
+      rejectedParticipantIds: id == 'event-001' ? const ['user-005'] : const [],
       eventTags: tags,
       musicGenres: genres,
       dressCode: tags.contains(EventTag.dressCode)
@@ -601,8 +688,8 @@ class DemoSeed {
       isBoosted: boosted,
       boostEndDate: boosted ? now.add(const Duration(hours: 6)) : null,
       likeCount: imageId % 23 + 8,
-      requestCount: id == 'event-001' ? 1 : imageId % 9,
-      matchCount: id == 'event-006' ? 1 : imageId % 5,
+      requestCount: id == 'event-001' ? 5 : imageId % 9,
+      matchCount: id == 'event-001' || id == 'event-006' ? 1 : imageId % 5,
       createdAt: now.subtract(Duration(hours: imageId % 12 + 1)),
       updatedAt: now,
       expiresAt: end.add(const Duration(hours: 2)),

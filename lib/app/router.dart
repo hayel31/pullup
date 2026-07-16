@@ -9,6 +9,7 @@ import '../features/discovery/presentation/pages/filters_page.dart';
 import '../features/dj/presentation/pages/dj_page.dart';
 import '../features/events/presentation/pages/create_event_page.dart';
 import '../features/events/presentation/pages/event_detail_page.dart';
+import '../features/events/presentation/pages/host_dashboard_page.dart';
 import '../features/events/presentation/pages/host_requests_page.dart';
 import '../features/matches/presentation/pages/matches_page.dart';
 import '../features/notifications/presentation/pages/notifications_page.dart';
@@ -166,6 +167,10 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/events/:eventId/requests',
         builder: (context, state) =>
             HostRequestsPage(eventId: state.pathParameters['eventId']!),
+      ),
+      GoRoute(
+        path: '/host',
+        builder: (context, state) => const HostDashboardPage(),
       ),
       GoRoute(
         path: '/chat/:conversationId',

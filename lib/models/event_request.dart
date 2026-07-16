@@ -12,6 +12,7 @@ class EventRequest {
     required this.status,
     required this.createdAt,
     this.decidedAt,
+    this.decisionReason,
   });
 
   final String id;
@@ -24,6 +25,7 @@ class EventRequest {
   final RequestStatus status;
   final DateTime createdAt;
   final DateTime? decidedAt;
+  final String? decisionReason;
 
   EventRequest copyWith({
     String? id,
@@ -36,6 +38,7 @@ class EventRequest {
     RequestStatus? status,
     DateTime? createdAt,
     DateTime? decidedAt,
+    String? decisionReason,
   }) {
     return EventRequest(
       id: id ?? this.id,
@@ -48,6 +51,7 @@ class EventRequest {
       status: status ?? this.status,
       createdAt: createdAt ?? this.createdAt,
       decidedAt: decidedAt ?? this.decidedAt,
+      decisionReason: decisionReason ?? this.decisionReason,
     );
   }
 }
