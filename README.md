@@ -166,6 +166,26 @@ Run with Firebase after adding platform config files:
 flutter run --dart-define=USE_FIREBASE=true --dart-define=APP_ENV=staging
 ```
 
+## Web and Vercel
+
+The public demo is deployed at [pullup-night.vercel.app](https://pullup-night.vercel.app).
+
+Build the same production bundle locally:
+
+```bash
+flutter build web --release --pwa-strategy=none \
+  --dart-define=APP_ENV=production \
+  --dart-define=USE_FIREBASE=false
+```
+
+Deploy the prebuilt static bundle to the existing Vercel project:
+
+```bash
+npx vercel@latest deploy build/web --prod --yes --project pullup-night
+```
+
+`web/vercel.json` is copied into the build and provides SPA rewrites for direct links. The public deployment deliberately uses the demo repository and contains no Firebase credentials.
+
 ## Firebase configuration
 
 Add your Firebase config files locally:
