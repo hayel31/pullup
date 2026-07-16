@@ -5,6 +5,7 @@ import '../../../../app/theme/app_colors.dart';
 import '../../../../core/utils/distance_utils.dart';
 import '../../../../core/utils/time_utils.dart';
 import '../../../../core/widgets/pullup_chip.dart';
+import '../../../../core/widgets/pullup_image.dart';
 import '../../../../models/enums.dart';
 import '../../../../models/party_event.dart';
 import '../../../../models/user_profile.dart';
@@ -37,15 +38,14 @@ class EventCard extends StatelessWidget {
         child: Stack(
           fit: StackFit.expand,
           children: [
-            CachedNetworkImage(
-              imageUrl: event.coverPhotoUrl,
+            PullupImage(
+              source: event.coverPhotoUrl,
               fit: BoxFit.cover,
-              placeholder: (_, _) => const ColoredBox(
+              placeholder: const ColoredBox(
                 color: AppColors.surfaceSecondary,
                 child: Center(child: CircularProgressIndicator()),
               ),
-              errorWidget: (_, _, _) =>
-                  Container(color: AppColors.surfaceSecondary),
+              errorWidget: const ColoredBox(color: AppColors.surfaceSecondary),
             ),
             DecoratedBox(
               decoration: BoxDecoration(

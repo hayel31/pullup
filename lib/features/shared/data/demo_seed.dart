@@ -12,6 +12,17 @@ import '../domain/pullup_repository.dart';
 class DemoSeed {
   const DemoSeed._();
 
+  static const _eventPhotoPaths = <String, List<String>>{
+    'event-001': ['assets/demo/events/rooftop-night.jpg'],
+    'event-002': ['assets/demo/events/villa-pool-party.jpg'],
+    'event-003': ['assets/demo/events/apartment-pregame.jpg'],
+    'event-004': ['assets/demo/events/yacht-sunset.jpg'],
+    'event-005': ['assets/demo/events/student-apartment.jpg'],
+    'event-006': ['assets/demo/events/private-dj-set.jpg'],
+    'event-007': ['assets/demo/events/birthday-suite.jpg'],
+    'event-008': ['assets/demo/events/pigalle-after.jpg'],
+  };
+
   static PullupSnapshot build() {
     final now = DateTime.now();
     final users = <UserProfile>[
@@ -528,6 +539,7 @@ class DemoSeed {
     required String exactAddress,
   }) {
     final now = DateTime.now();
+    final photoPaths = _eventPhotoPaths[id]!;
     final point = city == 'Paris'
         ? GeoPointLite(
             latitude: 48.8566 + imageId % 7 / 1000,
@@ -548,12 +560,8 @@ class DemoSeed {
       description:
           'A private night plan with curated music, clear rules, and a respectful guest list.',
       category: category,
-      coverPhotoUrl: 'https://picsum.photos/id/$imageId/1200/1600',
-      photoUrls: [
-        'https://picsum.photos/id/$imageId/1200/1600',
-        'https://picsum.photos/id/${imageId + 1}/1200/1600',
-        'https://picsum.photos/id/${imageId + 2}/1200/1600',
-      ],
+      coverPhotoUrl: photoPaths.first,
+      photoUrls: photoPaths,
       city: city,
       areaName: area,
       approximateGeoPoint: point,

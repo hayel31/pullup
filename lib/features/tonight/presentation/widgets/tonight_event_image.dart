@@ -1,7 +1,7 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:pullup/l10n/app_material.dart';
 
 import '../../../../app/theme/app_colors.dart';
+import '../../../../core/widgets/pullup_image.dart';
 
 class TonightEventImage extends StatelessWidget {
   const TonightEventImage({required this.url, super.key});
@@ -10,16 +10,16 @@ class TonightEventImage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return CachedNetworkImage(
-      imageUrl: url,
+    return PullupImage(
+      source: url,
       fit: BoxFit.cover,
-      placeholder: (context, url) => const ColoredBox(
+      placeholder: const ColoredBox(
         color: AppColors.surfaceSecondary,
         child: Center(
           child: Icon(Icons.nightlife_rounded, color: AppColors.textSecondary),
         ),
       ),
-      errorWidget: (context, url, error) => const ColoredBox(
+      errorWidget: const ColoredBox(
         color: AppColors.surfaceSecondary,
         child: Center(
           child: Icon(

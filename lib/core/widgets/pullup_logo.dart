@@ -6,7 +6,7 @@ import '../../app/theme/app_colors.dart';
 class PullupLogo extends StatelessWidget {
   const PullupLogo({this.size = 72, super.key});
 
-  static const assetPath = 'assets/branding/pullup-midnight-logo.jpg';
+  static const assetPath = 'assets/branding/pullup-midnight-logo.png';
 
   final double size;
 

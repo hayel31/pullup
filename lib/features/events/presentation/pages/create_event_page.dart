@@ -13,6 +13,21 @@ import '../../../../models/enums.dart';
 import '../../../../models/geo_point_lite.dart';
 import '../../../shared/domain/app_drafts.dart';
 
+String _demoCoverFor(EventCategory category) => switch (category) {
+  EventCategory.rooftop => 'assets/demo/events/rooftop-night.jpg',
+  EventCategory.poolParty ||
+  EventCategory.villaParty => 'assets/demo/events/villa-pool-party.jpg',
+  EventCategory.boatParty => 'assets/demo/events/yacht-sunset.jpg',
+  EventCategory.studentParty => 'assets/demo/events/student-apartment.jpg',
+  EventCategory.privateDjSet => 'assets/demo/events/private-dj-set.jpg',
+  EventCategory.birthday => 'assets/demo/events/birthday-suite.jpg',
+  EventCategory.after ||
+  EventCategory.otherNightPlan => 'assets/demo/events/pigalle-after.jpg',
+  EventCategory.houseParty ||
+  EventCategory.preGame ||
+  EventCategory.apartmentParty => 'assets/demo/events/apartment-pregame.jpg',
+};
+
 class CreateEventPage extends ConsumerStatefulWidget {
   const CreateEventPage({super.key});
 
@@ -480,6 +495,7 @@ class _CreateEventPageState extends ConsumerState<CreateEventPage> {
       setState(() => _step++);
       return;
     }
+    final demoCover = _demoCoverFor(_category);
     await ref
         .read(appControllerProvider.notifier)
         .createEvent(
@@ -487,12 +503,8 @@ class _CreateEventPageState extends ConsumerState<CreateEventPage> {
             title: _title.text.trim(),
             description: _description.text.trim(),
             category: _category,
-            coverPhotoUrl:
-                'https://picsum.photos/seed/pullup-created/1200/1600',
-            photoUrls: const [
-              'https://picsum.photos/seed/pullup-created/1200/1600',
-              'https://picsum.photos/seed/pullup-created-2/1200/1600',
-            ],
+            coverPhotoUrl: demoCover,
+            photoUrls: [demoCover],
             city: _city.text.trim(),
             areaName: _area.text.trim(),
             approximateGeoPoint: const GeoPointLite(

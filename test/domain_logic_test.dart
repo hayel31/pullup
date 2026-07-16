@@ -47,6 +47,19 @@ void main() {
     expect(ranked.any((item) => item.event.hostId == user.id), isFalse);
   });
 
+  test('demo events use stable category-specific local imagery', () {
+    final events = DemoPullupRepository().snapshot.events;
+    final covers = events.map((event) => event.coverPhotoUrl).toList();
+
+    expect(events, hasLength(8));
+    expect(covers.toSet(), hasLength(events.length));
+    expect(covers, everyElement(startsWith('assets/demo/events/')));
+    expect(covers, isNot(anyElement(contains('picsum.photos'))));
+    for (final event in events) {
+      expect(event.photoUrls, contains(event.coverPhotoUrl));
+    }
+  });
+
   test(
     'accepting a request creates match, conversation and decrements spots',
     () async {

@@ -10,6 +10,7 @@ import '../../../../core/widgets/app_state_views.dart';
 import '../../../../core/widgets/gradient_button.dart';
 import '../../../../core/widgets/night_card.dart';
 import '../../../../core/widgets/pullup_chip.dart';
+import '../../../../core/widgets/pullup_image.dart';
 import '../../../../models/enums.dart';
 import '../../../shared/domain/app_drafts.dart';
 import '../../../shared/presentation/withdraw_request_flow.dart';
@@ -74,11 +75,12 @@ class EventDetailPage extends ConsumerWidget {
                 for (final photo in event.photoUrls)
                   ClipRRect(
                     borderRadius: BorderRadius.circular(8),
-                    child: CachedNetworkImage(
-                      imageUrl: photo,
+                    child: PullupImage(
+                      source: photo,
                       fit: BoxFit.cover,
-                      errorWidget: (_, _, _) =>
-                          Container(color: AppColors.surfaceSecondary),
+                      errorWidget: const ColoredBox(
+                        color: AppColors.surfaceSecondary,
+                      ),
                     ),
                   ),
               ],
