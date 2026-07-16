@@ -23,10 +23,20 @@ import '../features/tonight/presentation/pages/tonight_page.dart';
 import 'providers/app_state.dart';
 
 final routerProvider = Provider<GoRouter>((ref) {
-  final authState = ref.watch(appControllerProvider);
+  final refreshNotifier = _RouterRefreshNotifier();
+  ref.onDispose(refreshNotifier.dispose);
+  ref.listen(
+    appControllerProvider.select(
+      (state) =>
+          (state.currentUser?.id, state.currentUser?.onboardingCompleted),
+    ),
+    (_, _) => refreshNotifier.refresh(),
+  );
+
   return GoRouter(
     initialLocation: '/splash',
     debugLogDiagnostics: false,
+    refreshListenable: refreshNotifier,
     redirect: (context, state) {
       final path = state.uri.path;
       final publicPaths = {
@@ -38,7 +48,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         '/verify-email',
       };
       final isPublic = publicPaths.contains(path);
-      final user = authState.currentUser;
+      final user = ref.read(appControllerProvider).currentUser;
       if (path == '/splash') {
         return null;
       }
@@ -76,28 +86,49 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/onboarding',
         builder: (context, state) => const OnboardingPage(),
       ),
-      ShellRoute(
-        builder: (context, state, child) => MainShell(child: child),
-        routes: [
-          GoRoute(
-            path: '/discover',
-            builder: (context, state) => const DiscoverPage(),
+      StatefulShellRoute.indexedStack(
+        builder: (context, state, navigationShell) =>
+            MainShell(navigationShell: navigationShell),
+        branches: [
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: '/discover',
+                builder: (context, state) => const DiscoverPage(),
+              ),
+            ],
           ),
-          GoRoute(
-            path: '/tonight',
-            builder: (context, state) => const TonightPage(),
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: '/tonight',
+                builder: (context, state) => const TonightPage(),
+              ),
+            ],
           ),
-          GoRoute(
-            path: '/create',
-            builder: (context, state) => const CreateEventPage(),
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: '/create',
+                builder: (context, state) => const CreateEventPage(),
+              ),
+            ],
           ),
-          GoRoute(
-            path: '/matches',
-            builder: (context, state) => const MatchesPage(),
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: '/matches',
+                builder: (context, state) => const MatchesPage(),
+              ),
+            ],
           ),
-          GoRoute(
-            path: '/profile',
-            builder: (context, state) => const ProfilePage(),
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: '/profile',
+                builder: (context, state) => const ProfilePage(),
+              ),
+            ],
           ),
         ],
       ),
@@ -145,3 +176,7 @@ final routerProvider = Provider<GoRouter>((ref) {
     ),
   );
 });
+
+class _RouterRefreshNotifier extends ChangeNotifier {
+  void refresh() => notifyListeners();
+}

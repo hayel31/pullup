@@ -7,24 +7,20 @@ import '../../../app/theme/app_colors.dart';
 import '../../../core/widgets/pullup_logo.dart';
 
 class MainShell extends ConsumerWidget {
-  const MainShell({required this.child, super.key});
+  const MainShell({required this.navigationShell, super.key});
 
-  final Widget child;
+  final StatefulNavigationShell navigationShell;
 
   static const _tabs = [
-    _ShellTab('/discover', 'Discover', Icons.style_rounded),
-    _ShellTab('/tonight', 'Tonight', Icons.bolt_rounded),
-    _ShellTab('/create', 'Create', Icons.add_circle_outline_rounded),
-    _ShellTab('/matches', 'Matches', Icons.favorite_rounded),
-    _ShellTab('/profile', 'Profile', Icons.person_rounded),
+    _ShellTab('Discover', Icons.style_rounded),
+    _ShellTab('Tonight', Icons.bolt_rounded),
+    _ShellTab('Create', Icons.add_circle_outline_rounded),
+    _ShellTab('Matches', Icons.favorite_rounded),
+    _ShellTab('Profile', Icons.person_rounded),
   ];
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final path = GoRouterState.of(context).uri.path;
-    final index = _tabs
-        .indexWhere((tab) => path.startsWith(tab.path))
-        .clamp(0, _tabs.length - 1);
     final notifications = ref
         .watch(myNotificationsProvider)
         .where((item) => !item.read)
@@ -52,14 +48,14 @@ class MainShell extends ConsumerWidget {
             icon: Icons.chat_bubble_outline_rounded,
             tooltip: 'Messages',
             count: unreadMessages,
-            onPressed: () => context.go('/matches'),
+            onPressed: () => navigationShell.goBranch(3),
           ),
           const SizedBox(width: 8),
         ],
       ),
-      body: SafeArea(child: child),
+      body: SafeArea(child: navigationShell),
       bottomNavigationBar: NavigationBar(
-        selectedIndex: index,
+        selectedIndex: navigationShell.currentIndex,
         destinations: [
           for (final tab in _tabs)
             NavigationDestination(
@@ -68,16 +64,18 @@ class MainShell extends ConsumerWidget {
               label: tab.label,
             ),
         ],
-        onDestinationSelected: (next) => context.go(_tabs[next].path),
+        onDestinationSelected: (next) => navigationShell.goBranch(
+          next,
+          initialLocation: next == navigationShell.currentIndex,
+        ),
       ),
     );
   }
 }
 
 class _ShellTab {
-  const _ShellTab(this.path, this.label, this.icon);
+  const _ShellTab(this.label, this.icon);
 
-  final String path;
   final String label;
   final IconData icon;
 }

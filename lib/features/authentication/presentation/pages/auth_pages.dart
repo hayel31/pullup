@@ -22,16 +22,36 @@ class _SplashPageState extends ConsumerState<SplashPage>
     with SingleTickerProviderStateMixin {
   static const _duration = Duration(milliseconds: 2600);
   late final AnimationController _progress;
-  late final Animation<double> _entrance;
+  late final Animation<double> _fade;
+  late final Animation<double> _scale;
+  late final Animation<double> _detailsFade;
+  late final Animation<Offset> _slide;
 
   @override
   void initState() {
     super.initState();
     _progress = AnimationController(vsync: this, duration: _duration)
       ..forward();
-    _entrance = CurvedAnimation(
+    _fade = CurvedAnimation(
       parent: _progress,
-      curve: const Interval(0, 0.45, curve: Curves.easeOutCubic),
+      curve: const Interval(0, 0.25, curve: Curves.easeOutCubic),
+    );
+    _scale = Tween<double>(begin: 0.82, end: 1).animate(
+      CurvedAnimation(
+        parent: _progress,
+        curve: const Interval(0, 0.34, curve: Curves.easeOutBack),
+      ),
+    );
+    _slide = Tween<Offset>(begin: const Offset(0, 0.14), end: Offset.zero)
+        .animate(
+          CurvedAnimation(
+            parent: _progress,
+            curve: const Interval(0, 0.3, curve: Curves.easeOutCubic),
+          ),
+        );
+    _detailsFade = CurvedAnimation(
+      parent: _progress,
+      curve: const Interval(0.12, 0.4, curve: Curves.easeOut),
     );
     _completeSplash();
   }
@@ -59,70 +79,78 @@ class _SplashPageState extends ConsumerState<SplashPage>
   Widget build(BuildContext context) {
     return Scaffold(
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(28, 36, 28, 28),
-          child: Column(
-            children: [
-              const Spacer(),
-              FadeTransition(
-                opacity: _entrance,
-                child: ScaleTransition(
-                  scale: Tween<double>(begin: 0.92, end: 1).animate(_entrance),
-                  child: const Column(
-                    children: [
-                      PullupLogo(size: 128),
-                      SizedBox(height: 20),
-                      Text(
-                        AppConstants.appName,
-                        style: TextStyle(
-                          fontSize: 42,
-                          fontWeight: FontWeight.w900,
-                          height: 1,
-                          letterSpacing: 0,
+        child: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(28),
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 280),
+              child: SlideTransition(
+                position: _slide,
+                child: FadeTransition(
+                  opacity: _fade,
+                  child: ScaleTransition(
+                    scale: _scale,
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const PullupLogo(size: 128),
+                        const SizedBox(height: 18),
+                        const Text(
+                          AppConstants.appName,
+                          style: TextStyle(
+                            fontSize: 42,
+                            fontWeight: FontWeight.w900,
+                            height: 1,
+                            letterSpacing: 0,
+                          ),
                         ),
-                      ),
-                      SizedBox(height: 10),
-                      Text(
-                        AppConstants.signature,
-                        style: TextStyle(
-                          color: AppColors.textSecondary,
-                          fontSize: 15,
-                          height: 1.2,
-                          letterSpacing: 0,
+                        const SizedBox(height: 10),
+                        const Text(
+                          AppConstants.signature,
+                          style: TextStyle(
+                            color: AppColors.textSecondary,
+                            fontSize: 15,
+                            height: 1.2,
+                            letterSpacing: 0,
+                          ),
                         ),
-                      ),
-                    ],
+                        const SizedBox(height: 34),
+                        FadeTransition(
+                          opacity: _detailsFade,
+                          child: Column(
+                            children: [
+                              const Text(
+                                "Finding tonight's move",
+                                style: TextStyle(
+                                  color: AppColors.textSecondary,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                  height: 1.2,
+                                  letterSpacing: 0,
+                                ),
+                              ),
+                              const SizedBox(height: 12),
+                              SizedBox(
+                                width: 180,
+                                child: AnimatedBuilder(
+                                  animation: _progress,
+                                  builder: (context, _) =>
+                                      LinearProgressIndicator(
+                                        value: _progress.value,
+                                        minHeight: 3,
+                                        borderRadius: BorderRadius.circular(2),
+                                      ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ),
-              const Spacer(),
-              ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 280),
-                child: Column(
-                  children: [
-                    const Text(
-                      'Getting tonight ready',
-                      style: TextStyle(
-                        color: AppColors.textSecondary,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        height: 1.2,
-                        letterSpacing: 0,
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    AnimatedBuilder(
-                      animation: _progress,
-                      builder: (context, _) => LinearProgressIndicator(
-                        value: _progress.value,
-                        minHeight: 3,
-                        borderRadius: BorderRadius.circular(2),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
+            ),
           ),
         ),
       ),

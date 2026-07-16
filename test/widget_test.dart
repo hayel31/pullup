@@ -18,11 +18,11 @@ void main() {
   ) async {
     await tester.pumpWidget(const ProviderScope(child: PullupApp()));
 
-    expect(find.text('Getting tonight ready'), findsOneWidget);
+    expect(find.text("Finding tonight's move"), findsOneWidget);
     expect(find.byType(LinearProgressIndicator), findsOneWidget);
 
     await tester.pump(const Duration(seconds: 2));
-    expect(find.text('Getting tonight ready'), findsOneWidget);
+    expect(find.text("Finding tonight's move"), findsOneWidget);
 
     await tester.pump(const Duration(milliseconds: 700));
     await tester.pumpAndSettle();

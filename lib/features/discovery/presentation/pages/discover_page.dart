@@ -9,13 +9,27 @@ import '../../../../core/widgets/app_state_views.dart';
 import '../../../../core/widgets/gradient_button.dart';
 import '../../../../models/party_event.dart';
 import '../../../shared/domain/app_drafts.dart';
-import '../widgets/event_card.dart';
+import '../widgets/swipe_event_deck.dart';
 
-class DiscoverPage extends ConsumerWidget {
+class DiscoverPage extends ConsumerStatefulWidget {
   const DiscoverPage({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<DiscoverPage> createState() => _DiscoverPageState();
+}
+
+class _DiscoverPageState extends ConsumerState<DiscoverPage> {
+  final _deckController = SwipeEventDeckController();
+  final _swipeProgress = ValueNotifier<double>(0);
+
+  @override
+  void dispose() {
+    _swipeProgress.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final state = ref.watch(appControllerProvider);
     final user = state.currentUser;
     final ranked = ref.watch(recommendedEventsProvider);
@@ -34,6 +48,7 @@ class DiscoverPage extends ConsumerWidget {
     }
 
     final event = ranked.first.event;
+    final nextEvent = ranked.length > 1 ? ranked[1].event : null;
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
       child: Column(
@@ -55,78 +70,52 @@ class DiscoverPage extends ConsumerWidget {
           ),
           const SizedBox(height: 12),
           Expanded(
-            child: Dismissible(
-              key: ValueKey(event.id),
-              direction: DismissDirection.horizontal,
-              confirmDismiss: (direction) async {
-                if (direction == DismissDirection.startToEnd) {
-                  await _openRequestSheet(context, ref, event);
-                  return false;
-                }
-                return true;
-              },
-              onDismissed: (_) {
-                HapticFeedback.lightImpact();
-                ref.read(appControllerProvider.notifier).passEvent(event.id);
-              },
-              background: const _SwipeBackground(
-                alignment: Alignment.centerLeft,
-                color: AppColors.magenta,
-                icon: Icons.favorite_rounded,
-                label: 'REQUEST',
-              ),
-              secondaryBackground: const _SwipeBackground(
-                alignment: Alignment.centerRight,
-                color: AppColors.surfaceElevated,
-                icon: Icons.close_rounded,
-                label: 'PASS',
-              ),
-              child: EventCard(
-                event: event,
-                viewer: user,
-                onDetails: () => context.push('/events/${event.id}'),
-              ),
+            child: SwipeEventDeck(
+              event: event,
+              nextEvent: nextEvent,
+              viewer: user,
+              controller: _deckController,
+              onProgressChanged: (progress) => _swipeProgress.value = progress,
+              onPass: (event) =>
+                  ref.read(appControllerProvider.notifier).passEvent(event.id),
+              onRequest: (event) => _openRequestSheet(context, event),
+              onDetails: () => context.push('/events/${event.id}'),
             ),
           ),
           const SizedBox(height: 14),
-          Row(
-            children: [
-              _RoundAction(
-                icon: Icons.undo_rounded,
-                label: 'Premium undo',
-                onTap: () =>
-                    ref.read(appControllerProvider.notifier).undoLastSwipe(),
-              ),
-              _RoundAction(
-                icon: Icons.close_rounded,
-                label: 'Pass',
-                color: AppColors.surfaceElevated,
-                onTap: () {
-                  HapticFeedback.lightImpact();
-                  ref.read(appControllerProvider.notifier).passEvent(event.id);
-                },
-              ),
-              _RoundAction(
-                icon: Icons.favorite_rounded,
-                label: 'Request',
-                color: AppColors.magenta,
-                onTap: () => _openRequestSheet(context, ref, event),
-              ),
-              _RoundAction(
-                icon: Icons.flag_outlined,
-                label: 'Report',
-                onTap: () => context.push('/safety'),
-              ),
-              _RoundAction(
-                icon: Icons.ios_share_rounded,
-                label: 'Share',
-                onTap: () => ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Sharing is unavailable in this preview.'),
-                  ),
+          ValueListenableBuilder<double>(
+            valueListenable: _swipeProgress,
+            builder: (context, progress, _) => Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                _SwipeActionButton(
+                  icon: Icons.undo_rounded,
+                  label: 'Premium undo',
+                  activeColor: AppColors.primaryBright,
+                  size: 50,
+                  onTap: () =>
+                      ref.read(appControllerProvider.notifier).undoLastSwipe(),
                 ),
-              ),
-            ],
+                const SizedBox(width: 22),
+                _SwipeActionButton(
+                  iconKey: const Key('pass-action-icon'),
+                  icon: Icons.close_rounded,
+                  label: 'Pass',
+                  activeColor: AppColors.danger,
+                  intensity: (-progress).clamp(0, 1),
+                  onTap: () => _deckController.pass(),
+                ),
+                const SizedBox(width: 22),
+                _SwipeActionButton(
+                  iconKey: const Key('request-action-icon'),
+                  icon: Icons.favorite_rounded,
+                  label: 'Request to join',
+                  activeColor: AppColors.magenta,
+                  intensity: progress.clamp(0, 1),
+                  onTap: () => _deckController.request(),
+                ),
+              ],
+            ),
           ),
           if (state.errorMessage != null) ...[
             const SizedBox(height: 8),
@@ -140,18 +129,15 @@ class DiscoverPage extends ConsumerWidget {
     );
   }
 
-  Future<void> _openRequestSheet(
-    BuildContext context,
-    WidgetRef ref,
-    PartyEvent event,
-  ) async {
+  Future<bool> _openRequestSheet(BuildContext context, PartyEvent event) async {
     HapticFeedback.selectionClick();
-    await showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      useSafeArea: true,
-      builder: (context) => _RequestSheet(event: event),
-    );
+    return await showModalBottomSheet<bool>(
+          context: context,
+          isScrollControlled: true,
+          useSafeArea: true,
+          builder: (context) => _RequestSheet(event: event),
+        ) ??
+        false;
   }
 }
 
@@ -167,6 +153,7 @@ class _RequestSheet extends ConsumerStatefulWidget {
 class _RequestSheetState extends ConsumerState<_RequestSheet> {
   final _note = TextEditingController();
   int _groupSize = 1;
+  bool _submitting = false;
 
   @override
   void dispose() {
@@ -176,12 +163,16 @@ class _RequestSheetState extends ConsumerState<_RequestSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final errorMessage = ref.watch(
+      appControllerProvider.select((state) => state.errorMessage),
+    );
     return SafeArea(
-      child: Padding(
+      child: SingleChildScrollView(
+        keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
         padding: EdgeInsets.only(
           left: 18,
           right: 18,
-          top: 18,
+          top: 8,
           bottom: MediaQuery.of(context).viewInsets.bottom + 18,
         ),
         child: Column(
@@ -203,8 +194,7 @@ class _RequestSheetState extends ConsumerState<_RequestSheet> {
             ),
             const SizedBox(height: 18),
             Text('Add a note', style: Theme.of(context).textTheme.titleMedium),
-            const SizedBox(height: 8),
-            const SizedBox(height: 12),
+            const SizedBox(height: 10),
             TextField(
               controller: _note,
               maxLines: 3,
@@ -226,7 +216,9 @@ class _RequestSheetState extends ConsumerState<_RequestSheet> {
                 ])
                   ActionChip(
                     label: Text(suggestion),
-                    onPressed: () => setState(() => _note.text = suggestion),
+                    onPressed: _submitting
+                        ? null
+                        : () => setState(() => _note.text = suggestion),
                   ),
               ],
             ),
@@ -240,7 +232,7 @@ class _RequestSheetState extends ConsumerState<_RequestSheet> {
                 border: Border.all(color: AppColors.border),
               ),
               child: Padding(
-                padding: const EdgeInsets.fromLTRB(14, 6, 6, 6),
+                padding: const EdgeInsets.fromLTRB(14, 8, 8, 8),
                 child: Row(
                   children: [
                     Expanded(
@@ -249,131 +241,164 @@ class _RequestSheetState extends ConsumerState<_RequestSheet> {
                         style: const TextStyle(fontWeight: FontWeight.w700),
                       ),
                     ),
-                    IconButton(
+                    _GroupSizeButton(
+                      buttonKey: const Key('group-remove-button'),
                       tooltip: 'Remove one person',
-                      onPressed: _groupSize > 1
+                      icon: Icons.remove_rounded,
+                      onPressed: !_submitting && _groupSize > 1
                           ? () => setState(() => _groupSize--)
                           : null,
-                      icon: const Icon(Icons.remove_rounded),
                     ),
                     SizedBox(
-                      width: 36,
+                      width: 38,
                       child: Text(
                         '$_groupSize',
                         textAlign: TextAlign.center,
                         style: Theme.of(context).textTheme.titleMedium,
                       ),
                     ),
-                    IconButton(
+                    _GroupSizeButton(
+                      buttonKey: const Key('group-add-button'),
                       tooltip: 'Add one person',
-                      onPressed: _groupSize < widget.event.maxGroupSize
+                      icon: Icons.add_rounded,
+                      onPressed:
+                          !_submitting && _groupSize < widget.event.maxGroupSize
                           ? () => setState(() => _groupSize++)
                           : null,
-                      icon: const Icon(Icons.add_rounded),
                     ),
                   ],
                 ),
               ),
             ),
+            if (errorMessage != null) ...[
+              const SizedBox(height: 12),
+              Text(
+                errorMessage,
+                style: const TextStyle(color: AppColors.danger),
+              ),
+            ],
             const SizedBox(height: 18),
             GradientButton(
-              label: 'Request to pull up',
+              label: _submitting ? 'Sending request...' : 'Request to pull up',
               icon: Icons.favorite_rounded,
-              onPressed: () async {
-                await ref
-                    .read(appControllerProvider.notifier)
-                    .requestToJoin(
-                      widget.event.id,
-                      JoinEventDraft(
-                        note: _note.text.trim(),
-                        groupSize: _groupSize,
-                        companionNames: const [],
-                      ),
-                    );
-                if (context.mounted) Navigator.of(context).pop();
-              },
+              onPressed: _submitting ? null : _submit,
             ),
           ],
         ),
       ),
     );
   }
+
+  Future<void> _submit() async {
+    setState(() => _submitting = true);
+    await ref
+        .read(appControllerProvider.notifier)
+        .requestToJoin(
+          widget.event.id,
+          JoinEventDraft(
+            note: _note.text.trim(),
+            groupSize: _groupSize,
+            companionNames: const [],
+          ),
+        );
+    if (!mounted) return;
+    final error = ref.read(appControllerProvider).errorMessage;
+    if (error == null) {
+      Navigator.of(context).pop(true);
+      return;
+    }
+    setState(() => _submitting = false);
+  }
 }
 
-class _SwipeBackground extends StatelessWidget {
-  const _SwipeBackground({
-    required this.alignment,
-    required this.color,
+class _GroupSizeButton extends StatelessWidget {
+  const _GroupSizeButton({
+    required this.buttonKey,
+    required this.tooltip,
     required this.icon,
-    required this.label,
+    required this.onPressed,
   });
 
-  final Alignment alignment;
-  final Color color;
+  final Key buttonKey;
+  final String tooltip;
   final IconData icon;
-  final String label;
+  final VoidCallback? onPressed;
 
   @override
   Widget build(BuildContext context) {
-    final leftAligned = alignment == Alignment.centerLeft;
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: color,
-        borderRadius: BorderRadius.circular(8),
+    return IconButton(
+      key: buttonKey,
+      tooltip: tooltip,
+      onPressed: onPressed,
+      style: IconButton.styleFrom(
+        fixedSize: const Size.square(44),
+        backgroundColor: AppColors.surfaceElevated,
+        foregroundColor: AppColors.textPrimary,
+        disabledBackgroundColor: AppColors.surfaceElevated,
+        disabledForegroundColor: AppColors.textSecondary,
+        side: const BorderSide(color: AppColors.border),
       ),
-      child: Align(
-        alignment: alignment,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: leftAligned
-                ? CrossAxisAlignment.start
-                : CrossAxisAlignment.end,
-            children: [
-              Icon(icon, size: 34),
-              const SizedBox(height: 6),
-              Text(
-                label,
-                style: const TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w900,
-                  letterSpacing: 0,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
+      icon: Icon(icon, size: 22),
     );
   }
 }
 
-class _RoundAction extends StatelessWidget {
-  const _RoundAction({
+class _SwipeActionButton extends StatelessWidget {
+  const _SwipeActionButton({
     required this.icon,
     required this.label,
+    required this.activeColor,
     required this.onTap,
-    this.color = AppColors.surfaceSecondary,
+    this.iconKey,
+    this.intensity = 0,
+    this.size = 64,
   });
 
   final IconData icon;
   final String label;
+  final Color activeColor;
   final VoidCallback onTap;
-  final Color color;
+  final Key? iconKey;
+  final double intensity;
+  final double size;
 
   @override
   Widget build(BuildContext context) {
-    return Expanded(
-      child: Tooltip(
-        message: label,
-        child: IconButton.filled(
-          onPressed: onTap,
-          style: IconButton.styleFrom(
-            backgroundColor: color,
-            minimumSize: const Size(52, 52),
+    return TweenAnimationBuilder<double>(
+      tween: Tween(end: intensity.clamp(0, 1)),
+      duration: const Duration(milliseconds: 80),
+      curve: Curves.easeOut,
+      builder: (context, value, _) => Transform.scale(
+        scale: 1 + (value * 0.12),
+        child: Tooltip(
+          message: label,
+          child: IconButton(
+            onPressed: onTap,
+            style: IconButton.styleFrom(
+              fixedSize: Size.square(size),
+              backgroundColor: Color.lerp(
+                AppColors.surfaceSecondary,
+                activeColor.withValues(alpha: 0.34),
+                value,
+              ),
+              foregroundColor: Color.lerp(
+                AppColors.textSecondary,
+                activeColor,
+                value,
+              ),
+              side: BorderSide(
+                color: Color.lerp(AppColors.border, activeColor, value)!,
+                width: 1 + value,
+              ),
+              shape: const CircleBorder(),
+            ),
+            icon: Icon(
+              icon,
+              key: iconKey,
+              color: Color.lerp(AppColors.textSecondary, activeColor, value),
+              size: size >= 60 ? 30 : 24,
+            ),
           ),
-          icon: Icon(icon),
         ),
       ),
     );
