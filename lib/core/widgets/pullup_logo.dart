@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:pullup/l10n/app_material.dart';
 
 import '../../app/constants/app_constants.dart';
 import '../../app/theme/app_colors.dart';
@@ -12,7 +12,7 @@ class PullupLogo extends StatelessWidget {
   Widget build(BuildContext context) {
     return Semantics(
       image: true,
-      label: 'PULLUP logo',
+      label: context.tr('PULLUP logo'),
       child: Image.asset(
         'assets/branding/pullup-mark.png',
         width: size,
@@ -36,7 +36,7 @@ class PullupBrand extends StatelessWidget {
     return Semantics(
       container: true,
       label: showSlogan
-          ? '${AppConstants.appName}. ${AppConstants.slogan}'
+          ? '${AppConstants.appName}. ${context.tr(AppConstants.slogan)}'
           : AppConstants.appName,
       child: Row(
         mainAxisSize: MainAxisSize.min,

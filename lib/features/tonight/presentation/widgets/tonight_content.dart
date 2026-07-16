@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:pullup/l10n/app_material.dart';
 
 import '../../../../app/theme/app_colors.dart';
 import '../../../../models/party_event.dart';

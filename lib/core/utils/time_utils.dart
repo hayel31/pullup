@@ -3,11 +3,14 @@ import 'package:intl/intl.dart';
 class TimeUtils {
   const TimeUtils._();
 
-  static final _date = DateFormat('EEE d MMM');
-  static final _time = DateFormat('HH:mm');
-
-  static String eventWindow(DateTime start, DateTime end) {
-    return '${_date.format(start)} - ${_time.format(start)} to ${_time.format(end)}';
+  static String eventWindow(
+    DateTime start,
+    DateTime end, {
+    String locale = 'en',
+  }) {
+    final date = DateFormat('EEE d MMM', locale);
+    final time = DateFormat('HH:mm', locale);
+    return '${date.format(start)} · ${time.format(start)} - ${time.format(end)}';
   }
 
   static String tonightCountdown(

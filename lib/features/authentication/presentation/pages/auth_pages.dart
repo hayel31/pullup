@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:pullup/l10n/app_material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -280,8 +280,8 @@ class _LoginPageState extends ConsumerState<LoginPage> {
               keyboardType: TextInputType.emailAddress,
               textInputAction: TextInputAction.next,
               autofillHints: const [AutofillHints.email],
-              decoration: const InputDecoration(
-                labelText: 'Email address',
+              decoration: InputDecoration(
+                labelText: context.tr('Email address'),
                 prefixIcon: Icon(Icons.mail_outline_rounded),
               ),
             ),
@@ -294,10 +294,12 @@ class _LoginPageState extends ConsumerState<LoginPage> {
               onSubmitted: (_) =>
                   ref.read(appControllerProvider.notifier).signInDemo(),
               decoration: InputDecoration(
-                labelText: 'Password',
+                labelText: context.tr('Password'),
                 prefixIcon: const Icon(Icons.lock_outline_rounded),
                 suffixIcon: IconButton(
-                  tooltip: _obscurePassword ? 'Show password' : 'Hide password',
+                  tooltip: context.tr(
+                    _obscurePassword ? 'Show password' : 'Hide password',
+                  ),
                   onPressed: () =>
                       setState(() => _obscurePassword = !_obscurePassword),
                   icon: Icon(
@@ -393,8 +395,8 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
               TextFormField(
                 controller: _firstName,
                 textInputAction: TextInputAction.next,
-                decoration: const InputDecoration(
-                  labelText: 'First name',
+                decoration: InputDecoration(
+                  labelText: context.tr('First name'),
                   prefixIcon: Icon(Icons.person_outline_rounded),
                 ),
                 validator: _required,
@@ -402,17 +404,17 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
               const SizedBox(height: 12),
               TextFormField(
                 controller: _lastName,
-                decoration: const InputDecoration(
-                  labelText: 'Last name',
-                  helperText: 'Optional',
+                decoration: InputDecoration(
+                  labelText: context.tr('Last name'),
+                  helperText: context.tr('Optional'),
                   prefixIcon: Icon(Icons.badge_outlined),
                 ),
               ),
               const SizedBox(height: 12),
               TextFormField(
                 controller: _displayName,
-                decoration: const InputDecoration(
-                  labelText: 'Name shown on PULLUP',
+                decoration: InputDecoration(
+                  labelText: context.tr('Name shown on PULLUP'),
                   prefixIcon: Icon(Icons.alternate_email_rounded),
                 ),
                 validator: _required,
@@ -427,8 +429,8 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
                 ],
                 onChanged: (value) =>
                     setState(() => _gender = value ?? _gender),
-                decoration: const InputDecoration(
-                  labelText: 'How do you identify?',
+                decoration: InputDecoration(
+                  labelText: context.tr('How do you identify?'),
                   prefixIcon: Icon(Icons.people_outline_rounded),
                 ),
               ),
@@ -437,8 +439,8 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
                 borderRadius: BorderRadius.circular(8),
                 onTap: _pickBirthDate,
                 child: InputDecorator(
-                  decoration: const InputDecoration(
-                    labelText: 'Date of birth',
+                  decoration: InputDecoration(
+                    labelText: context.tr('Date of birth'),
                     prefixIcon: Icon(Icons.calendar_month_outlined),
                   ),
                   child: Row(
@@ -462,8 +464,8 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
               TextFormField(
                 controller: _city,
                 textInputAction: TextInputAction.next,
-                decoration: const InputDecoration(
-                  labelText: 'City',
+                decoration: InputDecoration(
+                  labelText: context.tr('City'),
                   prefixIcon: Icon(Icons.location_city_outlined),
                 ),
                 validator: _required,
@@ -474,8 +476,8 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
                 keyboardType: TextInputType.emailAddress,
                 textInputAction: TextInputAction.next,
                 autofillHints: const [AutofillHints.email],
-                decoration: const InputDecoration(
-                  labelText: 'Email address',
+                decoration: InputDecoration(
+                  labelText: context.tr('Email address'),
                   prefixIcon: Icon(Icons.mail_outline_rounded),
                 ),
                 validator: _required,
@@ -487,13 +489,13 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
                 textInputAction: TextInputAction.done,
                 autofillHints: const [AutofillHints.newPassword],
                 decoration: InputDecoration(
-                  labelText: 'Create a password',
-                  helperText: 'Use at least 8 characters',
+                  labelText: context.tr('Create a password'),
+                  helperText: context.tr('Use at least 8 characters'),
                   prefixIcon: const Icon(Icons.lock_outline_rounded),
                   suffixIcon: IconButton(
-                    tooltip: _obscurePassword
-                        ? 'Show password'
-                        : 'Hide password',
+                    tooltip: context.tr(
+                      _obscurePassword ? 'Show password' : 'Hide password',
+                    ),
                     onPressed: () =>
                         setState(() => _obscurePassword = !_obscurePassword),
                     icon: Icon(
@@ -504,7 +506,7 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
                   ),
                 ),
                 validator: (value) => (value ?? '').length < 8
-                    ? 'Password must contain at least 8 characters'
+                    ? context.tr('Password must contain at least 8 characters')
                     : null,
               ),
               const SizedBox(height: 4),
@@ -547,7 +549,7 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
   }
 
   String? _required(String? value) =>
-      value == null || value.trim().isEmpty ? 'Required' : null;
+      value == null || value.trim().isEmpty ? context.tr('Required') : null;
 
   Future<void> _pickBirthDate() async {
     final picked = await showDatePicker(
@@ -614,11 +616,11 @@ class ForgotPasswordPage extends StatelessWidget {
               title: 'Reset your password',
               message: 'We will send a secure reset link to your email.',
             ),
-            const TextField(
+            TextField(
               keyboardType: TextInputType.emailAddress,
               autofillHints: [AutofillHints.email],
               decoration: InputDecoration(
-                labelText: 'Email address',
+                labelText: context.tr('Email address'),
                 prefixIcon: Icon(Icons.mail_outline_rounded),
               ),
             ),

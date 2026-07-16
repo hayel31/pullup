@@ -12,6 +12,7 @@ Completed in the Flutter app:
 
 - Dark premium Material 3 theme.
 - Feature-first architecture with Riverpod and GoRouter.
+- Persistent in-app language picker with English, French, Spanish and German UI copy.
 - Demo authentication, registration, email reset and email verification screens.
 - User onboarding: photos, profile, preferences and safety rules.
 - User profile, edit profile, settings, sign out and delete account flow.
@@ -43,6 +44,7 @@ Prepared but not activated without credentials:
 - RevenueCat/App Store/Google Play subscriptions.
 - Identity/selfie verification provider.
 - Real map tiles in restricted/offline environments.
+- Machine translation of user-authored profiles, events and messages.
 
 ## Architecture
 
@@ -62,6 +64,7 @@ lib/
     services/
     utils/
     widgets/
+  l10n/
   models/
   features/
     authentication/

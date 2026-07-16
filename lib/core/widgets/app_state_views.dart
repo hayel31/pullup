@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:pullup/l10n/app_material.dart';
 
 import '../../app/theme/app_colors.dart';
 
@@ -10,7 +10,10 @@ class LoadingView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Center(
-      child: Semantics(label: label, child: const CircularProgressIndicator()),
+      child: Semantics(
+        label: context.tr(label),
+        child: const CircularProgressIndicator(),
+      ),
     );
   }
 }

@@ -1,10 +1,11 @@
-import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../app/providers/app_state.dart';
 import '../../../app/theme/app_colors.dart';
+import '../../../core/widgets/language_picker_button.dart';
 import '../../../core/widgets/pullup_logo.dart';
+import '../../../l10n/app_material.dart';
 
 class MainShell extends ConsumerWidget {
   const MainShell({required this.navigationShell, super.key});
@@ -36,17 +37,18 @@ class MainShell extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const PullupBrand(logoSize: 32, showSlogan: true),
+        title: const PullupBrand(logoSize: 30),
         actions: [
+          const LanguagePickerButton(),
           _BadgeIconButton(
             icon: Icons.notifications_none_rounded,
-            tooltip: 'Notifications',
+            tooltip: context.tr('Notifications'),
             count: notifications,
             onPressed: () => context.push('/notifications'),
           ),
           _BadgeIconButton(
             icon: Icons.chat_bubble_outline_rounded,
-            tooltip: 'Messages',
+            tooltip: context.tr('Messages'),
             count: unreadMessages,
             onPressed: () => navigationShell.goBranch(3),
           ),
@@ -61,7 +63,7 @@ class MainShell extends ConsumerWidget {
             NavigationDestination(
               icon: Icon(tab.icon),
               selectedIcon: Icon(tab.icon, color: AppColors.textPrimary),
-              label: tab.label,
+              label: context.tr(tab.label),
             ),
         ],
         onDestinationSelected: (next) => navigationShell.goBranch(

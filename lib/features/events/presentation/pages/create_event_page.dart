@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:pullup/l10n/app_material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
@@ -83,8 +83,8 @@ class _CreateEventPageState extends ConsumerState<CreateEventPage> {
               DropdownMenuItem(value: category, child: Text(category.label)),
           ],
           onChanged: (value) => setState(() => _category = value ?? _category),
-          decoration: const InputDecoration(
-            labelText: 'Night plan type',
+          decoration: InputDecoration(
+            labelText: context.tr('Night plan type'),
             prefixIcon: Icon(Icons.nightlife_outlined),
           ),
         ),
@@ -99,9 +99,9 @@ class _CreateEventPageState extends ConsumerState<CreateEventPage> {
               controller: _title,
               textCapitalization: TextCapitalization.sentences,
               textInputAction: TextInputAction.next,
-              decoration: const InputDecoration(
-                labelText: 'Event title',
-                hintText: 'Last-minute rooftop pre-game',
+              decoration: InputDecoration(
+                labelText: context.tr('Event title'),
+                hintText: context.tr('Last-minute rooftop pre-game'),
                 prefixIcon: Icon(Icons.edit_outlined),
               ),
             ),
@@ -110,9 +110,11 @@ class _CreateEventPageState extends ConsumerState<CreateEventPage> {
               controller: _description,
               maxLines: 4,
               textCapitalization: TextCapitalization.sentences,
-              decoration: const InputDecoration(
-                labelText: 'Description',
-                hintText: 'Describe the atmosphere, music and guest list.',
+              decoration: InputDecoration(
+                labelText: context.tr('Description'),
+                hintText: context.tr(
+                  'Describe the atmosphere, music and guest list.',
+                ),
                 prefixIcon: Icon(Icons.notes_rounded),
               ),
             ),
@@ -183,8 +185,8 @@ class _CreateEventPageState extends ConsumerState<CreateEventPage> {
             TextField(
               controller: _city,
               textInputAction: TextInputAction.next,
-              decoration: const InputDecoration(
-                labelText: 'City',
+              decoration: InputDecoration(
+                labelText: context.tr('City'),
                 prefixIcon: Icon(Icons.location_city_outlined),
               ),
             ),
@@ -192,8 +194,8 @@ class _CreateEventPageState extends ConsumerState<CreateEventPage> {
             TextField(
               controller: _area,
               textInputAction: TextInputAction.next,
-              decoration: const InputDecoration(
-                labelText: 'Area or district',
+              decoration: InputDecoration(
+                labelText: context.tr('Area or district'),
                 prefixIcon: Icon(Icons.map_outlined),
               ),
             ),
@@ -202,9 +204,9 @@ class _CreateEventPageState extends ConsumerState<CreateEventPage> {
               controller: _address,
               textInputAction: TextInputAction.next,
               autofillHints: const [AutofillHints.fullStreetAddress],
-              decoration: const InputDecoration(
-                labelText: 'Private address',
-                helperText: 'Visible only to accepted guests',
+              decoration: InputDecoration(
+                labelText: context.tr('Private address'),
+                helperText: context.tr('Visible only to accepted guests'),
                 prefixIcon: Icon(Icons.lock_outline_rounded),
               ),
             ),
@@ -213,9 +215,11 @@ class _CreateEventPageState extends ConsumerState<CreateEventPage> {
               controller: _access,
               maxLines: 3,
               textCapitalization: TextCapitalization.sentences,
-              decoration: const InputDecoration(
-                labelText: 'Access instructions',
-                hintText: 'Entrance, floor, door code or host contact.',
+              decoration: InputDecoration(
+                labelText: context.tr('Access instructions'),
+                hintText: context.tr(
+                  'Entrance, floor, door code or host contact.',
+                ),
                 prefixIcon: Icon(Icons.directions_outlined),
               ),
             ),
@@ -295,8 +299,8 @@ class _CreateEventPageState extends ConsumerState<CreateEventPage> {
             TextField(
               controller: _dressCode,
               textInputAction: TextInputAction.next,
-              decoration: const InputDecoration(
-                labelText: 'Dress code',
+              decoration: InputDecoration(
+                labelText: context.tr('Dress code'),
                 prefixIcon: Icon(Icons.checkroom_outlined),
               ),
             ),
@@ -304,8 +308,8 @@ class _CreateEventPageState extends ConsumerState<CreateEventPage> {
             TextField(
               controller: _contribution,
               textInputAction: TextInputAction.next,
-              decoration: const InputDecoration(
-                labelText: 'What guests should bring',
+              decoration: InputDecoration(
+                labelText: context.tr('What guests should bring'),
                 prefixIcon: Icon(Icons.local_bar_outlined),
               ),
             ),
@@ -314,8 +318,8 @@ class _CreateEventPageState extends ConsumerState<CreateEventPage> {
               controller: _rules,
               maxLines: 3,
               textCapitalization: TextCapitalization.sentences,
-              decoration: const InputDecoration(
-                labelText: 'House rules',
+              decoration: InputDecoration(
+                labelText: context.tr('House rules'),
                 prefixIcon: Icon(Icons.gavel_outlined),
               ),
             ),
@@ -344,7 +348,10 @@ class _CreateEventPageState extends ConsumerState<CreateEventPage> {
                   ),
                   _ReviewRow(
                     icon: Icons.schedule_rounded,
-                    text: DateFormat('EEE d MMM, HH:mm').format(_start),
+                    text: DateFormat(
+                      'EEE d MMM, HH:mm',
+                      Localizations.localeOf(context).toLanguageTag(),
+                    ).format(_start),
                   ),
                   _ReviewRow(
                     icon: Icons.place_outlined,
@@ -367,8 +374,8 @@ class _CreateEventPageState extends ConsumerState<CreateEventPage> {
               ],
               onChanged: (value) =>
                   setState(() => _approval = value ?? _approval),
-              decoration: const InputDecoration(
-                labelText: 'Request approval',
+              decoration: InputDecoration(
+                labelText: context.tr('Request approval'),
                 prefixIcon: Icon(Icons.how_to_reg_outlined),
               ),
             ),
@@ -385,8 +392,8 @@ class _CreateEventPageState extends ConsumerState<CreateEventPage> {
               ],
               onChanged: (value) =>
                   setState(() => _visibility = value ?? _visibility),
-              decoration: const InputDecoration(
-                labelText: 'Visibility',
+              decoration: InputDecoration(
+                labelText: context.tr('Visibility'),
                 prefixIcon: Icon(Icons.visibility_outlined),
               ),
             ),
@@ -557,10 +564,20 @@ class _DateTimeField extends StatelessWidget {
       borderRadius: BorderRadius.circular(8),
       onTap: onTap,
       child: InputDecorator(
-        decoration: InputDecoration(labelText: label, prefixIcon: Icon(icon)),
+        decoration: InputDecoration(
+          labelText: context.tr(label),
+          prefixIcon: Icon(icon),
+        ),
         child: Row(
           children: [
-            Expanded(child: Text(DateFormat('EEE d MMM, HH:mm').format(value))),
+            Expanded(
+              child: Text(
+                DateFormat(
+                  'EEE d MMM, HH:mm',
+                  Localizations.localeOf(context).toLanguageTag(),
+                ).format(value),
+              ),
+            ),
             const Icon(
               Icons.expand_more_rounded,
               color: AppColors.textSecondary,

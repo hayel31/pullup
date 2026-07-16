@@ -1,5 +1,5 @@
 import 'package:cached_network_image/cached_network_image.dart';
-import 'package:flutter/material.dart';
+import 'package:pullup/l10n/app_material.dart';
 
 import '../../../../app/theme/app_colors.dart';
 import '../../../../core/utils/distance_utils.dart';
@@ -27,8 +27,11 @@ class EventCard extends StatelessWidget {
       viewer.approximateLocation,
       event.approximateGeoPoint,
     );
+    final countdown = context.tr(
+      TimeUtils.tonightCountdown(event.startDateTime, event.endDateTime),
+    );
     return Semantics(
-      label: '${event.title}, ${event.category.label}',
+      label: '${event.title}, ${context.tr(event.category.label)}',
       child: ClipRRect(
         borderRadius: BorderRadius.circular(8),
         child: Stack(
@@ -117,7 +120,7 @@ class EventCard extends StatelessWidget {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    '${event.areaName}, ${event.city} | ${TimeUtils.tonightCountdown(event.startDateTime, event.endDateTime)}',
+                    '${event.areaName}, ${event.city} | $countdown',
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
@@ -134,8 +137,13 @@ class EventCard extends StatelessWidget {
                       for (final genre in event.musicGenres.take(3))
                         PullupChip(label: genre),
                       PullupChip(
-                        label:
-                            '${event.availableSpots}/${event.maxParticipants} open',
+                        label: context.tr(
+                          '{available}/{maximum} open',
+                          values: {
+                            'available': event.availableSpots,
+                            'maximum': event.maxParticipants,
+                          },
+                        ),
                       ),
                     ],
                   ),

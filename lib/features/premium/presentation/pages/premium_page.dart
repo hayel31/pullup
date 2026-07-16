@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:pullup/l10n/app_material.dart';
 
 import '../../../../core/widgets/gradient_button.dart';
 import '../../../../core/widgets/night_card.dart';

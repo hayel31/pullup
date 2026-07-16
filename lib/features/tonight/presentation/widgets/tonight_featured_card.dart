@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:pullup/l10n/app_material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../app/theme/app_colors.dart';
@@ -25,7 +25,7 @@ class TonightFeaturedEventCard extends StatelessWidget {
     final distance = tonightDistanceLabel(event, viewer);
     return Semantics(
       button: true,
-      label: 'Open ${event.title}',
+      label: context.tr('Open {event}', values: {'event': event.title}),
       child: Container(
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(8),
@@ -102,7 +102,7 @@ class TonightFeaturedEventCard extends StatelessWidget {
                         ),
                         const SizedBox(height: 5),
                         Text(
-                          '${event.category.label} / ${event.areaName}',
+                          '${context.tr(event.category.label)} / ${event.areaName}',
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: const TextStyle(

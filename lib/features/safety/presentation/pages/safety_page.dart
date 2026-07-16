@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:pullup/l10n/app_material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -74,8 +74,8 @@ class _SafetyPageState extends ConsumerState<SafetyPage> {
                   ],
                   onChanged: (value) =>
                       setState(() => _reason = value ?? _reason),
-                  decoration: const InputDecoration(
-                    labelText: 'What happened?',
+                  decoration: InputDecoration(
+                    labelText: context.tr('What happened?'),
                     prefixIcon: Icon(Icons.report_outlined),
                   ),
                 ),
@@ -84,10 +84,11 @@ class _SafetyPageState extends ConsumerState<SafetyPage> {
                   controller: _description,
                   maxLines: 4,
                   textCapitalization: TextCapitalization.sentences,
-                  decoration: const InputDecoration(
-                    labelText: 'Add details',
-                    hintText:
-                        'Share only what is needed to review this report.',
+                  decoration: InputDecoration(
+                    labelText: context.tr('Add details'),
+                    hintText: context.tr(
+                      'Share only what is needed to review this report.',
+                    ),
                   ),
                 ),
                 const SizedBox(height: 12),

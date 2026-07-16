@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:pullup/l10n/app_material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -68,8 +68,8 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
           TextField(
             controller: _displayName,
             textInputAction: TextInputAction.next,
-            decoration: const InputDecoration(
-              labelText: 'Name shown on PULLUP',
+            decoration: InputDecoration(
+              labelText: context.tr('Name shown on PULLUP'),
               prefixIcon: Icon(Icons.person_outline_rounded),
             ),
           ),
@@ -78,17 +78,17 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
             controller: _bio,
             maxLines: 4,
             textCapitalization: TextCapitalization.sentences,
-            decoration: const InputDecoration(
-              labelText: 'Bio',
-              hintText: 'What should a host know about you?',
+            decoration: InputDecoration(
+              labelText: context.tr('Bio'),
+              hintText: context.tr('What should a host know about you?'),
             ),
           ),
           const SizedBox(height: 12),
           TextField(
             controller: _city,
             textInputAction: TextInputAction.next,
-            decoration: const InputDecoration(
-              labelText: 'City',
+            decoration: InputDecoration(
+              labelText: context.tr('City'),
               prefixIcon: Icon(Icons.location_city_outlined),
             ),
           ),
@@ -96,18 +96,18 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
           TextField(
             controller: _occupation,
             textInputAction: TextInputAction.next,
-            decoration: const InputDecoration(
-              labelText: 'Work or studies',
-              helperText: 'Optional',
+            decoration: InputDecoration(
+              labelText: context.tr('Work or studies'),
+              helperText: context.tr('Optional'),
               prefixIcon: Icon(Icons.work_outline_rounded),
             ),
           ),
           const SizedBox(height: 12),
           TextField(
             controller: _instagram,
-            decoration: const InputDecoration(
-              labelText: 'Instagram',
-              helperText: 'Optional',
+            decoration: InputDecoration(
+              labelText: context.tr('Instagram'),
+              helperText: context.tr('Optional'),
               prefixIcon: Icon(Icons.alternate_email_rounded),
             ),
           ),

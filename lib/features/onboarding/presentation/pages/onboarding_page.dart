@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:pullup/l10n/app_material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 
@@ -276,7 +276,7 @@ class _PhotosStep extends StatelessWidget {
         if (index == photos.length) {
           return Semantics(
             button: true,
-            label: 'Add profile photo',
+            label: context.tr('Add profile photo'),
             child: InkWell(
               borderRadius: BorderRadius.circular(8),
               onTap: onAdd,
@@ -351,7 +351,7 @@ class _PhotosStep extends StatelessWidget {
               right: 4,
               top: 4,
               child: IconButton.filled(
-                tooltip: 'Remove photo',
+                tooltip: context.tr('Remove photo'),
                 style: IconButton.styleFrom(
                   minimumSize: const Size(36, 36),
                   backgroundColor: Colors.black.withValues(alpha: 0.64),
@@ -401,9 +401,9 @@ class _ProfileStep extends StatelessWidget {
           controller: bio,
           maxLines: 3,
           textCapitalization: TextCapitalization.sentences,
-          decoration: const InputDecoration(
-            labelText: 'Bio',
-            hintText: 'What should a host know about you?',
+          decoration: InputDecoration(
+            labelText: context.tr('Bio'),
+            hintText: context.tr('What should a host know about you?'),
             prefixIcon: Icon(Icons.notes_rounded),
           ),
         ),
@@ -411,8 +411,8 @@ class _ProfileStep extends StatelessWidget {
         TextField(
           controller: city,
           textInputAction: TextInputAction.next,
-          decoration: const InputDecoration(
-            labelText: 'City',
+          decoration: InputDecoration(
+            labelText: context.tr('City'),
             prefixIcon: Icon(Icons.location_city_outlined),
           ),
         ),
@@ -420,18 +420,18 @@ class _ProfileStep extends StatelessWidget {
         TextField(
           controller: occupation,
           textInputAction: TextInputAction.next,
-          decoration: const InputDecoration(
-            labelText: 'Work or studies',
-            helperText: 'Optional',
+          decoration: InputDecoration(
+            labelText: context.tr('Work or studies'),
+            helperText: context.tr('Optional'),
             prefixIcon: Icon(Icons.work_outline_rounded),
           ),
         ),
         const SizedBox(height: 12),
         TextField(
           controller: instagram,
-          decoration: const InputDecoration(
-            labelText: 'Instagram',
-            helperText: 'Optional',
+          decoration: InputDecoration(
+            labelText: context.tr('Instagram'),
+            helperText: context.tr('Optional'),
             prefixIcon: Icon(Icons.alternate_email_rounded),
           ),
         ),

@@ -1,10 +1,11 @@
 import 'package:cached_network_image/cached_network_image.dart';
-import 'package:flutter/material.dart';
+import 'package:pullup/l10n/app_material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../app/providers/app_state.dart';
 import '../../../../app/theme/app_colors.dart';
+import '../../../../core/utils/time_utils.dart';
 import '../../../../core/widgets/app_state_views.dart';
 import '../../../../core/widgets/gradient_button.dart';
 import '../../../../core/widgets/night_card.dart';
@@ -107,7 +108,11 @@ class EventDetailPage extends ConsumerWidget {
                 Text(event.description),
                 const SizedBox(height: 12),
                 Text(
-                  event.timeLabel,
+                  TimeUtils.eventWindow(
+                    event.startDateTime,
+                    event.endDateTime,
+                    locale: Localizations.localeOf(context).languageCode,
+                  ),
                   style: const TextStyle(fontWeight: FontWeight.w800),
                 ),
                 Text('${event.city} - ${event.areaName}'),

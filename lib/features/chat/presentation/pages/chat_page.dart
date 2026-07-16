@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:pullup/l10n/app_material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
@@ -164,7 +164,7 @@ class _ChatPageState extends ConsumerState<ChatPage> {
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
                     IconButton(
-                      tooltip: 'Add a photo',
+                      tooltip: context.tr('Add a photo'),
                       onPressed: () => ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
                           content: Text(
@@ -181,8 +181,8 @@ class _ChatPageState extends ConsumerState<ChatPage> {
                         minLines: 1,
                         maxLines: 4,
                         textCapitalization: TextCapitalization.sentences,
-                        decoration: const InputDecoration(
-                          hintText: 'Message the group',
+                        decoration: InputDecoration(
+                          hintText: context.tr('Message the group'),
                         ),
                         onSubmitted: (_) {
                           if (_canSend) _sendMessage();
@@ -191,7 +191,7 @@ class _ChatPageState extends ConsumerState<ChatPage> {
                     ),
                     const SizedBox(width: 8),
                     IconButton.filled(
-                      tooltip: 'Send message',
+                      tooltip: context.tr('Send message'),
                       onPressed: _canSend ? _sendMessage : null,
                       icon: const Icon(Icons.send_rounded),
                     ),

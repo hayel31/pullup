@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:pullup/l10n/app_material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../app/theme/app_colors.dart';
@@ -24,7 +24,7 @@ class TonightEventTile extends StatelessWidget {
     final now = DateTime.now();
     final accent = tonightEventColor(event, now);
     final distance = tonightDistanceLabel(event, viewer);
-    final music = event.musicGenres.take(2).join(' / ');
+    final music = event.musicGenres.take(2).map(context.tr).join(' / ');
     return NightCard(
       padding: const EdgeInsets.all(8),
       onTap: () => context.push('/events/${event.id}'),

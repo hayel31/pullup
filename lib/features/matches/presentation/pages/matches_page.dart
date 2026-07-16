@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:pullup/l10n/app_material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -24,10 +24,10 @@ class MatchesPage extends ConsumerWidget {
           const TabBar(
             isScrollable: true,
             tabs: [
-              Tab(text: 'Recent'),
-              Tab(text: 'Upcoming'),
-              Tab(text: 'Pending'),
-              Tab(text: 'Chats'),
+              Tab(child: Text('Recent')),
+              Tab(child: Text('Upcoming')),
+              Tab(child: Text('Pending')),
+              Tab(child: Text('Chats')),
             ],
           ),
           Expanded(

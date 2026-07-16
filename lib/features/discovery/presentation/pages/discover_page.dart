@@ -1,6 +1,6 @@
 import 'dart:math' as math;
 
-import 'package:flutter/material.dart';
+import 'package:pullup/l10n/app_material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -65,7 +65,7 @@ class _DiscoverPageState extends ConsumerState<DiscoverPage> {
                 ),
               ),
               IconButton.filledTonal(
-                tooltip: 'Filters',
+                tooltip: context.tr('Filters'),
                 onPressed: () => context.push('/filters'),
                 icon: const Icon(Icons.tune_rounded),
               ),
@@ -211,9 +211,10 @@ class _RequestSheetState extends ConsumerState<_RequestSheet> {
               controller: _note,
               maxLines: 3,
               textCapitalization: TextCapitalization.sentences,
-              decoration: const InputDecoration(
-                hintText:
-                    'Tell the host who you are coming with or what you can bring.',
+              decoration: InputDecoration(
+                hintText: context.tr(
+                  'Tell the host who you are coming with or what you can bring.',
+                ),
               ),
             ),
             const SizedBox(height: 10),
@@ -244,7 +245,7 @@ class _RequestSheetState extends ConsumerState<_RequestSheet> {
               maxValue: _requestLimit,
               decreaseButtonKey: const Key('group-remove-button'),
               increaseButtonKey: const Key('group-add-button'),
-              helperText: _groupLimitMessage ?? _groupLimitHelper,
+              helperText: context.tr(_groupLimitMessage ?? _groupLimitHelper),
               onChanged: (value) => setState(() {
                 _groupSize = value;
                 _groupLimitMessage = null;
@@ -341,7 +342,7 @@ class _SwipeActionButton extends StatelessWidget {
       builder: (context, value, _) => Transform.scale(
         scale: 1 + (value * 0.12),
         child: Tooltip(
-          message: label,
+          message: context.tr(label),
           child: IconButton(
             onPressed: onTap,
             style: IconButton.styleFrom(

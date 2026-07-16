@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:pullup/l10n/app_material.dart';
 
 class SectionHeader extends StatelessWidget {
   const SectionHeader({required this.title, this.action, super.key});

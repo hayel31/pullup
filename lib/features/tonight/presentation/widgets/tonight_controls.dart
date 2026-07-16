@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:pullup/l10n/app_material.dart';
 import 'package:intl/intl.dart';
 
 import '../../../../app/theme/app_colors.dart';
@@ -11,7 +11,8 @@ class TonightHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final date = DateFormat('EEEE d MMMM').format(DateTime.now());
+    final locale = Localizations.localeOf(context).toLanguageTag();
+    final date = DateFormat('EEEE d MMMM', locale).format(DateTime.now());
     return Row(
       crossAxisAlignment: CrossAxisAlignment.end,
       children: [
@@ -45,7 +46,10 @@ class TonightHeader extends StatelessWidget {
             ),
           ),
           child: Text(
-            '$eventCount ${eventCount == 1 ? 'plan' : 'plans'} nearby',
+            context.tr(
+              eventCount == 1 ? '{count} plan nearby' : '{count} plans nearby',
+              values: {'count': eventCount},
+            ),
             style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800),
           ),
         ),

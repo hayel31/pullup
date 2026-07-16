@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:pullup/l10n/app_material.dart';
 
 import '../../app/theme/app_colors.dart';
 import 'gradient_button.dart';
@@ -114,7 +114,7 @@ class WizardScaffold extends StatelessWidget {
                 children: [
                   if (onBack != null) ...[
                     IconButton.outlined(
-                      tooltip: 'Previous step',
+                      tooltip: context.tr('Previous step'),
                       onPressed: onBack,
                       icon: const Icon(Icons.arrow_back_rounded),
                     ),

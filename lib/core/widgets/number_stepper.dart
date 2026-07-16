@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:pullup/l10n/app_material.dart';
 
 import '../../app/theme/app_colors.dart';
 
@@ -53,7 +53,7 @@ class NumberStepper extends StatelessWidget {
                 ),
                 _StepperButton(
                   buttonKey: decreaseButtonKey,
-                  tooltip: 'Decrease $label',
+                  tooltip: context.tr('Decrease $label'),
                   icon: Icons.remove_rounded,
                   onPressed: canDecrease ? () => onChanged(value - 1) : null,
                 ),
@@ -75,7 +75,7 @@ class NumberStepper extends StatelessWidget {
                 ),
                 _StepperButton(
                   buttonKey: increaseButtonKey,
-                  tooltip: 'Increase $label',
+                  tooltip: context.tr('Increase $label'),
                   icon: Icons.add_rounded,
                   onPressed: canIncrease
                       ? () => onChanged(value + 1)
