@@ -20,7 +20,7 @@ class ApproximateMap extends StatelessWidget {
           );
 
     return ClipRRect(
-      borderRadius: BorderRadius.circular(24),
+      borderRadius: BorderRadius.circular(8),
       child: SizedBox(
         height: 220,
         child: FlutterMap(

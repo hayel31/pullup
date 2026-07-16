@@ -17,25 +17,41 @@ class GradientButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final disabled = onPressed == null;
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        gradient: disabled
-            ? null
-            : const LinearGradient(
-                colors: [AppColors.primary, AppColors.magenta],
-              ),
-        color: disabled ? AppColors.surfaceElevated : null,
-        borderRadius: BorderRadius.circular(18),
-      ),
-      child: FilledButton.icon(
-        onPressed: onPressed,
-        style: FilledButton.styleFrom(
-          backgroundColor: Colors.transparent,
-          disabledBackgroundColor: Colors.transparent,
-          shadowColor: Colors.transparent,
+    final style = FilledButton.styleFrom(
+      backgroundColor: Colors.transparent,
+      disabledBackgroundColor: Colors.transparent,
+      shadowColor: Colors.transparent,
+      foregroundColor: AppColors.textPrimary,
+      disabledForegroundColor: AppColors.textSecondary,
+    );
+    final labelWidget = Text(
+      label,
+      maxLines: 2,
+      overflow: TextOverflow.ellipsis,
+      textAlign: TextAlign.center,
+    );
+    final button = icon == null
+        ? FilledButton(onPressed: onPressed, style: style, child: labelWidget)
+        : FilledButton.icon(
+            onPressed: onPressed,
+            style: style,
+            icon: Icon(icon, size: 20),
+            label: labelWidget,
+          );
+
+    return SizedBox(
+      width: double.infinity,
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          gradient: disabled
+              ? null
+              : const LinearGradient(
+                  colors: [AppColors.primary, AppColors.magenta],
+                ),
+          color: disabled ? AppColors.surfaceElevated : null,
+          borderRadius: BorderRadius.circular(8),
         ),
-        icon: icon == null ? const SizedBox.shrink() : Icon(icon),
-        label: Text(label),
+        child: button,
       ),
     );
   }

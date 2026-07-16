@@ -5,8 +5,8 @@ import 'package:image_picker/image_picker.dart';
 import '../../../../app/constants/app_constants.dart';
 import '../../../../app/providers/app_state.dart';
 import '../../../../app/theme/app_colors.dart';
-import '../../../../core/widgets/gradient_button.dart';
-import '../../../../core/widgets/pullup_chip.dart';
+import '../../../../core/widgets/pullup_logo.dart';
+import '../../../../core/widgets/wizard_scaffold.dart';
 import '../../../../models/enums.dart';
 import '../../../shared/domain/app_drafts.dart';
 
@@ -47,117 +47,137 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(appControllerProvider);
-    return Scaffold(
-      appBar: AppBar(title: const Text('Set up PULLUP')),
-      body: SafeArea(
-        child: Stepper(
-          currentStep: _step,
-          onStepTapped: (step) => setState(() => _step = step),
-          controlsBuilder: (context, details) => Padding(
-            padding: const EdgeInsets.only(top: 16),
-            child: Row(
+    final steps = <_OnboardingStep>[
+      _OnboardingStep(
+        title: 'Lead with a clear photo',
+        description:
+            'Add up to six photos. Your first image is your main photo.',
+        child: _PhotosStep(
+          photos: _photos,
+          onAdd: _addPhoto,
+          onRemove: _removePhoto,
+        ),
+      ),
+      _OnboardingStep(
+        title: 'Make your profile useful',
+        description:
+            'Share enough context for hosts to know who is requesting.',
+        child: _ProfileStep(
+          bio: _bio,
+          occupation: _occupation,
+          instagram: _instagram,
+          city: _city,
+          interests: _interests,
+          genres: _genres,
+          languages: _languages,
+          onToggleInterest: _toggleInterest,
+          onToggleGenre: _toggleGenre,
+          onToggleLanguage: _toggleLanguage,
+        ),
+      ),
+      _OnboardingStep(
+        title: 'Tune your discovery',
+        description: 'Set the radius and group style that fit your nights.',
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
               children: [
                 Expanded(
-                  child: GradientButton(
-                    label: _step == 3 ? 'Enter PULLUP' : 'Continue',
-                    icon: Icons.arrow_forward_rounded,
-                    onPressed: _nextOrSubmit,
+                  child: Text(
+                    'Search radius',
+                    style: Theme.of(context).textTheme.titleMedium,
                   ),
                 ),
-                if (_step > 0) ...[
-                  const SizedBox(width: 12),
-                  IconButton(
-                    onPressed: () => setState(() => _step--),
-                    icon: const Icon(Icons.arrow_back_rounded),
+                Text(
+                  '${_distance.round()} km',
+                  style: const TextStyle(
+                    color: AppColors.primaryBright,
+                    fontWeight: FontWeight.w800,
                   ),
-                ],
+                ),
               ],
             ),
-          ),
-          steps: [
-            Step(
-              title: const Text('Photos'),
-              isActive: _step == 0,
-              content: _PhotosStep(
-                photos: _photos,
-                onAdd: _addPhoto,
-                onRemove: _removePhoto,
-              ),
+            Slider(
+              min: 5,
+              max: 80,
+              divisions: 15,
+              label: '${_distance.round()} km',
+              value: _distance,
+              onChanged: (value) => setState(() => _distance = value),
             ),
-            Step(
-              title: const Text('Profile'),
-              isActive: _step == 1,
-              content: _ProfileStep(
-                bio: _bio,
-                occupation: _occupation,
-                instagram: _instagram,
-                city: _city,
-                interests: _interests,
-                genres: _genres,
-                languages: _languages,
-                onToggleInterest: _toggleInterest,
-                onToggleGenre: _toggleGenre,
-              ),
+            const Divider(),
+            SwitchListTile(
+              contentPadding: const EdgeInsets.symmetric(horizontal: 4),
+              value: _joinNow,
+              onChanged: (value) => setState(() => _joinNow = value),
+              title: const Text('Available for last-minute plans'),
+              subtitle: const Text('Prioritize nights starting soon.'),
             ),
-            Step(
-              title: const Text('Preferences'),
-              isActive: _step == 2,
-              content: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text('Distance: ${_distance.round()} km'),
-                  Slider(
-                    min: 5,
-                    max: 80,
-                    value: _distance,
-                    onChanged: (value) => setState(() => _distance = value),
-                  ),
-                  SwitchListTile(
-                    value: _joinNow,
-                    onChanged: (value) => setState(() => _joinNow = value),
-                    title: const Text('Available to pull up immediately'),
-                  ),
-                  SwitchListTile(
-                    value: _smallGroups,
-                    onChanged: (value) => setState(() => _smallGroups = value),
-                    title: const Text('Prefer small groups'),
-                  ),
-                ],
-              ),
-            ),
-            Step(
-              title: const Text('Safety'),
-              isActive: _step == 3,
-              content: const Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _Rule('Respect every user and every address.'),
-                  _Rule('Never share a private address publicly.'),
-                  _Rule(
-                    'No harassment, violence, illegal content or underage use.',
-                  ),
-                  _Rule('Report or block any unsafe interaction immediately.'),
-                ],
-              ),
+            SwitchListTile(
+              contentPadding: const EdgeInsets.symmetric(horizontal: 4),
+              value: _smallGroups,
+              onChanged: (value) => setState(() => _smallGroups = value),
+              title: const Text('Prefer smaller groups'),
+              subtitle: const Text('Favor more intimate guest lists.'),
             ),
           ],
         ),
       ),
-      bottomNavigationBar: state.errorMessage == null
-          ? null
-          : Padding(
-              padding: const EdgeInsets.all(16),
-              child: Text(
+      const _OnboardingStep(
+        title: 'Keep every night safe',
+        description: 'These rules protect guests, hosts and private spaces.',
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            _Rule('Respect every person and every private space.'),
+            _Rule('Never share a private address publicly.'),
+            _Rule('Harassment, violence and illegal activity are prohibited.'),
+            _Rule('PULLUP is for adults aged 18 and over.'),
+            _Rule('Report or block any unsafe interaction immediately.'),
+          ],
+        ),
+      ),
+    ];
+
+    return Scaffold(
+      appBar: AppBar(title: const PullupBrand(logoSize: 28)),
+      body: WizardScaffold(
+        eyebrow: 'Set up your profile',
+        title: steps[_step].title,
+        description: steps[_step].description,
+        currentStep: _step,
+        stepCount: steps.length,
+        continueLabel: _step == steps.length - 1 ? 'Enter PULLUP' : 'Continue',
+        continueIcon: _step == steps.length - 1
+            ? Icons.check_rounded
+            : Icons.arrow_forward_rounded,
+        onContinue: state.loading ? null : _nextOrSubmit,
+        onBack: _step == 0 ? null : () => setState(() => _step--),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            steps[_step].child,
+            if (state.errorMessage != null) ...[
+              const SizedBox(height: 16),
+              Text(
                 state.errorMessage!,
                 style: const TextStyle(color: AppColors.danger),
               ),
-            ),
+            ],
+          ],
+        ),
+      ),
     );
   }
 
   Future<void> _addPhoto() async {
     if (_photos.length >= AppConstants.maxProfilePhotos) return;
-    await ImagePicker().pickImage(source: ImageSource.gallery);
+    final image = await ImagePicker().pickImage(
+      source: ImageSource.gallery,
+      imageQuality: 85,
+    );
+    if (image == null || !mounted) return;
     setState(() {
       _photos.add(
         'https://picsum.photos/seed/pullup-onboarding-${_photos.length + 1}/900/1200',
@@ -175,6 +195,12 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
 
   void _toggleGenre(String value) => setState(() {
     _genres.contains(value) ? _genres.remove(value) : _genres.add(value);
+  });
+
+  void _toggleLanguage(String value) => setState(() {
+    _languages.contains(value)
+        ? _languages.remove(value)
+        : _languages.add(value);
   });
 
   void _nextOrSubmit() {
@@ -208,6 +234,18 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
   }
 }
 
+class _OnboardingStep {
+  const _OnboardingStep({
+    required this.title,
+    required this.description,
+    required this.child,
+  });
+
+  final String title;
+  final String description;
+  final Widget child;
+}
+
 class _PhotosStep extends StatelessWidget {
   const _PhotosStep({
     required this.photos,
@@ -221,47 +259,110 @@ class _PhotosStep extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Wrap(
-      spacing: 10,
-      runSpacing: 10,
-      children: [
-        for (final photo in photos)
-          Stack(
-            children: [
-              ClipRRect(
-                borderRadius: BorderRadius.circular(18),
-                child: Image.network(
-                  photo,
-                  width: 90,
-                  height: 120,
-                  fit: BoxFit.cover,
+    final count = photos.length < AppConstants.maxProfilePhotos
+        ? photos.length + 1
+        : photos.length;
+    return GridView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      itemCount: count,
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 3,
+        mainAxisSpacing: 10,
+        crossAxisSpacing: 10,
+        childAspectRatio: 0.74,
+      ),
+      itemBuilder: (context, index) {
+        if (index == photos.length) {
+          return Semantics(
+            button: true,
+            label: 'Add profile photo',
+            child: InkWell(
+              borderRadius: BorderRadius.circular(8),
+              onTap: onAdd,
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  color: AppColors.surfaceSecondary,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: AppColors.border),
+                ),
+                child: const Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.add_a_photo_outlined),
+                    SizedBox(height: 8),
+                    Text(
+                      'Add photo',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ],
                 ),
               ),
-              Positioned(
-                right: 2,
-                top: 2,
-                child: IconButton.filledTonal(
-                  onPressed: () => onRemove(photo),
-                  icon: const Icon(Icons.close_rounded, size: 16),
-                ),
-              ),
-            ],
-          ),
-        InkWell(
-          borderRadius: BorderRadius.circular(18),
-          onTap: onAdd,
-          child: Container(
-            width: 90,
-            height: 120,
-            decoration: BoxDecoration(
-              color: AppColors.surfaceSecondary,
-              borderRadius: BorderRadius.circular(18),
-              border: Border.all(color: Colors.white24),
             ),
-            child: const Icon(Icons.add_a_photo_rounded),
-          ),
-        ),
-      ],
+          );
+        }
+        final photo = photos[index];
+        return Stack(
+          fit: StackFit.expand,
+          children: [
+            ClipRRect(
+              borderRadius: BorderRadius.circular(8),
+              child: Image.network(
+                photo,
+                fit: BoxFit.cover,
+                loadingBuilder: (context, child, progress) => progress == null
+                    ? child
+                    : const ColoredBox(
+                        color: AppColors.surfaceSecondary,
+                        child: Center(child: CircularProgressIndicator()),
+                      ),
+                errorBuilder: (_, _, _) => const ColoredBox(
+                  color: AppColors.surfaceSecondary,
+                  child: Icon(Icons.broken_image_outlined),
+                ),
+              ),
+            ),
+            if (index == 0)
+              const Positioned(
+                left: 6,
+                bottom: 6,
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    color: AppColors.primary,
+                    borderRadius: BorderRadius.all(Radius.circular(99)),
+                  ),
+                  child: Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    child: Text(
+                      'MAIN',
+                      style: TextStyle(
+                        fontSize: 9,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            Positioned(
+              right: 4,
+              top: 4,
+              child: IconButton.filled(
+                tooltip: 'Remove photo',
+                style: IconButton.styleFrom(
+                  minimumSize: const Size(36, 36),
+                  backgroundColor: Colors.black.withValues(alpha: 0.64),
+                ),
+                onPressed: () => onRemove(photo),
+                icon: const Icon(Icons.close_rounded, size: 18),
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 }
@@ -277,6 +378,7 @@ class _ProfileStep extends StatelessWidget {
     required this.languages,
     required this.onToggleInterest,
     required this.onToggleGenre,
+    required this.onToggleLanguage,
   });
 
   final TextEditingController bio;
@@ -288,30 +390,50 @@ class _ProfileStep extends StatelessWidget {
   final Set<String> languages;
   final ValueChanged<String> onToggleInterest;
   final ValueChanged<String> onToggleGenre;
+  final ValueChanged<String> onToggleLanguage;
 
   @override
   Widget build(BuildContext context) {
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         TextField(
           controller: bio,
           maxLines: 3,
-          decoration: const InputDecoration(labelText: 'Bio'),
+          textCapitalization: TextCapitalization.sentences,
+          decoration: const InputDecoration(
+            labelText: 'Bio',
+            hintText: 'What should a host know about you?',
+            prefixIcon: Icon(Icons.notes_rounded),
+          ),
         ),
         const SizedBox(height: 12),
         TextField(
           controller: city,
-          decoration: const InputDecoration(labelText: 'City'),
+          textInputAction: TextInputAction.next,
+          decoration: const InputDecoration(
+            labelText: 'City',
+            prefixIcon: Icon(Icons.location_city_outlined),
+          ),
         ),
         const SizedBox(height: 12),
         TextField(
           controller: occupation,
-          decoration: const InputDecoration(labelText: 'Work or studies'),
+          textInputAction: TextInputAction.next,
+          decoration: const InputDecoration(
+            labelText: 'Work or studies',
+            helperText: 'Optional',
+            prefixIcon: Icon(Icons.work_outline_rounded),
+          ),
         ),
         const SizedBox(height: 12),
         TextField(
           controller: instagram,
-          decoration: const InputDecoration(labelText: 'Instagram optional'),
+          decoration: const InputDecoration(
+            labelText: 'Instagram',
+            helperText: 'Optional',
+            prefixIcon: Icon(Icons.alternate_email_rounded),
+          ),
         ),
         const SizedBox(height: 16),
         _ChipPicker(
@@ -334,6 +456,13 @@ class _ProfileStep extends StatelessWidget {
           values: musicGenreOptions.take(9).toList(),
           selected: genres,
           onToggle: onToggleGenre,
+        ),
+        const SizedBox(height: 16),
+        _ChipPicker(
+          title: 'Languages',
+          values: const ['French', 'English', 'Spanish', 'Arabic', 'Italian'],
+          selected: languages,
+          onToggle: onToggleLanguage,
         ),
       ],
     );
@@ -385,8 +514,19 @@ class _Rule extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 10),
-      child: PullupChip(label: text, icon: Icons.shield_outlined),
+      padding: const EdgeInsets.only(bottom: 14),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Icon(
+            Icons.shield_outlined,
+            size: 20,
+            color: AppColors.primaryBright,
+          ),
+          const SizedBox(width: 12),
+          Expanded(child: Text(text)),
+        ],
+      ),
     );
   }
 }

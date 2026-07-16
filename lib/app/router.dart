@@ -40,8 +40,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       final isPublic = publicPaths.contains(path);
       final user = authState.currentUser;
       if (path == '/splash') {
-        if (user == null) return '/welcome';
-        return user.onboardingCompleted ? '/discover' : '/onboarding';
+        return null;
       }
       if (user == null && !isPublic) {
         return '/welcome';

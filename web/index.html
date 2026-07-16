@@ -55,7 +55,14 @@
 
     #pullup-loader strong {
       font-size: 30px;
-      letter-spacing: 3px;
+      letter-spacing: 0;
+    }
+
+    #pullup-loader img {
+      width: 92px;
+      height: 92px;
+      margin: 0 auto 4px;
+      object-fit: contain;
     }
 
     #pullup-loader span {
@@ -80,6 +87,7 @@
 </head>
 <body>
   <div id="pullup-loader" aria-label="Loading PULLUP">
+    <img src="pullup-mark.png" alt="">
     <strong>PULLUP</strong>
     <span>What's the move?</span>
     <div class="pulse"></div>

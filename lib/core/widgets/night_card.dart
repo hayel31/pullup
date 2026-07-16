@@ -16,29 +16,28 @@ class NightCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final card = Container(
-      padding: padding,
+    const radius = BorderRadius.all(Radius.circular(8));
+    return Container(
       decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: radius,
         border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
         boxShadow: [
           BoxShadow(
-            blurRadius: 24,
-            color: Colors.black.withValues(alpha: 0.28),
-            offset: const Offset(0, 12),
+            blurRadius: 16,
+            color: Colors.black.withValues(alpha: 0.18),
+            offset: const Offset(0, 6),
           ),
         ],
       ),
-      child: child,
-    );
-    if (onTap == null) {
-      return card;
-    }
-    return InkWell(
-      borderRadius: BorderRadius.circular(24),
-      onTap: onTap,
-      child: card,
+      child: Material(
+        color: AppColors.surface,
+        borderRadius: radius,
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: onTap,
+          child: Padding(padding: padding, child: child),
+        ),
+      ),
     );
   }
 }

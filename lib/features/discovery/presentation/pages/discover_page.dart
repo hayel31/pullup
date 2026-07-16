@@ -55,16 +55,32 @@ class DiscoverPage extends ConsumerWidget {
           ),
           const SizedBox(height: 12),
           Expanded(
-            child: GestureDetector(
-              onHorizontalDragEnd: (details) {
-                final velocity = details.primaryVelocity ?? 0;
-                if (velocity > 450) {
-                  _openRequestSheet(context, ref, event);
-                } else if (velocity < -450) {
-                  HapticFeedback.lightImpact();
-                  ref.read(appControllerProvider.notifier).passEvent(event.id);
+            child: Dismissible(
+              key: ValueKey(event.id),
+              direction: DismissDirection.horizontal,
+              confirmDismiss: (direction) async {
+                if (direction == DismissDirection.startToEnd) {
+                  await _openRequestSheet(context, ref, event);
+                  return false;
                 }
+                return true;
               },
+              onDismissed: (_) {
+                HapticFeedback.lightImpact();
+                ref.read(appControllerProvider.notifier).passEvent(event.id);
+              },
+              background: const _SwipeBackground(
+                alignment: Alignment.centerLeft,
+                color: AppColors.magenta,
+                icon: Icons.favorite_rounded,
+                label: 'REQUEST',
+              ),
+              secondaryBackground: const _SwipeBackground(
+                alignment: Alignment.centerRight,
+                color: AppColors.surfaceElevated,
+                icon: Icons.close_rounded,
+                label: 'PASS',
+              ),
               child: EventCard(
                 event: event,
                 viewer: user,
@@ -106,9 +122,7 @@ class DiscoverPage extends ConsumerWidget {
                 label: 'Share',
                 onTap: () => ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
-                    content: Text(
-                      'Share sheet prepared for native integration.',
-                    ),
+                    content: Text('Sharing is unavailable in this preview.'),
                   ),
                 ),
               ),
@@ -126,15 +140,16 @@ class DiscoverPage extends ConsumerWidget {
     );
   }
 
-  void _openRequestSheet(
+  Future<void> _openRequestSheet(
     BuildContext context,
     WidgetRef ref,
     PartyEvent event,
-  ) {
+  ) async {
     HapticFeedback.selectionClick();
-    showModalBottomSheet<void>(
+    await showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
+      useSafeArea: true,
       builder: (context) => _RequestSheet(event: event),
     );
   }
@@ -150,7 +165,7 @@ class _RequestSheet extends ConsumerStatefulWidget {
 }
 
 class _RequestSheetState extends ConsumerState<_RequestSheet> {
-  final _note = TextEditingController(text: 'I can bring drinks.');
+  final _note = TextEditingController();
   int _groupSize = 1;
 
   @override
@@ -173,35 +188,94 @@ class _RequestSheetState extends ConsumerState<_RequestSheet> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Send request', style: Theme.of(context).textTheme.titleLarge),
+            Text(
+              'Request to join',
+              style: Theme.of(context).textTheme.headlineSmall,
+            ),
+            const SizedBox(height: 6),
+            Text(
+              widget.event.title,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: Theme.of(
+                context,
+              ).textTheme.bodyMedium?.copyWith(color: AppColors.textSecondary),
+            ),
+            const SizedBox(height: 18),
+            Text('Add a note', style: Theme.of(context).textTheme.titleMedium),
+            const SizedBox(height: 8),
             const SizedBox(height: 12),
             TextField(
               controller: _note,
               maxLines: 3,
+              textCapitalization: TextCapitalization.sentences,
               decoration: const InputDecoration(
-                labelText: 'Short note to the host',
+                hintText:
+                    'Tell the host who you are coming with or what you can bring.',
               ),
             ),
-            const SizedBox(height: 12),
-            Row(
+            const SizedBox(height: 10),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
               children: [
-                const Expanded(child: Text('People in your group')),
-                IconButton(
-                  onPressed: _groupSize > 1
-                      ? () => setState(() => _groupSize--)
-                      : null,
-                  icon: const Icon(Icons.remove_circle_outline_rounded),
-                ),
-                Text('$_groupSize'),
-                IconButton(
-                  onPressed: _groupSize < widget.event.maxGroupSize
-                      ? () => setState(() => _groupSize++)
-                      : null,
-                  icon: const Icon(Icons.add_circle_outline_rounded),
-                ),
+                for (final suggestion in const [
+                  'I am coming with a friend.',
+                  'I can bring drinks.',
+                  'We are a group of three.',
+                ])
+                  ActionChip(
+                    label: Text(suggestion),
+                    onPressed: () => setState(() => _note.text = suggestion),
+                  ),
               ],
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 18),
+            Text('Group size', style: Theme.of(context).textTheme.titleMedium),
+            const SizedBox(height: 8),
+            DecoratedBox(
+              decoration: BoxDecoration(
+                color: AppColors.surfaceSecondary,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: AppColors.border),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(14, 6, 6, 6),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        _groupSize == 1 ? 'Just me' : '$_groupSize people',
+                        style: const TextStyle(fontWeight: FontWeight.w700),
+                      ),
+                    ),
+                    IconButton(
+                      tooltip: 'Remove one person',
+                      onPressed: _groupSize > 1
+                          ? () => setState(() => _groupSize--)
+                          : null,
+                      icon: const Icon(Icons.remove_rounded),
+                    ),
+                    SizedBox(
+                      width: 36,
+                      child: Text(
+                        '$_groupSize',
+                        textAlign: TextAlign.center,
+                        style: Theme.of(context).textTheme.titleMedium,
+                      ),
+                    ),
+                    IconButton(
+                      tooltip: 'Add one person',
+                      onPressed: _groupSize < widget.event.maxGroupSize
+                          ? () => setState(() => _groupSize++)
+                          : null,
+                      icon: const Icon(Icons.add_rounded),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 18),
             GradientButton(
               label: 'Request to pull up',
               icon: Icons.favorite_rounded,
@@ -220,6 +294,55 @@ class _RequestSheetState extends ConsumerState<_RequestSheet> {
               },
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class _SwipeBackground extends StatelessWidget {
+  const _SwipeBackground({
+    required this.alignment,
+    required this.color,
+    required this.icon,
+    required this.label,
+  });
+
+  final Alignment alignment;
+  final Color color;
+  final IconData icon;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    final leftAligned = alignment == Alignment.centerLeft;
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: color,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Align(
+        alignment: alignment,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: leftAligned
+                ? CrossAxisAlignment.start
+                : CrossAxisAlignment.end,
+            children: [
+              Icon(icon, size: 34),
+              const SizedBox(height: 6),
+              Text(
+                label,
+                style: const TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: 0,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

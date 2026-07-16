@@ -28,7 +28,7 @@ class ProfilePage extends ConsumerWidget {
       padding: const EdgeInsets.all(16),
       children: [
         ClipRRect(
-          borderRadius: BorderRadius.circular(28),
+          borderRadius: BorderRadius.circular(8),
           child: CachedNetworkImage(
             imageUrl:
                 user.mainPhotoUrl ??

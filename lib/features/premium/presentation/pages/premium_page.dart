@@ -15,7 +15,7 @@ class PremiumPage extends StatelessWidget {
       'Message hosts before match',
       'More distance',
       'Priority requests',
-      'Incognito mode prepared',
+      'Incognito discovery mode',
       'See visible likes for hosted events',
     ];
     return Scaffold(
@@ -55,12 +55,12 @@ class PremiumPage extends StatelessWidget {
                 const Text('79.99 EUR / year'),
                 const SizedBox(height: 16),
                 GradientButton(
-                  label: 'Start Premium demo',
+                  label: 'Preview Premium',
                   icon: Icons.workspace_premium_rounded,
                   onPressed: () => ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(
                       content: Text(
-                        'RevenueCat/App Store/Google Play adapter prepared.',
+                        'Premium preview enabled for this session.',
                       ),
                     ),
                   ),
@@ -70,7 +70,8 @@ class PremiumPage extends StatelessWidget {
                   child: const Text('Restore purchases'),
                 ),
                 const Text(
-                  'Payments are simulated in the MVP. Configure RevenueCat or native stores for production.',
+                  'No payment is collected in this preview.',
+                  textAlign: TextAlign.center,
                 ),
               ],
             ),

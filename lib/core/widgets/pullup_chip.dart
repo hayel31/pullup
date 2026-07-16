@@ -30,8 +30,14 @@ class PullupChip extends StatelessWidget {
           Flexible(
             child: Text(
               label,
+              textAlign: TextAlign.center,
               overflow: TextOverflow.ellipsis,
-              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
+              style: const TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w700,
+                height: 1.1,
+                letterSpacing: 0,
+              ),
             ),
           ),
         ],

@@ -18,9 +18,22 @@ class ChatPage extends ConsumerStatefulWidget {
 
 class _ChatPageState extends ConsumerState<ChatPage> {
   final _message = TextEditingController();
+  bool _canSend = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _message.addListener(_syncSendState);
+  }
+
+  void _syncSendState() {
+    final next = _message.text.trim().isNotEmpty;
+    if (next != _canSend) setState(() => _canSend = next);
+  }
 
   @override
   void dispose() {
+    _message.removeListener(_syncSendState);
     _message.dispose();
     super.dispose();
   }
@@ -45,7 +58,26 @@ class _ChatPageState extends ConsumerState<ChatPage> {
     final messages = controller.messagesForConversation(widget.conversationId);
     return Scaffold(
       appBar: AppBar(
-        title: Text(event?.title ?? 'Chat'),
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              event?.title ?? 'Event chat',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+            const Text(
+              'Private event chat',
+              style: TextStyle(
+                color: AppColors.textSecondary,
+                fontSize: 11,
+                fontWeight: FontWeight.w500,
+                height: 1.2,
+                letterSpacing: 0,
+              ),
+            ),
+          ],
+        ),
         actions: [
           IconButton(
             onPressed: () => ref
@@ -72,10 +104,12 @@ class _ChatPageState extends ConsumerState<ChatPage> {
         children: [
           Expanded(
             child: ListView.builder(
+              reverse: true,
+              keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
               padding: const EdgeInsets.all(16),
               itemCount: messages.length,
               itemBuilder: (context, index) {
-                final message = messages[index];
+                final message = messages[messages.length - index - 1];
                 final mine = message.senderId == user.id;
                 final system = message.type == MessageType.system;
                 return Align(
@@ -96,7 +130,7 @@ class _ChatPageState extends ConsumerState<ChatPage> {
                           : mine
                           ? AppColors.primary
                           : AppColors.surface,
-                      borderRadius: BorderRadius.circular(18),
+                      borderRadius: BorderRadius.circular(8),
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -119,44 +153,64 @@ class _ChatPageState extends ConsumerState<ChatPage> {
           ),
           SafeArea(
             top: false,
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
-              child: Row(
-                children: [
-                  IconButton(
-                    onPressed: () => ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text(
-                          'Image messages are prepared for Firebase Storage.',
+            child: DecoratedBox(
+              decoration: const BoxDecoration(
+                color: AppColors.surface,
+                border: Border(top: BorderSide(color: AppColors.border)),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(10, 10, 10, 10),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    IconButton(
+                      tooltip: 'Add a photo',
+                      onPressed: () => ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text(
+                            'Photo messages are not available in this preview yet.',
+                          ),
                         ),
                       ),
+                      icon: const Icon(Icons.add_photo_alternate_outlined),
                     ),
-                    icon: const Icon(Icons.image_outlined),
-                  ),
-                  Expanded(
-                    child: TextField(
-                      controller: _message,
-                      minLines: 1,
-                      maxLines: 4,
-                      decoration: const InputDecoration(hintText: 'Message'),
+                    const SizedBox(width: 4),
+                    Expanded(
+                      child: TextField(
+                        controller: _message,
+                        minLines: 1,
+                        maxLines: 4,
+                        textCapitalization: TextCapitalization.sentences,
+                        decoration: const InputDecoration(
+                          hintText: 'Message the group',
+                        ),
+                        onSubmitted: (_) {
+                          if (_canSend) _sendMessage();
+                        },
+                      ),
                     ),
-                  ),
-                  const SizedBox(width: 8),
-                  IconButton.filled(
-                    onPressed: () {
-                      ref
-                          .read(appControllerProvider.notifier)
-                          .sendMessage(widget.conversationId, _message.text);
-                      _message.clear();
-                    },
-                    icon: const Icon(Icons.send_rounded),
-                  ),
-                ],
+                    const SizedBox(width: 8),
+                    IconButton.filled(
+                      tooltip: 'Send message',
+                      onPressed: _canSend ? _sendMessage : null,
+                      icon: const Icon(Icons.send_rounded),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
         ],
       ),
     );
+  }
+
+  void _sendMessage() {
+    final text = _message.text.trim();
+    if (text.isEmpty) return;
+    ref
+        .read(appControllerProvider.notifier)
+        .sendMessage(widget.conversationId, text);
+    _message.clear();
   }
 }

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../app/providers/app_state.dart';
+import '../../../../app/theme/app_colors.dart';
 import '../../../../core/widgets/gradient_button.dart';
 import '../../../../models/discover_filter.dart';
 import '../../../../models/enums.dart';
@@ -25,31 +26,73 @@ class _FiltersPageState extends ConsumerState<FiltersPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Discovery filters')),
+      appBar: AppBar(
+        title: const Text('Discovery filters'),
+        actions: [
+          TextButton(
+            onPressed: () => setState(() => _filter = DiscoverFilter.defaults),
+            child: const Text('Reset'),
+          ),
+          const SizedBox(width: 4),
+        ],
+      ),
       body: ListView(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.fromLTRB(20, 12, 20, 112),
         children: [
-          Text('Distance: ${_filter.distanceKm.round()} km'),
+          Text(
+            'Find your kind of night',
+            style: Theme.of(context).textTheme.headlineSmall,
+          ),
+          const SizedBox(height: 6),
+          Text(
+            'Narrow the deck without losing the best nearby plans.',
+            style: Theme.of(context).textTheme.bodySmall,
+          ),
+          const SizedBox(height: 24),
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  'Maximum distance',
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+              ),
+              Text(
+                '${_filter.distanceKm.round()} km',
+                style: const TextStyle(
+                  color: AppColors.primaryBright,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+            ],
+          ),
           Slider(
             min: 2,
             max: 120,
+            divisions: 59,
+            label: '${_filter.distanceKm.round()} km',
             value: _filter.distanceKm,
             onChanged: (value) =>
                 setState(() => _filter = _filter.copyWith(distanceKm: value)),
           ),
           SwitchListTile(
+            contentPadding: const EdgeInsets.symmetric(horizontal: 4),
             value: _filter.tonightOnly,
             onChanged: (value) =>
                 setState(() => _filter = _filter.copyWith(tonightOnly: value)),
             title: const Text('Tonight'),
+            subtitle: const Text('Only plans happening before tomorrow.'),
           ),
           SwitchListTile(
+            contentPadding: const EdgeInsets.symmetric(horizontal: 4),
             value: _filter.nowOnly,
             onChanged: (value) =>
                 setState(() => _filter = _filter.copyWith(nowOnly: value)),
             title: const Text('Now'),
+            subtitle: const Text('Only plans already happening.'),
           ),
           SwitchListTile(
+            contentPadding: const EdgeInsets.symmetric(horizontal: 4),
             value: _filter.availableSpotsOnly,
             onChanged: (value) => setState(
               () => _filter = _filter.copyWith(availableSpotsOnly: value),
@@ -57,6 +100,7 @@ class _FiltersPageState extends ConsumerState<FiltersPage> {
             title: const Text('Available spots only'),
           ),
           SwitchListTile(
+            contentPadding: const EdgeInsets.symmetric(horizontal: 4),
             value: _filter.verifiedHostsOnly,
             onChanged: (value) => setState(
               () => _filter = _filter.copyWith(verifiedHostsOnly: value),
@@ -64,7 +108,7 @@ class _FiltersPageState extends ConsumerState<FiltersPage> {
             title: const Text('Verified hosts only'),
             subtitle: const Text('Premium advanced filter'),
           ),
-          const SizedBox(height: 12),
+          const Divider(),
           Text('Party type', style: Theme.of(context).textTheme.titleMedium),
           const SizedBox(height: 8),
           Wrap(
@@ -87,7 +131,7 @@ class _FiltersPageState extends ConsumerState<FiltersPage> {
                 ),
             ],
           ),
-          const SizedBox(height: 18),
+          const SizedBox(height: 24),
           Text('Music', style: Theme.of(context).textTheme.titleMedium),
           const SizedBox(height: 8),
           Wrap(
@@ -108,7 +152,7 @@ class _FiltersPageState extends ConsumerState<FiltersPage> {
                 ),
             ],
           ),
-          const SizedBox(height: 18),
+          const SizedBox(height: 24),
           Text('Advanced tags', style: Theme.of(context).textTheme.titleMedium),
           const SizedBox(height: 8),
           Wrap(
@@ -135,16 +179,27 @@ class _FiltersPageState extends ConsumerState<FiltersPage> {
                 ),
             ],
           ),
-          const SizedBox(height: 24),
-          GradientButton(
-            label: 'Apply filters',
-            icon: Icons.check_rounded,
-            onPressed: () {
-              ref.read(appControllerProvider.notifier).updateFilter(_filter);
-              Navigator.of(context).pop();
-            },
-          ),
         ],
+      ),
+      bottomNavigationBar: DecoratedBox(
+        decoration: const BoxDecoration(
+          color: AppColors.surface,
+          border: Border(top: BorderSide(color: AppColors.border)),
+        ),
+        child: SafeArea(
+          top: false,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+            child: GradientButton(
+              label: 'Apply filters',
+              icon: Icons.check_rounded,
+              onPressed: () {
+                ref.read(appControllerProvider.notifier).updateFilter(_filter);
+                Navigator.of(context).pop();
+              },
+            ),
+          ),
+        ),
       ),
     );
   }

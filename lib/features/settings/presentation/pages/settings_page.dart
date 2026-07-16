@@ -1,51 +1,113 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../../app/providers/app_state.dart';
+import '../../../../app/theme/app_colors.dart';
 
-class SettingsPage extends ConsumerWidget {
+class SettingsPage extends ConsumerStatefulWidget {
   const SettingsPage({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<SettingsPage> createState() => _SettingsPageState();
+}
+
+class _SettingsPageState extends ConsumerState<SettingsPage> {
+  bool _notificationsEnabled = true;
+
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Settings')),
       body: ListView(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.fromLTRB(20, 12, 20, 32),
         children: [
-          const ListTile(
-            leading: Icon(Icons.lock_outline_rounded),
-            title: Text('Privacy'),
-            subtitle: Text(
-              'Exact addresses are only available after host approval.',
-            ),
+          Text(
+            'Privacy & safety',
+            style: Theme.of(context).textTheme.titleMedium,
           ),
-          const ListTile(
-            leading: Icon(Icons.notifications_outlined),
-            title: Text('Push notifications'),
-            subtitle: Text('Firebase Cloud Messaging adapter is prepared.'),
+          const SizedBox(height: 8),
+          ListTile(
+            leading: const Icon(Icons.lock_outline_rounded),
+            title: const Text('Private event addresses'),
+            subtitle: const Text(
+              'Exact locations unlock only after host approval.',
+            ),
+            trailing: const Icon(Icons.chevron_right_rounded),
+            onTap: () => context.push('/safety'),
+          ),
+          SwitchListTile(
+            contentPadding: const EdgeInsets.symmetric(horizontal: 4),
+            secondary: const Icon(Icons.notifications_outlined),
+            title: const Text('Push notifications'),
+            subtitle: const Text(
+              'Requests, matches, messages and event updates.',
+            ),
+            value: _notificationsEnabled,
+            onChanged: (value) => setState(() => _notificationsEnabled = value),
           ),
           const ListTile(
             leading: Icon(Icons.admin_panel_settings_outlined),
             title: Text('Verification'),
             subtitle: Text(
-              'Email, phone, selfie, identity, host and DJ badges are modeled.',
+              'Email verified. Phone and identity checks available.',
+            ),
+            trailing: Icon(
+              Icons.verified_rounded,
+              color: AppColors.primaryBright,
             ),
           ),
           const Divider(),
+          Text('Account', style: Theme.of(context).textTheme.titleMedium),
+          const SizedBox(height: 8),
           ListTile(
             leading: const Icon(Icons.logout_rounded),
             title: const Text('Sign out'),
+            trailing: const Icon(Icons.chevron_right_rounded),
             onTap: () => ref.read(appControllerProvider.notifier).signOut(),
           ),
           ListTile(
-            leading: const Icon(Icons.delete_forever_rounded),
-            title: const Text('Delete account'),
-            onTap: () =>
-                ref.read(appControllerProvider.notifier).deleteAccount(),
+            leading: const Icon(
+              Icons.delete_forever_rounded,
+              color: AppColors.danger,
+            ),
+            title: const Text(
+              'Delete account',
+              style: TextStyle(color: AppColors.danger),
+            ),
+            subtitle: const Text(
+              'Permanently remove your profile and activity.',
+            ),
+            onTap: _confirmDeleteAccount,
           ),
         ],
       ),
     );
+  }
+
+  Future<void> _confirmDeleteAccount() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Delete your account?'),
+        content: const Text(
+          'This removes your profile, requests, matches and conversations. This action cannot be undone.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            style: FilledButton.styleFrom(backgroundColor: AppColors.danger),
+            child: const Text('Delete account'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed == true) {
+      await ref.read(appControllerProvider.notifier).deleteAccount();
+    }
   }
 }

@@ -7,30 +7,123 @@ import '../../../../app/providers/app_state.dart';
 import '../../../../app/theme/app_colors.dart';
 import '../../../../core/utils/age_utils.dart';
 import '../../../../core/widgets/gradient_button.dart';
-import '../../../../core/widgets/night_card.dart';
+import '../../../../core/widgets/pullup_logo.dart';
 import '../../../../models/enums.dart';
 import '../../../shared/domain/app_drafts.dart';
 
-class SplashPage extends StatelessWidget {
+class SplashPage extends ConsumerStatefulWidget {
   const SplashPage({super.key});
 
   @override
+  ConsumerState<SplashPage> createState() => _SplashPageState();
+}
+
+class _SplashPageState extends ConsumerState<SplashPage>
+    with SingleTickerProviderStateMixin {
+  static const _duration = Duration(milliseconds: 2600);
+  late final AnimationController _progress;
+  late final Animation<double> _entrance;
+
+  @override
+  void initState() {
+    super.initState();
+    _progress = AnimationController(vsync: this, duration: _duration)
+      ..forward();
+    _entrance = CurvedAnimation(
+      parent: _progress,
+      curve: const Interval(0, 0.45, curve: Curves.easeOutCubic),
+    );
+    _completeSplash();
+  }
+
+  Future<void> _completeSplash() async {
+    await Future<void>.delayed(_duration);
+    if (!mounted) return;
+    final user = ref.read(appControllerProvider).currentUser;
+    context.go(
+      user == null
+          ? '/welcome'
+          : user.onboardingCompleted
+          ? '/discover'
+          : '/onboarding',
+    );
+  }
+
+  @override
+  void dispose() {
+    _progress.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return const Scaffold(
-      body: Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              AppConstants.appName,
-              style: TextStyle(fontSize: 44, fontWeight: FontWeight.w900),
-            ),
-            SizedBox(height: 8),
-            Text(
-              AppConstants.signature,
-              style: TextStyle(color: AppColors.textSecondary),
-            ),
-          ],
+    return Scaffold(
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(28, 36, 28, 28),
+          child: Column(
+            children: [
+              const Spacer(),
+              FadeTransition(
+                opacity: _entrance,
+                child: ScaleTransition(
+                  scale: Tween<double>(begin: 0.92, end: 1).animate(_entrance),
+                  child: const Column(
+                    children: [
+                      PullupLogo(size: 128),
+                      SizedBox(height: 20),
+                      Text(
+                        AppConstants.appName,
+                        style: TextStyle(
+                          fontSize: 42,
+                          fontWeight: FontWeight.w900,
+                          height: 1,
+                          letterSpacing: 0,
+                        ),
+                      ),
+                      SizedBox(height: 10),
+                      Text(
+                        AppConstants.signature,
+                        style: TextStyle(
+                          color: AppColors.textSecondary,
+                          fontSize: 15,
+                          height: 1.2,
+                          letterSpacing: 0,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const Spacer(),
+              ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 280),
+                child: Column(
+                  children: [
+                    const Text(
+                      'Getting tonight ready',
+                      style: TextStyle(
+                        color: AppColors.textSecondary,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        height: 1.2,
+                        letterSpacing: 0,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    AnimatedBuilder(
+                      animation: _progress,
+                      builder: (context, _) => LinearProgressIndicator(
+                        value: _progress.value,
+                        minHeight: 3,
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -45,54 +138,76 @@ class WelcomePage extends ConsumerWidget {
     final controller = ref.read(appControllerProvider.notifier);
     return Scaffold(
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Spacer(),
-              const Text(
-                AppConstants.appName,
-                style: TextStyle(
-                  fontSize: 52,
-                  fontWeight: FontWeight.w900,
-                  height: 1,
+        child: LayoutBuilder(
+          builder: (context, constraints) => SingleChildScrollView(
+            padding: const EdgeInsets.fromLTRB(24, 20, 24, 24),
+            child: ConstrainedBox(
+              constraints: BoxConstraints(
+                minHeight: (constraints.maxHeight - 44).clamp(
+                  0,
+                  double.infinity,
                 ),
               ),
-              const SizedBox(height: 12),
-              Text(
-                AppConstants.slogan,
-                style: Theme.of(context).textTheme.headlineMedium,
+              child: IntrinsicHeight(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    const Align(
+                      alignment: Alignment.centerLeft,
+                      child: PullupLogo(size: 72),
+                    ),
+                    const Spacer(flex: 2),
+                    const Text(
+                      AppConstants.appName,
+                      style: TextStyle(
+                        fontSize: 46,
+                        fontWeight: FontWeight.w900,
+                        height: 1,
+                        letterSpacing: 0,
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+                    Text(
+                      'What\'s the move tonight?',
+                      style: Theme.of(context).textTheme.headlineMedium,
+                    ),
+                    const SizedBox(height: 10),
+                    const Text(
+                      AppConstants.signature,
+                      style: TextStyle(
+                        color: AppColors.textSecondary,
+                        fontSize: 17,
+                        height: 1.3,
+                        letterSpacing: 0,
+                      ),
+                    ),
+                    const Spacer(),
+                    GradientButton(
+                      label: 'Explore as guest',
+                      icon: Icons.nightlife_rounded,
+                      onPressed: () => controller.signInDemo(),
+                    ),
+                    const SizedBox(height: 10),
+                    OutlinedButton.icon(
+                      onPressed: () => controller.signInDemo(asHost: true),
+                      icon: const Icon(Icons.home_work_outlined),
+                      label: const Text('Open host view'),
+                    ),
+                    const SizedBox(height: 10),
+                    OutlinedButton.icon(
+                      onPressed: () => context.go('/login'),
+                      icon: const Icon(Icons.mail_outline_rounded),
+                      label: const Text('Sign in with email'),
+                    ),
+                    const SizedBox(height: 4),
+                    TextButton(
+                      onPressed: () => context.go('/register'),
+                      child: const Text('Create an account'),
+                    ),
+                  ],
+                ),
               ),
-              const SizedBox(height: 8),
-              const Text(
-                AppConstants.signature,
-                style: TextStyle(color: AppColors.textSecondary, fontSize: 18),
-              ),
-              const SizedBox(height: 32),
-              GradientButton(
-                label: 'Continue as guest demo',
-                icon: Icons.nightlife_rounded,
-                onPressed: () => controller.signInDemo(),
-              ),
-              const SizedBox(height: 12),
-              OutlinedButton.icon(
-                onPressed: () => controller.signInDemo(asHost: true),
-                icon: const Icon(Icons.home_work_rounded),
-                label: const Text('Continue as host demo'),
-              ),
-              const SizedBox(height: 12),
-              OutlinedButton.icon(
-                onPressed: () => context.go('/login'),
-                icon: const Icon(Icons.mail_outline_rounded),
-                label: const Text('Sign in with email'),
-              ),
-              const SizedBox(height: 12),
-              TextButton(
-                onPressed: () => context.go('/register'),
-                child: const Text('Create an account'),
-              ),
-            ],
+            ),
           ),
         ),
       ),
@@ -110,6 +225,7 @@ class LoginPage extends ConsumerStatefulWidget {
 class _LoginPageState extends ConsumerState<LoginPage> {
   final _email = TextEditingController(text: 'maya@pullup.demo');
   final _password = TextEditingController(text: 'pullup-demo');
+  bool _obscurePassword = true;
 
   @override
   void dispose() {
@@ -121,22 +237,50 @@ class _LoginPageState extends ConsumerState<LoginPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Sign in')),
+      appBar: AppBar(title: const PullupBrand(logoSize: 28)),
       body: _AuthLayout(
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            const _AuthIntro(
+              icon: Icons.login_rounded,
+              title: 'Welcome back',
+              message: 'Sign in to pick up where your night left off.',
+            ),
             TextField(
               controller: _email,
               keyboardType: TextInputType.emailAddress,
-              decoration: const InputDecoration(labelText: 'Email'),
+              textInputAction: TextInputAction.next,
+              autofillHints: const [AutofillHints.email],
+              decoration: const InputDecoration(
+                labelText: 'Email address',
+                prefixIcon: Icon(Icons.mail_outline_rounded),
+              ),
             ),
             const SizedBox(height: 12),
             TextField(
               controller: _password,
-              obscureText: true,
-              decoration: const InputDecoration(labelText: 'Password'),
+              obscureText: _obscurePassword,
+              textInputAction: TextInputAction.done,
+              autofillHints: const [AutofillHints.password],
+              onSubmitted: (_) =>
+                  ref.read(appControllerProvider.notifier).signInDemo(),
+              decoration: InputDecoration(
+                labelText: 'Password',
+                prefixIcon: const Icon(Icons.lock_outline_rounded),
+                suffixIcon: IconButton(
+                  tooltip: _obscurePassword ? 'Show password' : 'Hide password',
+                  onPressed: () =>
+                      setState(() => _obscurePassword = !_obscurePassword),
+                  icon: Icon(
+                    _obscurePassword
+                        ? Icons.visibility_outlined
+                        : Icons.visibility_off_outlined,
+                  ),
+                ),
+              ),
             ),
-            const SizedBox(height: 18),
+            const SizedBox(height: 20),
             GradientButton(
               label: 'Sign in',
               icon: Icons.login_rounded,
@@ -157,6 +301,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
               icon: const Icon(Icons.apple_rounded),
               label: const Text('Continue with Apple'),
             ),
+            const SizedBox(height: 2),
             TextButton(
               onPressed: () => context.go('/forgot-password'),
               child: const Text('Forgot password?'),
@@ -187,6 +332,7 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
   Gender _gender = Gender.preferNotToSay;
   bool _acceptedTerms = false;
   bool _confirmedAge = false;
+  bool _obscurePassword = true;
 
   @override
   void dispose() {
@@ -203,85 +349,154 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
   Widget build(BuildContext context) {
     final state = ref.watch(appControllerProvider);
     return Scaffold(
-      appBar: AppBar(title: const Text('Create account')),
+      appBar: AppBar(title: const PullupBrand(logoSize: 28)),
       body: _AuthLayout(
         child: Form(
           key: _formKey,
           child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
+              const _AuthIntro(
+                icon: Icons.person_add_alt_rounded,
+                title: 'Create your profile',
+                message:
+                    'A clear profile helps hosts make confident decisions.',
+              ),
               TextFormField(
                 controller: _firstName,
-                decoration: const InputDecoration(labelText: 'First name'),
+                textInputAction: TextInputAction.next,
+                decoration: const InputDecoration(
+                  labelText: 'First name',
+                  prefixIcon: Icon(Icons.person_outline_rounded),
+                ),
                 validator: _required,
               ),
               const SizedBox(height: 12),
               TextFormField(
                 controller: _lastName,
                 decoration: const InputDecoration(
-                  labelText: 'Last name optional',
+                  labelText: 'Last name',
+                  helperText: 'Optional',
+                  prefixIcon: Icon(Icons.badge_outlined),
                 ),
               ),
               const SizedBox(height: 12),
               TextFormField(
                 controller: _displayName,
-                decoration: const InputDecoration(labelText: 'Display name'),
+                decoration: const InputDecoration(
+                  labelText: 'Name shown on PULLUP',
+                  prefixIcon: Icon(Icons.alternate_email_rounded),
+                ),
                 validator: _required,
               ),
               const SizedBox(height: 12),
               DropdownButtonFormField<Gender>(
                 initialValue: _gender,
+                isExpanded: true,
                 items: [
                   for (final gender in Gender.values)
                     DropdownMenuItem(value: gender, child: Text(gender.label)),
                 ],
                 onChanged: (value) =>
                     setState(() => _gender = value ?? _gender),
-                decoration: const InputDecoration(labelText: 'Gender'),
+                decoration: const InputDecoration(
+                  labelText: 'How do you identify?',
+                  prefixIcon: Icon(Icons.people_outline_rounded),
+                ),
               ),
               const SizedBox(height: 12),
-              ListTile(
-                contentPadding: EdgeInsets.zero,
-                title: const Text('Birth date'),
-                subtitle: Text(
-                  '${_birthDate.day}/${_birthDate.month}/${_birthDate.year}',
-                ),
-                trailing: const Icon(Icons.calendar_month_rounded),
+              InkWell(
+                borderRadius: BorderRadius.circular(8),
                 onTap: _pickBirthDate,
+                child: InputDecorator(
+                  decoration: const InputDecoration(
+                    labelText: 'Date of birth',
+                    prefixIcon: Icon(Icons.calendar_month_outlined),
+                  ),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          '${_birthDate.day.toString().padLeft(2, '0')}/'
+                          '${_birthDate.month.toString().padLeft(2, '0')}/'
+                          '${_birthDate.year}',
+                        ),
+                      ),
+                      const Icon(
+                        Icons.expand_more_rounded,
+                        color: AppColors.textSecondary,
+                      ),
+                    ],
+                  ),
+                ),
               ),
+              const SizedBox(height: 12),
               TextFormField(
                 controller: _city,
-                decoration: const InputDecoration(labelText: 'City'),
+                textInputAction: TextInputAction.next,
+                decoration: const InputDecoration(
+                  labelText: 'City',
+                  prefixIcon: Icon(Icons.location_city_outlined),
+                ),
                 validator: _required,
               ),
               const SizedBox(height: 12),
               TextFormField(
                 controller: _email,
                 keyboardType: TextInputType.emailAddress,
-                decoration: const InputDecoration(labelText: 'Email'),
+                textInputAction: TextInputAction.next,
+                autofillHints: const [AutofillHints.email],
+                decoration: const InputDecoration(
+                  labelText: 'Email address',
+                  prefixIcon: Icon(Icons.mail_outline_rounded),
+                ),
                 validator: _required,
               ),
               const SizedBox(height: 12),
               TextFormField(
                 controller: _password,
-                obscureText: true,
-                decoration: const InputDecoration(labelText: 'Password'),
+                obscureText: _obscurePassword,
+                textInputAction: TextInputAction.done,
+                autofillHints: const [AutofillHints.newPassword],
+                decoration: InputDecoration(
+                  labelText: 'Create a password',
+                  helperText: 'Use at least 8 characters',
+                  prefixIcon: const Icon(Icons.lock_outline_rounded),
+                  suffixIcon: IconButton(
+                    tooltip: _obscurePassword
+                        ? 'Show password'
+                        : 'Hide password',
+                    onPressed: () =>
+                        setState(() => _obscurePassword = !_obscurePassword),
+                    icon: Icon(
+                      _obscurePassword
+                          ? Icons.visibility_outlined
+                          : Icons.visibility_off_outlined,
+                    ),
+                  ),
+                ),
                 validator: (value) => (value ?? '').length < 8
-                    ? 'Use at least 8 characters'
+                    ? 'Password must contain at least 8 characters'
                     : null,
               ),
+              const SizedBox(height: 4),
               CheckboxListTile(
                 contentPadding: EdgeInsets.zero,
+                controlAffinity: ListTileControlAffinity.leading,
                 value: _acceptedTerms,
                 onChanged: (value) =>
                     setState(() => _acceptedTerms = value ?? false),
-                title: const Text('I accept the terms and community rules'),
+                title: const Text(
+                  'I accept the Terms of Use and Community Guidelines.',
+                ),
               ),
               CheckboxListTile(
                 contentPadding: EdgeInsets.zero,
+                controlAffinity: ListTileControlAffinity.leading,
                 value: _confirmedAge,
                 onChanged: (value) =>
                     setState(() => _confirmedAge = value ?? false),
-                title: const Text('I confirm I am at least 18'),
+                title: const Text('I confirm that I am at least 18 years old.'),
               ),
               if (state.errorMessage != null)
                 Padding(
@@ -320,6 +535,14 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
 
   void _submit() {
     if (!_formKey.currentState!.validate()) return;
+    if (!_acceptedTerms || !_confirmedAge) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Accept the terms and confirm your age to continue.'),
+        ),
+      );
+      return;
+    }
     if (!AgeUtils.isMinimumAge(_birthDate)) {
       ScaffoldMessenger.of(
         context,
@@ -353,20 +576,33 @@ class ForgotPasswordPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Reset password')),
-      body: const _AuthLayout(
+      appBar: AppBar(title: const PullupBrand(logoSize: 28)),
+      body: _AuthLayout(
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            TextField(
+            const _AuthIntro(
+              icon: Icons.lock_reset_rounded,
+              title: 'Reset your password',
+              message: 'We will send a secure reset link to your email.',
+            ),
+            const TextField(
               keyboardType: TextInputType.emailAddress,
-              decoration: InputDecoration(labelText: 'Email'),
+              autofillHints: [AutofillHints.email],
+              decoration: InputDecoration(
+                labelText: 'Email address',
+                prefixIcon: Icon(Icons.mail_outline_rounded),
+              ),
             ),
             SizedBox(height: 16),
-            FilledButton(onPressed: null, child: Text('Send reset link')),
-            SizedBox(height: 12),
-            Text(
-              'Firebase Auth email reset is prepared. Add credentials to enable it.',
-              style: TextStyle(color: AppColors.textSecondary),
+            FilledButton.icon(
+              onPressed: () => ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Check your inbox for the reset link.'),
+                ),
+              ),
+              icon: const Icon(Icons.send_rounded),
+              label: const Text('Send reset link'),
             ),
           ],
         ),
@@ -381,18 +617,22 @@ class VerifyEmailPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Verify email')),
+      appBar: AppBar(title: const PullupBrand(logoSize: 28)),
       body: _AuthLayout(
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const Icon(Icons.mark_email_read_outlined, size: 48),
-            const SizedBox(height: 12),
-            const Text('Email verification is tracked in the profile model.'),
-            const SizedBox(height: 16),
+            const _AuthIntro(
+              icon: Icons.mark_email_read_outlined,
+              title: 'Verify your email',
+              message: 'Open the link we sent to secure your PULLUP account.',
+            ),
             FilledButton(
               onPressed: () => context.go('/discover'),
-              child: const Text('Continue'),
+              child: const Text('I have verified my email'),
             ),
+            const SizedBox(height: 8),
+            TextButton(onPressed: () {}, child: const Text('Resend email')),
           ],
         ),
       ),
@@ -409,8 +649,51 @@ class _AuthLayout extends StatelessWidget {
   Widget build(BuildContext context) {
     return SafeArea(
       child: ListView(
-        padding: const EdgeInsets.all(20),
-        children: [NightCard(child: child)],
+        keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+        padding: const EdgeInsets.fromLTRB(24, 20, 24, 32),
+        children: [
+          Align(
+            alignment: Alignment.topCenter,
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 440),
+              child: child,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _AuthIntro extends StatelessWidget {
+  const _AuthIntro({
+    required this.icon,
+    required this.title,
+    required this.message,
+  });
+
+  final IconData icon;
+  final String title;
+  final String message;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, size: 32, color: AppColors.magenta),
+          const SizedBox(height: 14),
+          Text(title, style: Theme.of(context).textTheme.headlineMedium),
+          const SizedBox(height: 8),
+          Text(
+            message,
+            style: Theme.of(
+              context,
+            ).textTheme.bodyMedium?.copyWith(color: AppColors.textSecondary),
+          ),
+        ],
       ),
     );
   }

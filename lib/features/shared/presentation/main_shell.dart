@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../app/constants/app_constants.dart';
 import '../../../app/providers/app_state.dart';
 import '../../../app/theme/app_colors.dart';
+import '../../../core/widgets/pullup_logo.dart';
 
 class MainShell extends ConsumerWidget {
   const MainShell({required this.child, super.key});
@@ -40,27 +40,17 @@ class MainShell extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              AppConstants.appName,
-              style: TextStyle(fontWeight: FontWeight.w900),
-            ),
-            Text(
-              AppConstants.slogan,
-              style: TextStyle(color: AppColors.textSecondary, fontSize: 12),
-            ),
-          ],
-        ),
+        title: const PullupBrand(logoSize: 32, showSlogan: true),
         actions: [
           _BadgeIconButton(
             icon: Icons.notifications_none_rounded,
+            tooltip: 'Notifications',
             count: notifications,
             onPressed: () => context.push('/notifications'),
           ),
           _BadgeIconButton(
             icon: Icons.chat_bubble_outline_rounded,
+            tooltip: 'Messages',
             count: unreadMessages,
             onPressed: () => context.go('/matches'),
           ),
@@ -70,8 +60,6 @@ class MainShell extends ConsumerWidget {
       body: SafeArea(child: child),
       bottomNavigationBar: NavigationBar(
         selectedIndex: index,
-        backgroundColor: AppColors.surface,
-        indicatorColor: AppColors.primary.withValues(alpha: 0.22),
         destinations: [
           for (final tab in _tabs)
             NavigationDestination(
@@ -97,11 +85,13 @@ class _ShellTab {
 class _BadgeIconButton extends StatelessWidget {
   const _BadgeIconButton({
     required this.icon,
+    required this.tooltip,
     required this.count,
     required this.onPressed,
   });
 
   final IconData icon;
+  final String tooltip;
   final int count;
   final VoidCallback onPressed;
 
@@ -110,7 +100,7 @@ class _BadgeIconButton extends StatelessWidget {
     return Stack(
       alignment: Alignment.center,
       children: [
-        IconButton(onPressed: onPressed, icon: Icon(icon)),
+        IconButton(tooltip: tooltip, onPressed: onPressed, icon: Icon(icon)),
         if (count > 0)
           Positioned(
             right: 8,

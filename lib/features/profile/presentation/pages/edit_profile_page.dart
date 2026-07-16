@@ -52,36 +52,68 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
     return Scaffold(
       appBar: AppBar(title: const Text('Edit profile')),
       body: ListView(
-        padding: const EdgeInsets.all(16),
+        keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+        padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
         children: [
+          Text(
+            'Profile details',
+            style: Theme.of(context).textTheme.headlineSmall,
+          ),
+          const SizedBox(height: 6),
+          Text(
+            'Keep this clear and current so hosts can review requests quickly.',
+            style: Theme.of(context).textTheme.bodySmall,
+          ),
+          const SizedBox(height: 20),
           TextField(
             controller: _displayName,
-            decoration: const InputDecoration(labelText: 'Display name'),
+            textInputAction: TextInputAction.next,
+            decoration: const InputDecoration(
+              labelText: 'Name shown on PULLUP',
+              prefixIcon: Icon(Icons.person_outline_rounded),
+            ),
           ),
           const SizedBox(height: 12),
           TextField(
             controller: _bio,
             maxLines: 4,
-            decoration: const InputDecoration(labelText: 'Bio'),
+            textCapitalization: TextCapitalization.sentences,
+            decoration: const InputDecoration(
+              labelText: 'Bio',
+              hintText: 'What should a host know about you?',
+            ),
           ),
           const SizedBox(height: 12),
           TextField(
             controller: _city,
-            decoration: const InputDecoration(labelText: 'City'),
+            textInputAction: TextInputAction.next,
+            decoration: const InputDecoration(
+              labelText: 'City',
+              prefixIcon: Icon(Icons.location_city_outlined),
+            ),
           ),
           const SizedBox(height: 12),
           TextField(
             controller: _occupation,
-            decoration: const InputDecoration(labelText: 'Work or studies'),
+            textInputAction: TextInputAction.next,
+            decoration: const InputDecoration(
+              labelText: 'Work or studies',
+              helperText: 'Optional',
+              prefixIcon: Icon(Icons.work_outline_rounded),
+            ),
           ),
           const SizedBox(height: 12),
           TextField(
             controller: _instagram,
-            decoration: const InputDecoration(labelText: 'Instagram'),
+            decoration: const InputDecoration(
+              labelText: 'Instagram',
+              helperText: 'Optional',
+              prefixIcon: Icon(Icons.alternate_email_rounded),
+            ),
           ),
           const SizedBox(height: 16),
           _Picker(
-            title: 'Music',
+            title: 'Music preferences',
             selected: _genres,
             values: musicGenreOptions.take(10).toList(),
           ),

@@ -51,7 +51,9 @@ class EventDetailPage extends ConsumerWidget {
           ),
           IconButton(
             onPressed: () => ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Native share prepared.')),
+              const SnackBar(
+                content: Text('Sharing is unavailable in this preview.'),
+              ),
             ),
             icon: const Icon(Icons.ios_share_rounded),
           ),
@@ -66,7 +68,7 @@ class EventDetailPage extends ConsumerWidget {
               children: [
                 for (final photo in event.photoUrls)
                   ClipRRect(
-                    borderRadius: BorderRadius.circular(28),
+                    borderRadius: BorderRadius.circular(8),
                     child: CachedNetworkImage(
                       imageUrl: photo,
                       fit: BoxFit.cover,

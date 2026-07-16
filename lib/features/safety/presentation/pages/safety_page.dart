@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../../app/providers/app_state.dart';
 import '../../../../app/theme/app_colors.dart';
 import '../../../../core/widgets/gradient_button.dart';
 import '../../../../core/widgets/night_card.dart';
-import '../../../../core/widgets/pullup_chip.dart';
 import '../../../../models/enums.dart';
 
 class SafetyPage extends ConsumerStatefulWidget {
@@ -64,6 +64,7 @@ class _SafetyPageState extends ConsumerState<SafetyPage> {
                 const SizedBox(height: 12),
                 DropdownButtonFormField<ReportReason>(
                   initialValue: _reason,
+                  isExpanded: true,
                   items: [
                     for (final reason in ReportReason.values)
                       DropdownMenuItem(
@@ -73,13 +74,21 @@ class _SafetyPageState extends ConsumerState<SafetyPage> {
                   ],
                   onChanged: (value) =>
                       setState(() => _reason = value ?? _reason),
-                  decoration: const InputDecoration(labelText: 'Reason'),
+                  decoration: const InputDecoration(
+                    labelText: 'What happened?',
+                    prefixIcon: Icon(Icons.report_outlined),
+                  ),
                 ),
                 const SizedBox(height: 12),
                 TextField(
                   controller: _description,
                   maxLines: 4,
-                  decoration: const InputDecoration(labelText: 'Description'),
+                  textCapitalization: TextCapitalization.sentences,
+                  decoration: const InputDecoration(
+                    labelText: 'Add details',
+                    hintText:
+                        'Share only what is needed to review this report.',
+                  ),
                 ),
                 const SizedBox(height: 12),
                 GradientButton(
@@ -124,10 +133,9 @@ class _SafetyPageState extends ConsumerState<SafetyPage> {
               ),
           const SizedBox(height: 16),
           OutlinedButton.icon(
-            onPressed: () =>
-                ref.read(appControllerProvider.notifier).deleteAccount(),
+            onPressed: () => context.push('/settings'),
             icon: const Icon(Icons.delete_forever_rounded),
-            label: const Text('Delete my account'),
+            label: const Text('Manage account deletion'),
           ),
         ],
       ),
@@ -143,8 +151,19 @@ class _Rule extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
-      child: PullupChip(label: text, icon: Icons.shield_outlined),
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Icon(
+            Icons.shield_outlined,
+            size: 20,
+            color: AppColors.primaryBright,
+          ),
+          const SizedBox(width: 10),
+          Expanded(child: Text(text)),
+        ],
+      ),
     );
   }
 }

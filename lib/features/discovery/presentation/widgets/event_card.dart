@@ -30,13 +30,17 @@ class EventCard extends StatelessWidget {
     return Semantics(
       label: '${event.title}, ${event.category.label}',
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(30),
+        borderRadius: BorderRadius.circular(8),
         child: Stack(
           fit: StackFit.expand,
           children: [
             CachedNetworkImage(
               imageUrl: event.coverPhotoUrl,
               fit: BoxFit.cover,
+              placeholder: (_, _) => const ColoredBox(
+                color: AppColors.surfaceSecondary,
+                child: Center(child: CircularProgressIndicator()),
+              ),
               errorWidget: (_, _, _) =>
                   Container(color: AppColors.surfaceSecondary),
             ),
@@ -105,15 +109,22 @@ class EventCard extends StatelessWidget {
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
-                      fontSize: 34,
+                      fontSize: 30,
                       fontWeight: FontWeight.w900,
-                      height: 0.98,
+                      height: 1.04,
+                      letterSpacing: 0,
                     ),
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    '${event.areaName}, ${event.city} - ${TimeUtils.tonightCountdown(event.startDateTime, event.endDateTime)}',
-                    style: const TextStyle(fontWeight: FontWeight.w700),
+                    '${event.areaName}, ${event.city} | ${TimeUtils.tonightCountdown(event.startDateTime, event.endDateTime)}',
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w700,
+                      height: 1.25,
+                      letterSpacing: 0,
+                    ),
                   ),
                   const SizedBox(height: 12),
                   Wrap(
