@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # PULLUP
 
 PULLUP is a Flutter MVP for private night-plan discovery.
@@ -267,3 +268,6 @@ flutter test integration_test
 - Add crash reporting, analytics consent and privacy policy flows.
 - Add CI running `flutter analyze`, `flutter test`, rules tests and functions build.
 - Replace demo recommendation with a server-assisted ranking service once data volume grows.
+=======
+# pullup
+>>>>>>> 7795d6b6ab838df55cea5f09c3db582740cac2fa
