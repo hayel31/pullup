@@ -20,11 +20,11 @@ class NightCard extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         borderRadius: radius,
-        border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
+        border: Border.all(color: AppColors.border),
         boxShadow: [
           BoxShadow(
             blurRadius: 16,
-            color: Colors.black.withValues(alpha: 0.18),
+            color: AppColors.primary.withValues(alpha: 0.08),
             offset: const Offset(0, 6),
           ),
         ],

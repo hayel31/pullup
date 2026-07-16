@@ -14,11 +14,12 @@ class PullupLogo extends StatelessWidget {
       image: true,
       label: context.tr('PULLUP logo'),
       child: Image.asset(
-        'assets/branding/pullup-mark.png',
+        'assets/branding/pullup-midnight-logo.jpg',
         width: size,
         height: size,
         fit: BoxFit.contain,
         filterQuality: FilterQuality.high,
+        gaplessPlayback: true,
         excludeFromSemantics: true,
       ),
     );

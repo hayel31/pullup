@@ -58,7 +58,7 @@ class TonightFeaturedEventCard extends StatelessWidget {
                         colors: [
                           Color(0x26000000),
                           Color(0x4D000000),
-                          Color(0xF208080B),
+                          Color(0xF2030305),
                         ],
                         stops: [0, 0.45, 1],
                       ),
@@ -160,7 +160,7 @@ class _StatusPill extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 6),
       decoration: BoxDecoration(
-        color: const Color(0xDD08080B),
+        color: AppColors.background.withValues(alpha: 0.9),
         borderRadius: BorderRadius.circular(99),
         border: Border.all(color: color.withValues(alpha: 0.75)),
       ),

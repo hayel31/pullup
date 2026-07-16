@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../l10n/app_localizations.dart';
 import 'providers/locale_provider.dart';
 import 'router.dart';
+import 'theme/app_colors.dart';
 import 'theme/app_theme.dart';
 
 class PullupApp extends ConsumerWidget {
@@ -38,14 +39,28 @@ class PullupApp extends ConsumerWidget {
 
         final appSize = Size(520, mediaQuery.size.height);
         return ColoredBox(
-          color: const Color(0xFF050507),
+          color: AppColors.desktopBackground,
           child: Center(
-            child: SizedBox(
-              width: appSize.width,
-              height: appSize.height,
-              child: MediaQuery(
-                data: mediaQuery.copyWith(size: appSize),
-                child: page,
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                border: const Border.symmetric(
+                  vertical: BorderSide(color: AppColors.border),
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.primary.withValues(alpha: 0.12),
+                    blurRadius: 44,
+                    spreadRadius: 2,
+                  ),
+                ],
+              ),
+              child: SizedBox(
+                width: appSize.width,
+                height: appSize.height,
+                child: MediaQuery(
+                  data: mediaQuery.copyWith(size: appSize),
+                  child: page,
+                ),
               ),
             ),
           ),

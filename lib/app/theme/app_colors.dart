@@ -3,18 +3,22 @@ import 'package:flutter/material.dart';
 class AppColors {
   const AppColors._();
 
-  static const background = Color(0xFF08080B);
-  static const surface = Color(0xFF121218);
-  static const surfaceSecondary = Color(0xFF1A1A22);
-  static const surfaceElevated = Color(0xFF222230);
-  static const border = Color(0xFF2B2B36);
-  static const primary = Color(0xFF7C3AED);
-  static const primaryBright = Color(0xFF8B5CF6);
-  static const magenta = Color(0xFFEC4899);
-  static const blue = Color(0xFF3B82F6);
+  // Midnight: near-black foundations with increasingly vivid violet surfaces.
+  static const desktopBackground = Color(0xFF010102);
+  static const background = Color(0xFF030305);
+  static const surface = Color(0xFF11091C);
+  static const surfaceSecondary = Color(0xFF1A0E2A);
+  static const surfaceElevated = Color(0xFF25133B);
+  static const surfaceHighlight = Color(0xFF32184F);
+  static const border = Color(0xFF3B2453);
+  static const borderBright = Color(0xFF63358A);
+  static const primary = Color(0xFF8B2CF5);
+  static const primaryBright = Color(0xFFB45CFF);
+  static const magenta = Color(0xFFFF3D8D);
+  static const blue = Color(0xFF37A3FF);
   static const textPrimary = Color(0xFFFFFFFF);
-  static const textSecondary = Color(0xFFA1A1AA);
-  static const success = Color(0xFF22C55E);
-  static const warning = Color(0xFFF59E0B);
-  static const danger = Color(0xFFEF4444);
+  static const textSecondary = Color(0xFFB7AFC3);
+  static const success = Color(0xFF38D996);
+  static const warning = Color(0xFFFFC857);
+  static const danger = Color(0xFFFF4D6D);
 }

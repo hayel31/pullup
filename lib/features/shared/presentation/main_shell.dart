@@ -56,19 +56,32 @@ class MainShell extends ConsumerWidget {
         ],
       ),
       body: SafeArea(child: navigationShell),
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: navigationShell.currentIndex,
-        destinations: [
-          for (final tab in _tabs)
-            NavigationDestination(
-              icon: Icon(tab.icon),
-              selectedIcon: Icon(tab.icon, color: AppColors.textPrimary),
-              label: context.tr(tab.label),
+      bottomNavigationBar: DecoratedBox(
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          border: const Border(top: BorderSide(color: AppColors.border)),
+          boxShadow: [
+            BoxShadow(
+              color: AppColors.primary.withValues(alpha: 0.1),
+              blurRadius: 18,
+              offset: const Offset(0, -4),
             ),
-        ],
-        onDestinationSelected: (next) => navigationShell.goBranch(
-          next,
-          initialLocation: next == navigationShell.currentIndex,
+          ],
+        ),
+        child: NavigationBar(
+          selectedIndex: navigationShell.currentIndex,
+          destinations: [
+            for (final tab in _tabs)
+              NavigationDestination(
+                icon: Icon(tab.icon),
+                selectedIcon: Icon(tab.icon),
+                label: context.tr(tab.label),
+              ),
+          ],
+          onDestinationSelected: (next) => navigationShell.goBranch(
+            next,
+            initialLocation: next == navigationShell.currentIndex,
+          ),
         ),
       ),
     );
