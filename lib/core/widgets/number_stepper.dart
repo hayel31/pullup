@@ -54,7 +54,7 @@ class NumberStepper extends StatelessWidget {
                 _StepperButton(
                   buttonKey: decreaseButtonKey,
                   tooltip: context.tr('Decrease $label'),
-                  icon: Icons.remove_rounded,
+                  symbol: '-',
                   onPressed: canDecrease ? () => onChanged(value - 1) : null,
                 ),
                 SizedBox(
@@ -76,7 +76,7 @@ class NumberStepper extends StatelessWidget {
                 _StepperButton(
                   buttonKey: increaseButtonKey,
                   tooltip: context.tr('Increase $label'),
-                  icon: Icons.add_rounded,
+                  symbol: '+',
                   onPressed: canIncrease
                       ? () => onChanged(value + 1)
                       : onMaximumPressed,
@@ -105,13 +105,13 @@ class _StepperButton extends StatelessWidget {
   const _StepperButton({
     required this.buttonKey,
     required this.tooltip,
-    required this.icon,
+    required this.symbol,
     required this.onPressed,
   });
 
   final Key? buttonKey;
   final String tooltip;
-  final IconData icon;
+  final String symbol;
   final VoidCallback? onPressed;
 
   @override
@@ -128,7 +128,14 @@ class _StepperButton extends StatelessWidget {
         disabledForegroundColor: AppColors.textSecondary,
         side: const BorderSide(color: AppColors.border),
       ),
-      icon: Icon(icon, size: 22),
+      icon: Text(
+        symbol,
+        style: const TextStyle(
+          fontSize: 25,
+          fontWeight: FontWeight.w700,
+          height: 1,
+        ),
+      ),
     );
   }
 }

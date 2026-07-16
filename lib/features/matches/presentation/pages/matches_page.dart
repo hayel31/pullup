@@ -3,9 +3,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../app/providers/app_state.dart';
+import '../../../../app/theme/app_colors.dart';
 import '../../../../core/widgets/app_state_views.dart';
 import '../../../../core/widgets/night_card.dart';
 import '../../../../models/enums.dart';
+import '../../../shared/presentation/withdraw_request_flow.dart';
 
 class MatchesPage extends ConsumerWidget {
   const MatchesPage({super.key});
@@ -16,6 +18,9 @@ class MatchesPage extends ConsumerWidget {
     final requests = ref.watch(myRequestsProvider);
     final conversations = ref.watch(myConversationsProvider);
     final controller = ref.read(appControllerProvider.notifier);
+    final loading = ref.watch(
+      appControllerProvider.select((state) => state.loading),
+    );
 
     return DefaultTabController(
       length: 4,
@@ -26,7 +31,7 @@ class MatchesPage extends ConsumerWidget {
             tabs: [
               Tab(child: Text('Recent')),
               Tab(child: Text('Upcoming')),
-              Tab(child: Text('Pending')),
+              Tab(child: Text('Requests')),
               Tab(child: Text('Chats')),
             ],
           ),
@@ -72,21 +77,62 @@ class MatchesPage extends ConsumerWidget {
                         ),
                   ],
                 ),
-                ListView(
-                  padding: const EdgeInsets.all(16),
-                  children: [
-                    for (final request in requests)
-                      _MatchTile(
-                        title:
-                            controller.eventById(request.eventId)?.title ??
-                            'Request',
-                        subtitle: request.status == RequestStatus.rejected
-                            ? 'Not selected this time'
-                            : request.status.label,
-                        onTap: () => context.push('/events/${request.eventId}'),
+                requests.isEmpty
+                    ? const EmptyStateView(
+                        title: 'No requests yet',
+                        message: 'Requests you send will appear here.',
+                      )
+                    : ListView(
+                        padding: const EdgeInsets.all(16),
+                        children: [
+                          for (final request in requests)
+                            _MatchTile(
+                              title:
+                                  controller
+                                      .eventById(request.eventId)
+                                      ?.title ??
+                                  'Request',
+                              subtitle: request.status == RequestStatus.rejected
+                                  ? 'Not selected this time'
+                                  : request.status.label,
+                              trailing: request.status == RequestStatus.pending
+                                  ? IconButton(
+                                      key: Key(
+                                        'withdraw-request-${request.id}',
+                                      ),
+                                      tooltip: context.tr('Withdraw request'),
+                                      onPressed: loading
+                                          ? null
+                                          : () => confirmAndWithdrawRequest(
+                                              context: context,
+                                              ref: ref,
+                                              requestId: request.id,
+                                              eventTitle:
+                                                  controller
+                                                      .eventById(
+                                                        request.eventId,
+                                                      )
+                                                      ?.title ??
+                                                  'Request',
+                                            ),
+                                      style: IconButton.styleFrom(
+                                        foregroundColor: AppColors.danger,
+                                        backgroundColor: AppColors.danger
+                                            .withValues(alpha: 0.12),
+                                        side: BorderSide(
+                                          color: AppColors.danger.withValues(
+                                            alpha: 0.42,
+                                          ),
+                                        ),
+                                      ),
+                                      icon: const Icon(Icons.close_rounded),
+                                    )
+                                  : null,
+                              onTap: () =>
+                                  context.push('/events/${request.eventId}'),
+                            ),
+                        ],
                       ),
-                  ],
-                ),
                 conversations.isEmpty
                     ? const EmptyStateView(
                         title: 'No conversations',

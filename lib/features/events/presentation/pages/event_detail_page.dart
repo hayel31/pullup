@@ -12,6 +12,7 @@ import '../../../../core/widgets/night_card.dart';
 import '../../../../core/widgets/pullup_chip.dart';
 import '../../../../models/enums.dart';
 import '../../../shared/domain/app_drafts.dart';
+import '../../../shared/presentation/withdraw_request_flow.dart';
 import '../widgets/approximate_map.dart';
 
 class EventDetailPage extends ConsumerWidget {
@@ -35,12 +36,15 @@ class EventDetailPage extends ConsumerWidget {
     }
     final canReveal = event.canRevealAddressTo(user.id);
     final isHost = event.hostId == user.id;
-    final request = state.requests
-        .where(
-          (request) =>
-              request.eventId == event.id && request.requesterId == user.id,
-        )
-        .firstOrNull;
+    final userRequests =
+        state.requests
+            .where(
+              (request) =>
+                  request.eventId == event.id && request.requesterId == user.id,
+            )
+            .toList()
+          ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+    final request = userRequests.firstOrNull;
 
     return Scaffold(
       appBar: AppBar(
@@ -218,9 +222,20 @@ class EventDetailPage extends ConsumerWidget {
             )
           else if (request?.status == RequestStatus.pending)
             OutlinedButton.icon(
-              onPressed: null,
-              icon: const Icon(Icons.hourglass_top_rounded),
-              label: const Text('Request pending'),
+              onPressed: state.loading
+                  ? null
+                  : () => confirmAndWithdrawRequest(
+                      context: context,
+                      ref: ref,
+                      requestId: request!.id,
+                      eventTitle: event.title,
+                    ),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: AppColors.danger,
+                side: const BorderSide(color: AppColors.danger),
+              ),
+              icon: const Icon(Icons.close_rounded),
+              label: const Text('Withdraw request'),
             )
           else if (request?.status == RequestStatus.accepted)
             FilledButton.icon(

@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:pullup/core/errors/app_exception.dart';
 import 'package:pullup/core/utils/age_utils.dart';
 import 'package:pullup/core/utils/distance_utils.dart';
 import 'package:pullup/core/utils/recommendation_engine.dart';
@@ -107,4 +108,75 @@ void main() {
       );
     },
   );
+
+  test(
+    'withdrawing a pending request clears the waitlist and allows resubmission',
+    () async {
+      final repository = DemoPullupRepository();
+      final request = await repository.requestToJoin(
+        'user-004',
+        'event-002',
+        const JoinEventDraft(
+          note: 'I may need to change plans.',
+          groupSize: 1,
+          companionNames: [],
+        ),
+      );
+      final before = repository.snapshot.events.firstWhere(
+        (event) => event.id == request.eventId,
+      );
+
+      final withdrawn = await repository.withdrawRequest(
+        'user-004',
+        request.id,
+      );
+      final after = repository.snapshot.events.firstWhere(
+        (event) => event.id == request.eventId,
+      );
+
+      expect(withdrawn.status, RequestStatus.withdrawn);
+      expect(after.waitingParticipantIds, isNot(contains('user-004')));
+      expect(after.requestCount, before.requestCount - 1);
+      expect(
+        repository.snapshot.swipedEventIds['user-004'],
+        isNot(contains(request.eventId)),
+      );
+
+      final resubmitted = await repository.requestToJoin(
+        'user-004',
+        request.eventId,
+        const JoinEventDraft(
+          note: 'Plans confirmed now.',
+          groupSize: 1,
+          companionNames: [],
+        ),
+      );
+      expect(resubmitted.status, RequestStatus.pending);
+    },
+  );
+
+  test('an accepted request cannot be withdrawn', () async {
+    final repository = DemoPullupRepository();
+    final request = await repository.requestToJoin(
+      'user-004',
+      'event-002',
+      const JoinEventDraft(
+        note: 'Ready to join.',
+        groupSize: 1,
+        companionNames: [],
+      ),
+    );
+    await repository.acceptRequest('host-002', request.id);
+
+    expect(
+      repository.withdrawRequest('user-004', request.id),
+      throwsA(
+        isA<AppException>().having(
+          (error) => error.message,
+          'message',
+          'Only pending requests can be withdrawn.',
+        ),
+      ),
+    );
+  });
 }

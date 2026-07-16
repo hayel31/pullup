@@ -246,6 +246,26 @@ const eventTranslationRows = <String, TranslationRow>{
     es: 'Solicitud pendiente',
     de: 'Anfrage ausstehend',
   ),
+  'Withdraw this request?': (
+    fr: 'Retirer cette demande ?',
+    es: '¿Retirar esta solicitud?',
+    de: 'Diese Anfrage zurückziehen?',
+  ),
+  'Your request for {event} will be removed. You can request to join again later.': (
+    fr: 'Ta demande pour {event} sera retirée. Tu pourras en envoyer une nouvelle plus tard.',
+    es: 'Tu solicitud para {event} se retirará. Podrás enviar otra más tarde.',
+    de: 'Deine Anfrage für {event} wird zurückgezogen. Du kannst später erneut anfragen.',
+  ),
+  'Withdraw request': (
+    fr: 'Retirer la demande',
+    es: 'Retirar solicitud',
+    de: 'Anfrage zurückziehen',
+  ),
+  'Request withdrawn.': (
+    fr: 'Demande retirée.',
+    es: 'Solicitud retirada.',
+    de: 'Anfrage zurückgezogen.',
+  ),
   'Open match': (
     fr: 'Ouvrir le match',
     es: 'Abrir conexión',

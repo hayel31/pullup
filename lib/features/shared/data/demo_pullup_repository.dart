@@ -307,6 +307,36 @@ class DemoPullupRepository implements PullupRepository {
   }
 
   @override
+  Future<EventRequest> withdrawRequest(String userId, String requestId) async {
+    final request = _requestById(requestId);
+    if (request.requesterId != userId) {
+      throw const AppException('You can only withdraw your own request.');
+    }
+    if (request.status != RequestStatus.pending) {
+      throw const AppException('Only pending requests can be withdrawn.');
+    }
+
+    final now = DateTime.now();
+    final updated = request.copyWith(
+      status: RequestStatus.withdrawn,
+      decidedAt: now,
+    );
+    final event = _eventById(request.eventId);
+    _replaceRequest(updated);
+    _replaceEvent(
+      event.copyWith(
+        waitingParticipantIds: event.waitingParticipantIds
+            .where((id) => id != userId)
+            .toList(),
+        requestCount: event.requestCount > 0 ? event.requestCount - 1 : 0,
+        updatedAt: now,
+      ),
+    );
+    _swipedEventIds[userId]?.remove(event.id);
+    return updated;
+  }
+
+  @override
   Future<void> passEvent(String userId, String eventId) async {
     _swipedEventIds.putIfAbsent(userId, () => <String>{}).add(eventId);
     _rejectedEventIds.putIfAbsent(userId, () => <String>{}).add(eventId);

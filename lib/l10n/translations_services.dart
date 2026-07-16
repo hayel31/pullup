@@ -426,6 +426,16 @@ const serviceTranslationRows = <String, TranslationRow>{
     es: 'Ya has enviado una solicitud para este evento.',
     de: 'Du hast für dieses Event bereits eine Anfrage gesendet.',
   ),
+  'You can only withdraw your own request.': (
+    fr: 'Tu peux uniquement retirer ta propre demande.',
+    es: 'Solo puedes retirar tu propia solicitud.',
+    de: 'Du kannst nur deine eigene Anfrage zurückziehen.',
+  ),
+  'Only pending requests can be withdrawn.': (
+    fr: 'Seules les demandes en attente peuvent être retirées.',
+    es: 'Solo se pueden retirar las solicitudes pendientes.',
+    de: 'Nur ausstehende Anfragen können zurückgezogen werden.',
+  ),
   'This request is no longer pending.': (
     fr: 'Cette demande n’est plus en attente.',
     es: 'Esta solicitud ya no está pendiente.',

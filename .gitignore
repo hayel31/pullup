@@ -34,6 +34,10 @@ migrate_working_dir/
 /coverage/
 .vercel/
 
+# Firebase Cloud Functions build output and local dependencies
+/functions/lib/
+/functions/node_modules/
+
 # Symbolication related
 app.*.symbols
 

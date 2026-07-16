@@ -329,6 +329,17 @@ const discoveryTranslationRows = <String, TranslationRow>{
   'Recent': (fr: 'Récents', es: 'Recientes', de: 'Neu'),
   'Upcoming': (fr: 'À venir', es: 'Próximos', de: 'Bevorstehend'),
   'Pending': (fr: 'En attente', es: 'Pendiente', de: 'Ausstehend'),
+  'Requests': (fr: 'Demandes', es: 'Solicitudes', de: 'Anfragen'),
+  'No requests yet': (
+    fr: 'Aucune demande',
+    es: 'Aún no hay solicitudes',
+    de: 'Noch keine Anfragen',
+  ),
+  'Requests you send will appear here.': (
+    fr: 'Les demandes envoyées apparaîtront ici.',
+    es: 'Las solicitudes que envíes aparecerán aquí.',
+    de: 'Gesendete Anfragen erscheinen hier.',
+  ),
   'Not selected this time': (
     fr: 'Pas retenu cette fois',
     es: 'No seleccionado esta vez',

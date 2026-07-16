@@ -89,6 +89,10 @@ class FirebasePullupRepository implements PullupRepository {
   Future<void> undoSwipe(String userId, String eventId) => _notConfigured();
 
   @override
+  Future<EventRequest> withdrawRequest(String userId, String requestId) =>
+      _notConfigured();
+
+  @override
   Future<UserProfile> unblockUser(String userId, String blockedUserId) =>
       _notConfigured();
 

@@ -74,6 +74,60 @@ export const createMatchFromAcceptedRequest = onCall(async (request) => {
   });
 });
 
+export const withdrawEventRequest = onCall(async (request) => {
+  const uid = request.auth?.uid;
+  if (!uid) throw new HttpsError("unauthenticated", "Sign in required.");
+  const {eventId, requestId} = request.data as {
+    eventId: string;
+    requestId: string;
+  };
+  if (!eventId || !requestId) {
+    throw new HttpsError(
+      "invalid-argument",
+      "eventId and requestId are required."
+    );
+  }
+
+  return db.runTransaction(async (tx) => {
+    const eventRef = db.doc(`events/${eventId}`);
+    const requestRef = eventRef.collection("requests").doc(requestId);
+    const swipeRef = db.doc(`users/${uid}/swipes/${eventId}`);
+    const eventSnap = await tx.get(eventRef);
+    const requestSnap = await tx.get(requestRef);
+    if (!eventSnap.exists || !requestSnap.exists) {
+      throw new HttpsError("not-found", "Event or request missing.");
+    }
+
+    const event = eventSnap.data()!;
+    const joinRequest = requestSnap.data()!;
+    if (joinRequest.requesterId !== uid) {
+      throw new HttpsError(
+        "permission-denied",
+        "You can only withdraw your own request."
+      );
+    }
+    if (joinRequest.status !== "pending") {
+      throw new HttpsError(
+        "failed-precondition",
+        "Only pending requests can be withdrawn."
+      );
+    }
+
+    tx.update(requestRef, {
+      status: "withdrawn",
+      decidedAt: admin.firestore.FieldValue.serverTimestamp()
+    });
+    tx.update(eventRef, {
+      waitingParticipantIds: admin.firestore.FieldValue.arrayRemove(uid),
+      requestCount: Math.max(0, Number(event.requestCount ?? 0) - 1),
+      updatedAt: admin.firestore.FieldValue.serverTimestamp()
+    });
+    tx.delete(swipeRef);
+
+    return {requestId, status: "withdrawn"};
+  });
+});
+
 export const preventDuplicateRequest = onDocumentCreated("events/{eventId}/requests/{requestId}", async (event) => {
   const data = event.data?.data();
   if (!data) return;

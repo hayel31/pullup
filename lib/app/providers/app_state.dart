@@ -83,7 +83,11 @@ final myRequestsProvider = Provider<List<EventRequest>>((ref) {
   final user = state.currentUser;
   if (user == null) return const [];
   return state.requests
-      .where((request) => request.requesterId == user.id)
+      .where(
+        (request) =>
+            request.requesterId == user.id &&
+            request.status != RequestStatus.withdrawn,
+      )
       .toList()
     ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
 });
@@ -289,6 +293,14 @@ class AppController extends StateNotifier<PullupState> {
     await _run(() async {
       await _repository.requestToJoin(user.id, eventId, draft);
       _sync(currentUserId: user.id, lastSwipedEventId: eventId);
+    });
+  }
+
+  Future<void> withdrawRequest(String requestId) async {
+    final user = _requireUser();
+    await _run(() async {
+      await _repository.withdrawRequest(user.id, requestId);
+      _sync(currentUserId: user.id, clearLastSwiped: true);
     });
   }
 

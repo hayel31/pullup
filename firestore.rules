@@ -103,9 +103,9 @@ service cloud.firestore {
         allow update: if signedIn()
           && resource.data.hostId == request.auth.uid
           && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'decidedAt']);
-        allow delete: if signedIn()
-          && resource.data.requesterId == request.auth.uid
-          && resource.data.status == 'pending';
+        // Withdrawal updates the request and event atomically through a Cloud
+        // Function so the host waiting list cannot become stale.
+        allow delete: if false;
       }
 
       match /participants/{participantId} {

@@ -60,6 +60,8 @@ abstract class PullupRepository {
     JoinEventDraft draft,
   );
 
+  Future<EventRequest> withdrawRequest(String userId, String requestId);
+
   Future<void> passEvent(String userId, String eventId);
 
   Future<void> undoSwipe(String userId, String eventId);
