@@ -6,6 +6,8 @@ import '../../app/theme/app_colors.dart';
 class PullupLogo extends StatelessWidget {
   const PullupLogo({this.size = 72, super.key});
 
+  static const assetPath = 'assets/branding/pullup-midnight-logo.jpg';
+
   final double size;
 
   @override
@@ -14,7 +16,7 @@ class PullupLogo extends StatelessWidget {
       image: true,
       label: context.tr('PULLUP logo'),
       child: Image.asset(
-        'assets/branding/pullup-midnight-logo.jpg',
+        assetPath,
         width: size,
         height: size,
         fit: BoxFit.contain,

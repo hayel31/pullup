@@ -10,7 +10,11 @@ void main() {
 
     expect(find.text('PULLUP'), findsWidgets);
     expect(find.text("What's the move tonight?"), findsOneWidget);
+    expect(find.byKey(const Key('welcome-hero')), findsOneWidget);
+    expect(find.byKey(const Key('language-picker')), findsOneWidget);
     expect(find.byIcon(Icons.nightlife_rounded), findsOneWidget);
+    expect(find.byIcon(Icons.home_work_outlined), findsOneWidget);
+    expect(find.byIcon(Icons.mail_outline_rounded), findsOneWidget);
   });
 
   testWidgets('keeps the branded splash visible before routing', (

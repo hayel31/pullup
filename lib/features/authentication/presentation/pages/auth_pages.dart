@@ -10,6 +10,7 @@ import '../../../../core/widgets/gradient_button.dart';
 import '../../../../core/widgets/pullup_logo.dart';
 import '../../../../models/enums.dart';
 import '../../../shared/domain/app_drafts.dart';
+import '../widgets/welcome_experience.dart';
 
 class SplashPage extends ConsumerStatefulWidget {
   const SplashPage({super.key});
@@ -164,81 +165,11 @@ class WelcomePage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final controller = ref.read(appControllerProvider.notifier);
-    return Scaffold(
-      body: SafeArea(
-        child: LayoutBuilder(
-          builder: (context, constraints) => SingleChildScrollView(
-            padding: const EdgeInsets.fromLTRB(24, 20, 24, 24),
-            child: ConstrainedBox(
-              constraints: BoxConstraints(
-                minHeight: (constraints.maxHeight - 44).clamp(
-                  0,
-                  double.infinity,
-                ),
-              ),
-              child: IntrinsicHeight(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    const Align(
-                      alignment: Alignment.centerLeft,
-                      child: PullupLogo(size: 72),
-                    ),
-                    const Spacer(flex: 2),
-                    const Text(
-                      AppConstants.appName,
-                      style: TextStyle(
-                        fontSize: 46,
-                        fontWeight: FontWeight.w900,
-                        height: 1,
-                        letterSpacing: 0,
-                      ),
-                    ),
-                    const SizedBox(height: 14),
-                    Text(
-                      'What\'s the move tonight?',
-                      style: Theme.of(context).textTheme.headlineMedium,
-                    ),
-                    const SizedBox(height: 10),
-                    const Text(
-                      AppConstants.signature,
-                      style: TextStyle(
-                        color: AppColors.textSecondary,
-                        fontSize: 17,
-                        height: 1.3,
-                        letterSpacing: 0,
-                      ),
-                    ),
-                    const Spacer(),
-                    GradientButton(
-                      label: 'Explore as guest',
-                      icon: Icons.nightlife_rounded,
-                      onPressed: () => controller.signInDemo(),
-                    ),
-                    const SizedBox(height: 10),
-                    OutlinedButton.icon(
-                      onPressed: () => controller.signInDemo(asHost: true),
-                      icon: const Icon(Icons.home_work_outlined),
-                      label: const Text('Open host view'),
-                    ),
-                    const SizedBox(height: 10),
-                    OutlinedButton.icon(
-                      onPressed: () => context.go('/login'),
-                      icon: const Icon(Icons.mail_outline_rounded),
-                      label: const Text('Sign in with email'),
-                    ),
-                    const SizedBox(height: 4),
-                    TextButton(
-                      onPressed: () => context.go('/register'),
-                      child: const Text('Create an account'),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-        ),
-      ),
+    return WelcomeExperience(
+      onExploreGuest: () => controller.signInDemo(),
+      onOpenHost: () => controller.signInDemo(asHost: true),
+      onSignIn: () => context.go('/login'),
+      onCreateAccount: () => context.go('/register'),
     );
   }
 }
