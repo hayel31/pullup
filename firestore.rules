@@ -1,0 +1,182 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function isUser(userId) {
+      return signedIn() && request.auth.uid == userId;
+    }
+
+    function isModerator() {
+      return signedIn() &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['moderator', 'admin'];
+    }
+
+    function userDoc(userId) {
+      return get(/databases/$(database)/documents/users/$(userId));
+    }
+
+    function isBlockedBy(targetUserId) {
+      return signedIn() &&
+        exists(/databases/$(database)/documents/users/$(targetUserId)/blockedUsers/$(request.auth.uid));
+    }
+
+    function immutableSensitiveUserFields() {
+      return !request.resource.data.diff(resource.data).affectedKeys().hasAny([
+        'verificationStatus',
+        'phoneVerified',
+        'selfieVerified',
+        'identityVerified',
+        'isPremium',
+        'role',
+        'accountStatus',
+        'reportCount'
+      ]);
+    }
+
+    match /users/{userId} {
+      allow read: if signedIn() && !isBlockedBy(userId);
+      allow create: if isUser(userId)
+        && request.resource.data.accountStatus == 'active'
+        && request.resource.data.isPremium == false
+        && request.resource.data.role == null;
+      allow update: if isUser(userId) && immutableSensitiveUserFields();
+      allow delete: if isUser(userId);
+
+      match /swipes/{swipeId} {
+        allow read, create, update, delete: if isUser(userId);
+      }
+
+      match /notifications/{notificationId} {
+        allow read, update, delete: if isUser(userId);
+        allow create: if false;
+      }
+
+      match /blockedUsers/{blockedUserId} {
+        allow read, create, delete: if isUser(userId);
+      }
+    }
+
+    match /events/{eventId} {
+      allow read: if signedIn()
+        && resource.data.visibility == 'public'
+        && resource.data.status in ['published', 'ongoing', 'full']
+        && !isBlockedBy(resource.data.hostId)
+        && !('exactAddress' in resource.data);
+      allow create: if signedIn()
+        && request.resource.data.hostId == request.auth.uid
+        && !('exactAddress' in request.resource.data);
+      allow update: if signedIn()
+        && resource.data.hostId == request.auth.uid
+        && request.resource.data.hostId == resource.data.hostId
+        && !request.resource.data.diff(resource.data).affectedKeys().hasAny([
+          'acceptedParticipantIds',
+          'waitingParticipantIds',
+          'rejectedParticipantIds',
+          'availableSpots',
+          'matchCount',
+          'requestCount',
+          'isBoosted',
+          'boostEndDate'
+        ]);
+      allow delete: if signedIn() && resource.data.hostId == request.auth.uid;
+
+      match /private/{privateDoc} {
+        allow read: if signedIn()
+          && (
+            get(/databases/$(database)/documents/events/$(eventId)).data.hostId == request.auth.uid ||
+            exists(/databases/$(database)/documents/events/$(eventId)/participants/$(request.auth.uid))
+          );
+        allow write: if signedIn()
+          && get(/databases/$(database)/documents/events/$(eventId)).data.hostId == request.auth.uid;
+      }
+
+      match /requests/{requestId} {
+        allow read: if signedIn()
+          && (resource.data.requesterId == request.auth.uid || resource.data.hostId == request.auth.uid);
+        allow create: if signedIn()
+          && request.resource.data.requesterId == request.auth.uid
+          && request.resource.data.status == 'pending'
+          && !isBlockedBy(request.resource.data.hostId);
+        allow update: if signedIn()
+          && resource.data.hostId == request.auth.uid
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'decidedAt']);
+        allow delete: if signedIn()
+          && resource.data.requesterId == request.auth.uid
+          && resource.data.status == 'pending';
+      }
+
+      match /participants/{participantId} {
+        allow read: if signedIn()
+          && (participantId == request.auth.uid ||
+              get(/databases/$(database)/documents/events/$(eventId)).data.hostId == request.auth.uid);
+        allow write: if false;
+      }
+    }
+
+    match /matches/{matchId} {
+      allow read: if signedIn()
+        && (resource.data.userId == request.auth.uid || resource.data.hostId == request.auth.uid);
+      allow write: if false;
+    }
+
+    match /conversations/{conversationId} {
+      allow read: if signedIn() && request.auth.uid in resource.data.memberIds;
+      allow create, update, delete: if false;
+
+      match /messages/{messageId} {
+        allow read: if signedIn()
+          && request.auth.uid in get(/databases/$(database)/documents/conversations/$(conversationId)).data.memberIds;
+        allow create: if signedIn()
+          && request.resource.data.senderId == request.auth.uid
+          && request.auth.uid in get(/databases/$(database)/documents/conversations/$(conversationId)).data.memberIds;
+        allow update, delete: if false;
+      }
+    }
+
+    match /reports/{reportId} {
+      allow create: if signedIn() && request.resource.data.reporterId == request.auth.uid;
+      allow read: if signedIn() && (resource.data.reporterId == request.auth.uid || isModerator());
+      allow update, delete: if isModerator();
+    }
+
+    match /djProfiles/{djId} {
+      allow read: if signedIn();
+      allow create: if signedIn()
+        && request.resource.data.userId == request.auth.uid
+        && request.resource.data.isVerified == false;
+      allow update: if signedIn()
+        && resource.data.userId == request.auth.uid
+        && request.resource.data.userId == request.auth.uid
+        && request.resource.data.isVerified == resource.data.isVerified;
+      allow delete: if signedIn() && resource.data.userId == request.auth.uid;
+    }
+
+    match /djServiceRequests/{requestId} {
+      allow read: if signedIn()
+        && (resource.data.hostId == request.auth.uid || resource.data.djUserId == request.auth.uid);
+      allow create: if signedIn() && request.resource.data.hostId == request.auth.uid;
+      allow update: if signedIn() && resource.data.djUserId == request.auth.uid;
+      allow delete: if false;
+    }
+
+    match /djProposals/{proposalId} {
+      allow read: if signedIn()
+        && (resource.data.hostId == request.auth.uid || resource.data.djUserId == request.auth.uid);
+      allow create: if signedIn() && request.resource.data.djUserId == request.auth.uid;
+      allow update, delete: if false;
+    }
+
+    match /subscriptions/{userId} {
+      allow read: if isUser(userId);
+      allow write: if false;
+    }
+
+    match /boosts/{boostId} {
+      allow read: if signedIn() && resource.data.hostId == request.auth.uid;
+      allow write: if false;
+    }
+  }
+}
