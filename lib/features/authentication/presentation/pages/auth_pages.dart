@@ -27,6 +27,7 @@ class _SplashPageState extends ConsumerState<SplashPage>
   late final Animation<double> _scale;
   late final Animation<double> _detailsFade;
   late final Animation<Offset> _slide;
+  bool _isLeaving = false;
 
   @override
   void initState() {
@@ -61,13 +62,14 @@ class _SplashPageState extends ConsumerState<SplashPage>
     await Future<void>.delayed(_duration);
     if (!mounted) return;
     final user = ref.read(appControllerProvider).currentUser;
-    context.go(
-      user == null
-          ? '/welcome'
-          : user.onboardingCompleted
-          ? '/discover'
-          : '/onboarding',
-    );
+    if (user == null) {
+      setState(() => _isLeaving = true);
+      await WidgetsBinding.instance.endOfFrame;
+      if (!mounted) return;
+      context.pushReplacement('/welcome');
+      return;
+    }
+    context.go(user.onboardingCompleted ? '/discover' : '/onboarding');
   }
 
   @override
@@ -78,6 +80,19 @@ class _SplashPageState extends ConsumerState<SplashPage>
 
   @override
   Widget build(BuildContext context) {
+    if (_isLeaving) {
+      return const Scaffold(
+        body: SafeArea(
+          child: Center(
+            child: PullupLogo(
+              key: Key('splash-shared-logo'),
+              size: 128,
+              heroTag: PullupLogo.splashHeroTag,
+            ),
+          ),
+        ),
+      );
+    }
     return Scaffold(
       body: SafeArea(
         child: Center(
@@ -94,7 +109,11 @@ class _SplashPageState extends ConsumerState<SplashPage>
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        const PullupLogo(size: 128),
+                        const PullupLogo(
+                          key: Key('splash-shared-logo'),
+                          size: 128,
+                          heroTag: PullupLogo.splashHeroTag,
+                        ),
                         const SizedBox(height: 18),
                         const Text(
                           AppConstants.appName,

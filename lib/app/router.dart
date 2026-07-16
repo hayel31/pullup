@@ -67,7 +67,28 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: '/splash', builder: (context, state) => const SplashPage()),
       GoRoute(
         path: '/welcome',
-        builder: (context, state) => const WelcomePage(),
+        pageBuilder: (context, state) => CustomTransitionPage<void>(
+          key: state.pageKey,
+          transitionDuration: const Duration(milliseconds: 620),
+          reverseTransitionDuration: const Duration(milliseconds: 420),
+          child: const WelcomePage(),
+          transitionsBuilder: (context, animation, secondaryAnimation, child) {
+            final entrance = CurvedAnimation(
+              parent: animation,
+              curve: const Interval(0.04, 1, curve: Curves.easeOutCubic),
+            );
+            return FadeTransition(
+              opacity: entrance,
+              child: SlideTransition(
+                position: Tween<Offset>(
+                  begin: const Offset(0, 0.025),
+                  end: Offset.zero,
+                ).animate(entrance),
+                child: child,
+              ),
+            );
+          },
+        ),
       ),
       GoRoute(path: '/login', builder: (context, state) => const LoginPage()),
       GoRoute(

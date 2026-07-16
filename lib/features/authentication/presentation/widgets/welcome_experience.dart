@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:pullup/l10n/app_material.dart';
 
 import '../../../../app/constants/app_constants.dart';
@@ -46,6 +48,7 @@ class WelcomeExperience extends StatelessWidget {
                           const _WelcomeTopBar(),
                           SizedBox(height: compact ? 155 : 210),
                           _WelcomeEntrance(
+                            delay: const Duration(milliseconds: 220),
                             duration: const Duration(milliseconds: 720),
                             offset: 18,
                             child: _WelcomeHero(compact: compact),
@@ -53,7 +56,8 @@ class WelcomeExperience extends StatelessWidget {
                           SizedBox(height: compact ? 12 : 18),
                           const Spacer(),
                           _WelcomeEntrance(
-                            duration: const Duration(milliseconds: 920),
+                            delay: const Duration(milliseconds: 440),
+                            duration: const Duration(milliseconds: 760),
                             offset: 24,
                             child: _WelcomeActions(
                               onExploreGuest: onExploreGuest,
@@ -92,13 +96,16 @@ class _WelcomeBackdrop extends StatelessWidget {
             right: -42,
             height: 470,
             child: TweenAnimationBuilder<double>(
-              tween: Tween(begin: 0.9, end: 1),
-              duration: const Duration(milliseconds: 1150),
-              curve: Curves.easeOutCubic,
-              builder: (context, value, child) => Transform.scale(
-                scale: value,
-                alignment: Alignment.topCenter,
-                child: Opacity(opacity: 0.78, child: child),
+              tween: Tween(begin: 0, end: 1),
+              duration: const Duration(milliseconds: 1100),
+              curve: const Interval(0.12, 1, curve: Curves.easeOutCubic),
+              builder: (context, value, child) => Opacity(
+                opacity: 0.78 * value,
+                child: Transform.scale(
+                  scale: 0.94 + 0.06 * value,
+                  alignment: Alignment.topCenter,
+                  child: child,
+                ),
               ),
               child: Image.asset(
                 PullupLogo.assetPath,
@@ -137,30 +144,42 @@ class _WelcomeTopBar extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        const PullupBrand(logoSize: 34),
+        const PullupBrand(logoSize: 34, logoHeroTag: PullupLogo.splashHeroTag),
         const Spacer(),
-        Container(
-          height: 30,
-          padding: const EdgeInsets.symmetric(horizontal: 10),
-          alignment: Alignment.center,
-          decoration: BoxDecoration(
-            color: AppColors.surface.withValues(alpha: 0.78),
-            borderRadius: BorderRadius.circular(99),
-            border: Border.all(color: AppColors.magenta.withValues(alpha: 0.5)),
+        _WelcomeEntrance(
+          delay: const Duration(milliseconds: 260),
+          duration: const Duration(milliseconds: 520),
+          offset: -8,
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                height: 30,
+                padding: const EdgeInsets.symmetric(horizontal: 10),
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: AppColors.surface.withValues(alpha: 0.78),
+                  borderRadius: BorderRadius.circular(99),
+                  border: Border.all(
+                    color: AppColors.magenta.withValues(alpha: 0.5),
+                  ),
+                ),
+                child: const Text(
+                  '18+',
+                  style: TextStyle(fontSize: 11, fontWeight: FontWeight.w900),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Container(
+                decoration: BoxDecoration(
+                  color: AppColors.surface.withValues(alpha: 0.78),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: AppColors.border),
+                ),
+                child: const LanguagePickerButton(),
+              ),
+            ],
           ),
-          child: const Text(
-            '18+',
-            style: TextStyle(fontSize: 11, fontWeight: FontWeight.w900),
-          ),
-        ),
-        const SizedBox(width: 8),
-        Container(
-          decoration: BoxDecoration(
-            color: AppColors.surface.withValues(alpha: 0.78),
-            borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: AppColors.border),
-          ),
-          child: const LanguagePickerButton(),
         ),
       ],
     );
@@ -305,28 +324,52 @@ class _WelcomeActions extends StatelessWidget {
   }
 }
 
-class _WelcomeEntrance extends StatelessWidget {
+class _WelcomeEntrance extends StatefulWidget {
   const _WelcomeEntrance({
     required this.child,
     required this.duration,
     required this.offset,
+    this.delay = Duration.zero,
   });
 
   final Widget child;
   final Duration duration;
   final double offset;
+  final Duration delay;
+
+  @override
+  State<_WelcomeEntrance> createState() => _WelcomeEntranceState();
+}
+
+class _WelcomeEntranceState extends State<_WelcomeEntrance> {
+  bool _visible = false;
+  Timer? _delayTimer;
+
+  @override
+  void initState() {
+    super.initState();
+    _delayTimer = Timer(widget.delay, () {
+      if (mounted) setState(() => _visible = true);
+    });
+  }
+
+  @override
+  void dispose() {
+    _delayTimer?.cancel();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     return TweenAnimationBuilder<double>(
-      tween: Tween(begin: 0, end: 1),
-      duration: duration,
+      tween: Tween(begin: 0, end: _visible ? 1 : 0),
+      duration: widget.duration,
       curve: Curves.easeOutCubic,
-      child: child,
+      child: widget.child,
       builder: (context, value, child) => Opacity(
         opacity: value,
         child: Transform.translate(
-          offset: Offset(0, offset * (1 - value)),
+          offset: Offset(0, widget.offset * (1 - value)),
           child: child,
         ),
       ),
