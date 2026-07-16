@@ -15,6 +15,7 @@ class SwipeEventDeckController {
   SwipeEventDeckState? _state;
 
   bool get isAnimating => _state?._animating ?? false;
+  double get dragProgress => _state?._progress ?? 0;
 
   Future<void> pass() =>
       _state?._commit(_SwipeChoice.pass) ?? Future<void>.value();
@@ -109,9 +110,9 @@ class SwipeEventDeckState extends State<SwipeEventDeck>
 
         return GestureDetector(
           behavior: HitTestBehavior.opaque,
-          onPanUpdate: _animating ? null : _handlePanUpdate,
-          onPanEnd: _animating ? null : _handlePanEnd,
-          onPanCancel: _animating ? null : _returnToCenter,
+          onPanUpdate: _handlePanUpdate,
+          onPanEnd: _handlePanEnd,
+          onPanCancel: _returnToCenter,
           child: Stack(
             clipBehavior: Clip.none,
             fit: StackFit.expand,
@@ -171,6 +172,7 @@ class SwipeEventDeckState extends State<SwipeEventDeck>
   double get _progress => (_offset.dx / _layoutWidth).clamp(-1.0, 1.0);
 
   void _handlePanUpdate(DragUpdateDetails details) {
+    if (_animating) return;
     final maxVertical = (context.size?.height ?? 600) * 0.14;
     setState(() {
       _offset = Offset(
@@ -185,6 +187,7 @@ class SwipeEventDeckState extends State<SwipeEventDeck>
   }
 
   void _handlePanEnd(DragEndDetails details) {
+    if (_animating) return;
     final horizontalVelocity = details.velocity.pixelsPerSecond.dx;
     final crossedDistance = _offset.dx.abs() >= _layoutWidth * 0.24;
     final decisiveFling =
@@ -207,7 +210,7 @@ class SwipeEventDeckState extends State<SwipeEventDeck>
       duration: const Duration(milliseconds: 320),
       curve: Curves.easeOutBack,
     );
-    _animating = false;
+    if (mounted) setState(() => _animating = false);
   }
 
   Future<void> _commit(_SwipeChoice choice) async {
@@ -224,7 +227,7 @@ class SwipeEventDeckState extends State<SwipeEventDeck>
       curve: Curves.easeInCubic,
     );
     if (!mounted || !exited) {
-      _animating = false;
+      if (mounted) setState(() => _animating = false);
       return;
     }
 
@@ -248,7 +251,7 @@ class SwipeEventDeckState extends State<SwipeEventDeck>
       widget.onProgressChanged(0);
       setState(() {});
     }
-    _animating = false;
+    setState(() => _animating = false);
   }
 
   Future<bool> _animateTo(

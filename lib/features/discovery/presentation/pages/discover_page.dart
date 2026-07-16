@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -7,6 +9,7 @@ import '../../../../app/providers/app_state.dart';
 import '../../../../app/theme/app_colors.dart';
 import '../../../../core/widgets/app_state_views.dart';
 import '../../../../core/widgets/gradient_button.dart';
+import '../../../../core/widgets/number_stepper.dart';
 import '../../../../models/party_event.dart';
 import '../../../shared/domain/app_drafts.dart';
 import '../widgets/swipe_event_deck.dart';
@@ -154,6 +157,15 @@ class _RequestSheetState extends ConsumerState<_RequestSheet> {
   final _note = TextEditingController();
   int _groupSize = 1;
   bool _submitting = false;
+  String? _groupLimitMessage;
+
+  int get _requestLimit {
+    if (!widget.event.allowsGroups) return 1;
+    return math.max(
+      1,
+      math.min(widget.event.maxGroupSize, widget.event.availableSpots),
+    );
+  }
 
   @override
   void dispose() {
@@ -223,52 +235,21 @@ class _RequestSheetState extends ConsumerState<_RequestSheet> {
               ],
             ),
             const SizedBox(height: 18),
-            Text('Group size', style: Theme.of(context).textTheme.titleMedium),
+            Text('People', style: Theme.of(context).textTheme.titleMedium),
             const SizedBox(height: 8),
-            DecoratedBox(
-              decoration: BoxDecoration(
-                color: AppColors.surfaceSecondary,
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: AppColors.border),
-              ),
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(14, 8, 8, 8),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        _groupSize == 1 ? 'Just me' : '$_groupSize people',
-                        style: const TextStyle(fontWeight: FontWeight.w700),
-                      ),
-                    ),
-                    _GroupSizeButton(
-                      buttonKey: const Key('group-remove-button'),
-                      tooltip: 'Remove one person',
-                      icon: Icons.remove_rounded,
-                      onPressed: !_submitting && _groupSize > 1
-                          ? () => setState(() => _groupSize--)
-                          : null,
-                    ),
-                    SizedBox(
-                      width: 38,
-                      child: Text(
-                        '$_groupSize',
-                        textAlign: TextAlign.center,
-                        style: Theme.of(context).textTheme.titleMedium,
-                      ),
-                    ),
-                    _GroupSizeButton(
-                      buttonKey: const Key('group-add-button'),
-                      tooltip: 'Add one person',
-                      icon: Icons.add_rounded,
-                      onPressed:
-                          !_submitting && _groupSize < widget.event.maxGroupSize
-                          ? () => setState(() => _groupSize++)
-                          : null,
-                    ),
-                  ],
-                ),
-              ),
+            NumberStepper(
+              label: 'People in this request',
+              value: _groupSize,
+              minValue: 1,
+              maxValue: _requestLimit,
+              decreaseButtonKey: const Key('group-remove-button'),
+              increaseButtonKey: const Key('group-add-button'),
+              helperText: _groupLimitMessage ?? _groupLimitHelper,
+              onChanged: (value) => setState(() {
+                _groupSize = value;
+                _groupLimitMessage = null;
+              }),
+              onMaximumPressed: _submitting ? null : _showGroupLimit,
             ),
             if (errorMessage != null) ...[
               const SizedBox(height: 12),
@@ -309,37 +290,26 @@ class _RequestSheetState extends ConsumerState<_RequestSheet> {
     }
     setState(() => _submitting = false);
   }
-}
 
-class _GroupSizeButton extends StatelessWidget {
-  const _GroupSizeButton({
-    required this.buttonKey,
-    required this.tooltip,
-    required this.icon,
-    required this.onPressed,
-  });
+  void _showGroupLimit() {
+    HapticFeedback.selectionClick();
+    setState(() {
+      _groupLimitMessage = !widget.event.allowsGroups
+          ? 'This host accepts individual requests only.'
+          : _requestLimit == 1
+          ? 'Maximum reached: only one spot is still available.'
+          : 'Maximum reached: this event accepts up to $_requestLimit people in one request.';
+    });
+  }
 
-  final Key buttonKey;
-  final String tooltip;
-  final IconData icon;
-  final VoidCallback? onPressed;
-
-  @override
-  Widget build(BuildContext context) {
-    return IconButton(
-      key: buttonKey,
-      tooltip: tooltip,
-      onPressed: onPressed,
-      style: IconButton.styleFrom(
-        fixedSize: const Size.square(44),
-        backgroundColor: AppColors.surfaceElevated,
-        foregroundColor: AppColors.textPrimary,
-        disabledBackgroundColor: AppColors.surfaceElevated,
-        disabledForegroundColor: AppColors.textSecondary,
-        side: const BorderSide(color: AppColors.border),
-      ),
-      icon: Icon(icon, size: 22),
-    );
+  String get _groupLimitHelper {
+    if (!widget.event.allowsGroups) {
+      return 'This event accepts individual requests only.';
+    }
+    if (_requestLimit == 1) {
+      return 'Only one spot is still available.';
+    }
+    return 'Up to $_requestLimit people, based on the host limit and spots left.';
   }
 }
 

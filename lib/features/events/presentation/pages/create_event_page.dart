@@ -7,6 +7,7 @@ import 'package:intl/intl.dart';
 import '../../../../app/providers/app_state.dart';
 import '../../../../app/theme/app_colors.dart';
 import '../../../../core/widgets/night_card.dart';
+import '../../../../core/widgets/number_stepper.dart';
 import '../../../../core/widgets/wizard_scaffold.dart';
 import '../../../../models/enums.dart';
 import '../../../../models/geo_point_lite.dart';
@@ -132,17 +133,21 @@ class _CreateEventPageState extends ConsumerState<CreateEventPage> {
             const SizedBox(height: 20),
             Text('Guest list', style: Theme.of(context).textTheme.titleMedium),
             const SizedBox(height: 8),
-            _NumberRow(
+            NumberStepper(
               label: 'Maximum guests',
               value: _maxParticipants,
+              minValue: 2,
+              maxValue: 200,
               onChanged: (value) => setState(
                 () => _maxParticipants = value.clamp(2, 200).toInt(),
               ),
             ),
             const SizedBox(height: 8),
-            _NumberRow(
+            NumberStepper(
               label: 'Minimum age',
               value: _ageRequirement,
+              minValue: 18,
+              maxValue: 60,
               suffix: '+',
               onChanged: (value) =>
                   setState(() => _ageRequirement = value.clamp(18, 60).toInt()),
@@ -156,9 +161,11 @@ class _CreateEventPageState extends ConsumerState<CreateEventPage> {
             ),
             if (_allowsGroups) ...[
               const SizedBox(height: 8),
-              _NumberRow(
+              NumberStepper(
                 label: 'Maximum group size',
                 value: _maxGroupSize,
+                minValue: 1,
+                maxValue: 10,
                 onChanged: (value) =>
                     setState(() => _maxGroupSize = value.clamp(1, 10).toInt()),
               ),
@@ -529,62 +536,6 @@ class _CreateStep {
   final String title;
   final String description;
   final Widget child;
-}
-
-class _NumberRow extends StatelessWidget {
-  const _NumberRow({
-    required this.label,
-    required this.value,
-    required this.onChanged,
-    this.suffix = '',
-  });
-
-  final String label;
-  final int value;
-  final ValueChanged<int> onChanged;
-  final String suffix;
-
-  @override
-  Widget build(BuildContext context) {
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: AppColors.surfaceSecondary,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: AppColors.border),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(14, 8, 8, 8),
-        child: Row(
-          children: [
-            Expanded(
-              child: Text(
-                label,
-                style: const TextStyle(fontWeight: FontWeight.w700),
-              ),
-            ),
-            IconButton(
-              tooltip: 'Decrease $label',
-              onPressed: () => onChanged(value - 1),
-              icon: const Icon(Icons.remove_rounded),
-            ),
-            SizedBox(
-              width: 44,
-              child: Text(
-                '$value$suffix',
-                textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.titleMedium,
-              ),
-            ),
-            IconButton(
-              tooltip: 'Increase $label',
-              onPressed: () => onChanged(value + 1),
-              icon: const Icon(Icons.add_rounded),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 }
 
 class _DateTimeField extends StatelessWidget {

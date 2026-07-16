@@ -6,9 +6,10 @@ import '../../../../app/theme/app_colors.dart';
 import '../../../../models/party_event.dart';
 
 class ApproximateMap extends StatelessWidget {
-  const ApproximateMap({required this.events, super.key});
+  const ApproximateMap({required this.events, this.height = 220, super.key});
 
   final List<PartyEvent> events;
+  final double height;
 
   @override
   Widget build(BuildContext context) {
@@ -22,7 +23,7 @@ class ApproximateMap extends StatelessWidget {
     return ClipRRect(
       borderRadius: BorderRadius.circular(8),
       child: SizedBox(
-        height: 220,
+        height: height,
         child: FlutterMap(
           options: MapOptions(initialCenter: center, initialZoom: 12),
           children: [
