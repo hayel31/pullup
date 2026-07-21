@@ -5,6 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:pullup/app/app.dart';
 import 'package:pullup/app/providers/app_state.dart';
 import 'package:pullup/app/theme/app_theme.dart';
+import 'package:pullup/features/authentication/presentation/widgets/portal_entrance_animation.dart';
 import 'package:pullup/features/events/presentation/pages/host_dashboard_page.dart';
 import 'package:pullup/features/events/presentation/pages/host_requests_page.dart';
 import 'package:pullup/features/shared/data/demo_pullup_repository.dart';
@@ -29,7 +30,7 @@ void main() {
         child: const PullupApp(),
       ),
     );
-    await tester.pump(const Duration(seconds: 3));
+    await tester.pump(PortalEntranceAnimation.defaultDuration);
     await _pumpUi(tester, const Duration(milliseconds: 900));
     await _pumpUi(tester, const Duration(milliseconds: 250));
 
@@ -42,7 +43,11 @@ void main() {
       'Pullup2026!',
     );
     await tester.tap(find.text('Enter PULLUP'));
-    await _pumpUi(tester, const Duration(milliseconds: 3950));
+    await _pumpUi(
+      tester,
+      PortalEntranceAnimation.defaultDuration +
+          const Duration(milliseconds: 350),
+    );
     await tester.tap(find.byKey(const Key('switch-to-host')));
     await _pumpUi(tester, const Duration(milliseconds: 900));
 

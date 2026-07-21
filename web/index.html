@@ -46,76 +46,97 @@
     #pullup-loader {
       position: fixed;
       inset: 0;
-      display: grid;
-      place-content: center;
-      background: #08080b;
-      color: #ffffff;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      text-align: center;
-    }
-
-    .pullup-loader-content {
-      display: grid;
-      justify-items: center;
-      animation: pullup-enter 720ms cubic-bezier(.16, 1, .3, 1) both;
-    }
-
-    #pullup-loader strong {
-      margin-top: 18px;
-      font-size: 42px;
-      line-height: 1;
-      letter-spacing: 0;
-    }
-
-    #pullup-loader img {
-      width: 128px;
-      height: 128px;
-      object-fit: contain;
-    }
-
-    #pullup-loader span {
-      margin-top: 10px;
-      color: #a1a1aa;
-      font-size: 15px;
-    }
-
-    .loader-progress {
-      width: 180px;
-      height: 3px;
-      margin-top: 46px;
+      z-index: 9999;
       overflow: hidden;
-      border-radius: 2px;
-      background: #222230;
+      background:
+        radial-gradient(circle at 50% 32.5%, rgba(124, 58, 237, .2), transparent 22%),
+        linear-gradient(180deg, #050507 0%, #08080b 58%, #101016 100%);
+      opacity: 1;
+      transition: opacity 280ms ease, transform 420ms cubic-bezier(.16, 1, .3, 1);
     }
 
-    .loader-progress::after {
+    #pullup-loader.is-leaving {
+      opacity: 0;
+      transform: scale(1.015);
+      pointer-events: none;
+    }
+
+    .pullup-prelude {
+      position: absolute;
+      left: 50%;
+      top: 32.5%;
+      width: 112px;
+      height: 112px;
+      transform: translate(-50%, -50%);
+      animation: prelude-enter 800ms cubic-bezier(.16, 1, .3, 1) both;
+    }
+
+    .pullup-prelude::before,
+    .pullup-prelude::after {
       content: "";
-      display: block;
-      width: 46%;
+      position: absolute;
+      inset: -10px;
+      border: 1px solid rgba(236, 72, 153, .2);
+      border-radius: 50%;
+      animation: portal-breathe 2.4s ease-in-out infinite;
+    }
+
+    .pullup-prelude::after {
+      inset: -24px;
+      border-color: rgba(168, 85, 247, .12);
+      animation-delay: -1.2s;
+    }
+
+    .pullup-prelude img {
+      width: 100%;
       height: 100%;
-      border-radius: inherit;
-      background: #ec4899;
-      animation: pullup-progress 1.05s ease-in-out infinite;
+      object-fit: contain;
+      filter: drop-shadow(0 0 26px rgba(236, 72, 153, .2));
     }
 
-    @keyframes pullup-enter {
-      from { opacity: 0; transform: translateY(18px) scale(.84); }
-      to { opacity: 1; transform: translateY(0) scale(1); }
+    .prelude-beam {
+      position: absolute;
+      left: 50%;
+      top: calc(32.5% + 34px);
+      width: min(72vw, 440px);
+      height: 54vh;
+      transform: translateX(-50%);
+      clip-path: polygon(47% 0, 53% 0, 100% 100%, 0 100%);
+      background: linear-gradient(180deg, rgba(168, 85, 247, .11), transparent 76%);
+      filter: blur(14px);
+      animation: beam-in 1s .18s ease-out both;
     }
 
-    @keyframes pullup-progress {
-      from { transform: translateX(-115%); }
-      to { transform: translateX(250%); }
+    @keyframes prelude-enter {
+      from { opacity: 0; transform: translate(-50%, -46%) scale(.78); }
+      to { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+    }
+
+    @keyframes portal-breathe {
+      0%, 100% { opacity: .45; transform: scale(.96); }
+      50% { opacity: 1; transform: scale(1.04); }
+    }
+
+    @keyframes beam-in {
+      from { opacity: 0; transform: translateX(-50%) scaleX(.6); }
+      to { opacity: 1; transform: translateX(-50%) scaleX(1); }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .pullup-prelude,
+      .pullup-prelude::before,
+      .pullup-prelude::after,
+      .prelude-beam {
+        animation: none;
+      }
     }
   </style>
 </head>
 <body>
   <div id="pullup-loader" aria-label="Loading PULLUP">
-    <div class="pullup-loader-content">
+    <div class="prelude-beam"></div>
+    <div class="pullup-prelude">
       <img src="pullup-midnight-mark.png" alt="">
-      <strong>PULLUP</strong>
-      <span>Swipe. Match. Pull up.</span>
-      <div class="loader-progress"></div>
     </div>
   </div>
   <!--
@@ -138,7 +159,10 @@
     }
 
     window.addEventListener('flutter-first-frame', function () {
-      document.getElementById('pullup-loader')?.remove();
+      const loader = document.getElementById('pullup-loader');
+      if (!loader) return;
+      loader.classList.add('is-leaving');
+      window.setTimeout(function () { loader.remove(); }, 440);
     });
   </script>
   <script src="flutter_bootstrap.js" async></script>

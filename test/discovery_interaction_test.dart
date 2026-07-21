@@ -7,6 +7,7 @@ import 'package:pullup/app/app.dart';
 import 'package:pullup/app/providers/app_state.dart';
 import 'package:pullup/app/router.dart';
 import 'package:pullup/app/theme/app_colors.dart';
+import 'package:pullup/features/authentication/presentation/widgets/portal_entrance_animation.dart';
 import 'package:pullup/features/discovery/presentation/pages/discover_page.dart';
 import 'package:pullup/features/discovery/presentation/widgets/swipe_event_deck.dart';
 import 'package:pullup/features/events/presentation/pages/event_detail_page.dart';
@@ -267,14 +268,14 @@ Future<ProviderContainer> _pumpSignedInApp(WidgetTester tester) async {
   await tester.pumpWidget(
     UncontrolledProviderScope(container: container, child: const PullupApp()),
   );
-  await tester.pump(const Duration(milliseconds: 3700));
+  await tester.pump(PortalEntranceAnimation.defaultDuration);
   await tester.pump(const Duration(milliseconds: 250));
 
   await container.read(appControllerProvider.notifier).signInDemo();
   await tester.pump();
   await tester.pump(const Duration(milliseconds: 250));
   expect(find.byKey(const Key('portal-after-sign-in')), findsOneWidget);
-  await tester.pump(const Duration(milliseconds: 3700));
+  await tester.pump(PortalEntranceAnimation.defaultDuration);
   await tester.pump(const Duration(milliseconds: 250));
   expect(find.byType(DiscoverPage), findsOneWidget);
   return container;

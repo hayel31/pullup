@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:pullup/app/app.dart';
 import 'package:pullup/app/providers/entrance_flow_provider.dart';
 import 'package:pullup/app/router.dart';
+import 'package:pullup/features/authentication/presentation/widgets/portal_entrance_animation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
@@ -34,13 +35,15 @@ void main() {
     expect(find.byKey(const Key('portal-before-sign-in')), findsOneWidget);
     expect(find.byKey(const Key('portal-animated-scene')), findsOneWidget);
     expect(find.byKey(const Key('portal-walker')), findsOneWidget);
+    expect(find.byKey(const Key('portal-target-mark')), findsOneWidget);
+    expect(find.byKey(const Key('portal-brand-lockup')), findsOneWidget);
     expect(find.text('PREVIEW 1 / BEFORE SIGN IN'), findsNothing);
     expect(find.text('PULLUP'), findsOneWidget);
 
     await tester.pump(const Duration(seconds: 2));
     expect(find.byKey(const Key('portal-before-sign-in')), findsOneWidget);
 
-    await tester.pump(const Duration(milliseconds: 1800));
+    await tester.pump(const Duration(milliseconds: 2800));
     await tester.pumpAndSettle();
     expect(find.byKey(const Key('portal-before-sign-in')), findsNothing);
     expect(find.text('Your night starts here.'), findsOneWidget);
@@ -54,7 +57,7 @@ void main() {
     await tester.pumpWidget(
       UncontrolledProviderScope(container: container, child: const PullupApp()),
     );
-    await tester.pump(const Duration(milliseconds: 3700));
+    await tester.pump(PortalEntranceAnimation.defaultDuration);
     await tester.pumpAndSettle();
 
     container.read(routerProvider).go('/login');
