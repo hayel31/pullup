@@ -48,7 +48,7 @@ class AppTheme {
       hoverColor: AppColors.primary.withValues(alpha: 0.08),
       focusColor: AppColors.primaryBright.withValues(alpha: 0.16),
       fontFamily: 'Roboto',
-      appBarTheme: const AppBarTheme(
+      appBarTheme: AppBarTheme(
         backgroundColor: AppColors.background,
         foregroundColor: AppColors.textPrimary,
         elevation: 0,
@@ -101,7 +101,7 @@ class AppTheme {
         margin: EdgeInsets.zero,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(8),
-          side: const BorderSide(color: AppColors.border),
+          side: BorderSide(color: AppColors.border),
         ),
       ),
       inputDecorationTheme: InputDecorationTheme(
@@ -117,7 +117,7 @@ class AppTheme {
           height: 1.2,
           letterSpacing: 0,
         ),
-        floatingLabelStyle: const TextStyle(
+        floatingLabelStyle: TextStyle(
           color: AppColors.primaryBright,
           fontSize: 13,
           fontWeight: FontWeight.w700,
@@ -144,18 +144,15 @@ class AppTheme {
         ),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
-          borderSide: const BorderSide(color: AppColors.border),
+          borderSide: BorderSide(color: AppColors.border),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
-          borderSide: const BorderSide(color: AppColors.border),
+          borderSide: BorderSide(color: AppColors.border),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
-          borderSide: const BorderSide(
-            color: AppColors.primaryBright,
-            width: 1.5,
-          ),
+          borderSide: BorderSide(color: AppColors.primaryBright, width: 1.5),
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
@@ -183,7 +180,7 @@ class AppTheme {
           height: 1.1,
           letterSpacing: 0,
         ),
-        side: const BorderSide(color: AppColors.border),
+        side: BorderSide(color: AppColors.border),
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(999)),
       ),
@@ -209,7 +206,7 @@ class AppTheme {
         style: OutlinedButton.styleFrom(
           minimumSize: const Size.fromHeight(52),
           foregroundColor: AppColors.textPrimary,
-          side: const BorderSide(color: AppColors.borderBright),
+          side: BorderSide(color: AppColors.borderBright),
           backgroundColor: AppColors.surface.withValues(alpha: 0.72),
           padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
@@ -242,7 +239,7 @@ class AppTheme {
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
         ),
       ),
-      listTileTheme: const ListTileThemeData(
+      listTileTheme: ListTileThemeData(
         contentPadding: EdgeInsets.symmetric(horizontal: 4, vertical: 4),
         minVerticalPadding: 10,
         iconColor: AppColors.textSecondary,
@@ -267,7 +264,7 @@ class AppTheme {
       ),
       checkboxTheme: CheckboxThemeData(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
-        side: const BorderSide(color: AppColors.borderBright),
+        side: BorderSide(color: AppColors.borderBright),
         fillColor: WidgetStateProperty.resolveWith(
           (states) => states.contains(WidgetState.selected)
               ? AppColors.primary
@@ -298,7 +295,7 @@ class AppTheme {
               : AppColors.borderBright,
         ),
       ),
-      tabBarTheme: const TabBarThemeData(
+      tabBarTheme: TabBarThemeData(
         labelColor: AppColors.textPrimary,
         unselectedLabelColor: AppColors.textSecondary,
         indicatorColor: AppColors.magenta,
@@ -319,7 +316,7 @@ class AppTheme {
         surfaceTintColor: Colors.transparent,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(8),
-          side: const BorderSide(color: AppColors.borderBright),
+          side: BorderSide(color: AppColors.borderBright),
         ),
         titleTextStyle: const TextStyle(
           color: AppColors.textPrimary,
@@ -340,10 +337,10 @@ class AppTheme {
         elevation: 10,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(8),
-          side: const BorderSide(color: AppColors.borderBright),
+          side: BorderSide(color: AppColors.borderBright),
         ),
       ),
-      bottomSheetTheme: const BottomSheetThemeData(
+      bottomSheetTheme: BottomSheetThemeData(
         backgroundColor: AppColors.surface,
         modalBackgroundColor: AppColors.surface,
         surfaceTintColor: Colors.transparent,
@@ -365,15 +362,15 @@ class AppTheme {
         ),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(8),
-          side: const BorderSide(color: AppColors.borderBright),
+          side: BorderSide(color: AppColors.borderBright),
         ),
       ),
-      dividerTheme: const DividerThemeData(color: AppColors.border, space: 24),
-      progressIndicatorTheme: const ProgressIndicatorThemeData(
+      dividerTheme: DividerThemeData(color: AppColors.border, space: 24),
+      progressIndicatorTheme: ProgressIndicatorThemeData(
         color: AppColors.primaryBright,
         linearTrackColor: AppColors.surfaceElevated,
       ),
-      sliderTheme: const SliderThemeData(
+      sliderTheme: SliderThemeData(
         activeTrackColor: AppColors.primaryBright,
         inactiveTrackColor: AppColors.surfaceElevated,
         thumbColor: AppColors.magenta,
@@ -381,7 +378,7 @@ class AppTheme {
         valueIndicatorColor: AppColors.surfaceHighlight,
         valueIndicatorTextStyle: TextStyle(color: AppColors.textPrimary),
       ),
-      textSelectionTheme: const TextSelectionThemeData(
+      textSelectionTheme: TextSelectionThemeData(
         cursorColor: AppColors.primaryBright,
         selectionColor: Color(0x668B2CF5),
         selectionHandleColor: AppColors.magenta,
@@ -394,7 +391,7 @@ class AppTheme {
         ),
         textStyle: const TextStyle(color: AppColors.textPrimary, fontSize: 12),
       ),
-      badgeTheme: const BadgeThemeData(
+      badgeTheme: BadgeThemeData(
         backgroundColor: AppColors.magenta,
         textColor: AppColors.textPrimary,
       ),

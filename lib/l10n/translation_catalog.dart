@@ -5,6 +5,7 @@ import 'translations_discovery.dart';
 import 'translations_events.dart';
 import 'translations_host.dart';
 import 'translations_services.dart';
+import 'translations_social.dart';
 
 const _translationRows = <String, TranslationRow>{
   ...coreTranslationRows,
@@ -13,6 +14,7 @@ const _translationRows = <String, TranslationRow>{
   ...hostTranslationRows,
   ...discoveryTranslationRows,
   ...serviceTranslationRows,
+  ...socialTranslationRows,
 };
 
 final Map<String, Map<String, String>> translationCatalog = {

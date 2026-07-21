@@ -8,6 +8,8 @@ class ChatConversation {
     required this.lastMessagePreview,
     required this.updatedAt,
     required this.unreadByUserIds,
+    this.isGroup = false,
+    this.expiresAt,
   });
 
   final String id;
@@ -16,6 +18,20 @@ class ChatConversation {
   final String lastMessagePreview;
   final DateTime updatedAt;
   final List<String> unreadByUserIds;
+  final bool isGroup;
+  final DateTime? expiresAt;
+
+  bool get isExpired {
+    final expiration = expiresAt;
+    return expiration != null && !expiration.isAfter(DateTime.now());
+  }
+
+  Duration get remainingTime {
+    final expiration = expiresAt;
+    if (expiration == null) return Duration.zero;
+    final remaining = expiration.difference(DateTime.now());
+    return remaining.isNegative ? Duration.zero : remaining;
+  }
 
   ChatConversation copyWith({
     String? id,
@@ -24,6 +40,8 @@ class ChatConversation {
     String? lastMessagePreview,
     DateTime? updatedAt,
     List<String>? unreadByUserIds,
+    bool? isGroup,
+    DateTime? expiresAt,
   }) {
     return ChatConversation(
       id: id ?? this.id,
@@ -32,6 +50,8 @@ class ChatConversation {
       lastMessagePreview: lastMessagePreview ?? this.lastMessagePreview,
       updatedAt: updatedAt ?? this.updatedAt,
       unreadByUserIds: unreadByUserIds ?? this.unreadByUserIds,
+      isGroup: isGroup ?? this.isGroup,
+      expiresAt: expiresAt ?? this.expiresAt,
     );
   }
 }

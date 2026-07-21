@@ -3,23 +3,18 @@ import 'package:pullup/l10n/app_material.dart';
 import '../../app/theme/app_colors.dart';
 
 class PullupChip extends StatelessWidget {
-  const PullupChip({
-    required this.label,
-    this.icon,
-    this.color = AppColors.surfaceSecondary,
-    super.key,
-  });
+  const PullupChip({required this.label, this.icon, this.color, super.key});
 
   final String label;
   final IconData? icon;
-  final Color color;
+  final Color? color;
 
   @override
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
       decoration: BoxDecoration(
-        color: color,
+        color: color ?? AppColors.surfaceSecondary,
         borderRadius: BorderRadius.circular(999),
         border: Border.all(color: AppColors.border.withValues(alpha: 0.8)),
       ),

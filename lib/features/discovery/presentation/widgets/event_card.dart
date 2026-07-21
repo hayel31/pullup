@@ -41,11 +41,11 @@ class EventCard extends StatelessWidget {
             PullupImage(
               source: event.coverPhotoUrl,
               fit: BoxFit.cover,
-              placeholder: const ColoredBox(
+              placeholder: ColoredBox(
                 color: AppColors.surfaceSecondary,
                 child: Center(child: CircularProgressIndicator()),
               ),
-              errorWidget: const ColoredBox(color: AppColors.surfaceSecondary),
+              errorWidget: ColoredBox(color: AppColors.surfaceSecondary),
             ),
             DecoratedBox(
               decoration: BoxDecoration(

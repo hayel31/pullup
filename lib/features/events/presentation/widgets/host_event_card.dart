@@ -73,7 +73,7 @@ class HostEventCard extends StatelessWidget {
                       ),
                       const SizedBox(height: 3),
                       Text(
-                        '${event.areaName} - ${TimeUtils.eventWindow(event.startDateTime, event.endDateTime, locale: Localizations.localeOf(context).languageCode)}',
+                        '${event.areaName}, ${event.city} - ${TimeUtils.eventWindow(event.startDateTime, event.endDateTime, locale: Localizations.localeOf(context).languageCode)}',
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: Theme.of(context).textTheme.bodySmall,

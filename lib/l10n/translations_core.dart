@@ -3,6 +3,47 @@ import 'translation_types.dart';
 const coreTranslationRows = <String, TranslationRow>{
   // Brand, navigation and shared states.
   'Language': (fr: 'Langue', es: 'Idioma', de: 'Sprache'),
+  'Appearance': (fr: 'Apparence', es: 'Apariencia', de: 'Erscheinungsbild'),
+  'Colors & theme': (
+    fr: 'Couleurs et thème',
+    es: 'Colores y tema',
+    de: 'Farben und Design',
+  ),
+  'Choose your atmosphere': (
+    fr: 'Choisis ton ambiance',
+    es: 'Elige tu ambiente',
+    de: 'Wähle deine Atmosphäre',
+  ),
+  'Tap a theme to apply it instantly across PULLUP.': (
+    fr: 'Sélectionne un thème pour l’appliquer instantanément dans PULLUP.',
+    es: 'Selecciona un tema para aplicarlo al instante en PULLUP.',
+    de: 'Wähle ein Design, um es sofort in PULLUP anzuwenden.',
+  ),
+  'Live preview': (
+    fr: 'Aperçu en direct',
+    es: 'Vista previa en directo',
+    de: 'Live-Vorschau',
+  ),
+  'Deep black & neon violet': (
+    fr: 'Noir profond et violet néon',
+    es: 'Negro profundo y violeta neón',
+    de: 'Tiefschwarz und Neonviolett',
+  ),
+  'Warm coral & pink glow': (
+    fr: 'Corail chaud et lueur rose',
+    es: 'Coral cálido y brillo rosa',
+    de: 'Warmes Korall und rosa Leuchten',
+  ),
+  'Futuristic cyan & black': (
+    fr: 'Cyan futuriste et noir',
+    es: 'Cian futurista y negro',
+    de: 'Futuristisches Cyan und Schwarz',
+  ),
+  'Graphite grey & electric rose': (
+    fr: 'Gris graphite et rose électrique',
+    es: 'Gris grafito y rosa eléctrico',
+    de: 'Graphitgrau und elektrisches Rosa',
+  ),
   'Discover': (fr: 'Découvrir', es: 'Descubrir', de: 'Entdecken'),
   'Tonight': (fr: 'Ce soir', es: 'Esta noche', de: 'Heute Abend'),
   'Create': (fr: 'Créer', es: 'Crear', de: 'Erstellen'),
@@ -33,6 +74,19 @@ const coreTranslationRows = <String, TranslationRow>{
     de: 'Vorheriger Schritt',
   ),
   'Cancel': (fr: 'Annuler', es: 'Cancelar', de: 'Abbrechen'),
+  'Done': (fr: 'Terminer', es: 'Listo', de: 'Fertig'),
+  'Clear': (fr: 'Effacer', es: 'Borrar', de: 'Leeren'),
+  'App style': (
+    fr: "Style de l'application",
+    es: 'Estilo de la aplicacion',
+    de: 'App-Stil',
+  ),
+  'Midnight': (fr: 'Minuit', es: 'Medianoche', de: 'Mitternacht'),
+  'Sunset': (fr: 'Coucher de soleil', es: 'Atardecer', de: 'Sonnenuntergang'),
+  'Cyan Night': (fr: 'Nuit cyan', es: 'Noche cian', de: 'Cyan-Nacht'),
+  'Cyan': (fr: 'Cyan', es: 'Cian', de: 'Cyan'),
+  'Anthracite': (fr: 'Anthracite', es: 'Antracita', de: 'Anthrazit'),
+  'Graphite': (fr: 'Graphite', es: 'Grafito', de: 'Graphit'),
   'Save': (fr: 'Enregistrer', es: 'Guardar', de: 'Speichern'),
   'Reset': (fr: 'Réinitialiser', es: 'Restablecer', de: 'Zurücksetzen'),
   'Optional': (fr: 'Facultatif', es: 'Opcional', de: 'Optional'),

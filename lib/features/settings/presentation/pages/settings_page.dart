@@ -3,7 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../app/providers/app_state.dart';
+import '../../../../app/providers/theme_provider.dart';
 import '../../../../app/theme/app_colors.dart';
+import '../../../../app/theme/app_palette.dart';
 
 class SettingsPage extends ConsumerStatefulWidget {
   const SettingsPage({super.key});
@@ -17,11 +19,26 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
 
   @override
   Widget build(BuildContext context) {
+    final themePreset = ref.watch(themePresetProvider);
     return Scaffold(
       appBar: AppBar(title: const Text('Settings')),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(20, 12, 20, 32),
         children: [
+          Text('Appearance', style: Theme.of(context).textTheme.titleMedium),
+          const SizedBox(height: 8),
+          ListTile(
+            key: const Key('settings-appearance'),
+            leading: Icon(
+              Icons.palette_outlined,
+              color: AppColors.primaryBright,
+            ),
+            title: const Text('Colors & theme'),
+            subtitle: Text(context.tr(themePreset.label)),
+            trailing: const Icon(Icons.chevron_right_rounded),
+            onTap: () => context.push('/settings/appearance'),
+          ),
+          const Divider(),
           Text(
             'Privacy & safety',
             style: Theme.of(context).textTheme.titleMedium,
@@ -46,7 +63,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
             value: _notificationsEnabled,
             onChanged: (value) => setState(() => _notificationsEnabled = value),
           ),
-          const ListTile(
+          ListTile(
             leading: Icon(Icons.admin_panel_settings_outlined),
             title: Text('Verification'),
             subtitle: Text(

@@ -5,10 +5,13 @@ import 'package:pullup/l10n/app_material.dart';
 import '../../../../app/providers/app_state.dart';
 import '../../../../app/theme/app_colors.dart';
 import '../../../../core/widgets/app_state_views.dart';
+import '../../../../core/widgets/language_picker_button.dart';
 import '../../../../core/widgets/night_card.dart';
+import '../../../../core/widgets/pullup_logo.dart';
 import '../../../../models/enums.dart';
 import '../../../../models/event_request.dart';
 import '../../../../models/party_event.dart';
+import '../../../shared/presentation/widgets/experience_mode_switcher.dart';
 import '../widgets/host_event_card.dart';
 
 class HostDashboardPage extends ConsumerWidget {
@@ -40,8 +43,55 @@ class HostDashboardPage extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Host space'),
+        title: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const PullupBrand(logoSize: 26),
+            const SizedBox(width: 6),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 3),
+              decoration: BoxDecoration(
+                color: AppColors.magenta.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(5),
+                border: Border.all(
+                  color: AppColors.magenta.withValues(alpha: 0.48),
+                ),
+              ),
+              child: Text(
+                'HOST',
+                style: TextStyle(
+                  color: AppColors.magenta,
+                  fontSize: 9,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+            ),
+          ],
+        ),
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(60),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
+            child: ExperienceModeSwitcher(
+              selected: AppExperience.host,
+              pendingHostRequests: pending,
+              onGuestSelected: () {
+                ref
+                    .read(appControllerProvider.notifier)
+                    .setActiveExperience(AppExperience.guest);
+                context.go('/discover');
+              },
+              onHostSelected: () {},
+            ),
+          ),
+        ),
         actions: [
+          const LanguagePickerButton(),
+          IconButton(
+            tooltip: context.tr('Notifications'),
+            onPressed: () => context.push('/notifications'),
+            icon: const Icon(Icons.notifications_none_rounded),
+          ),
           IconButton(
             tooltip: context.tr('Create an event'),
             onPressed: () => context.go('/create'),
@@ -64,17 +114,50 @@ class HostDashboardPage extends ConsumerWidget {
           : ListView(
               padding: const EdgeInsets.fromLTRB(16, 18, 16, 32),
               children: [
-                Column(
+                Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      'Your nights',
-                      style: Theme.of(context).textTheme.headlineSmall,
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Host control room',
+                            style: Theme.of(context).textTheme.headlineSmall,
+                          ),
+                          const SizedBox(height: 5),
+                          Text(
+                            'Manage your events, guests and private access from one place.',
+                            style: Theme.of(context).textTheme.bodyMedium
+                                ?.copyWith(
+                                  color: AppColors.textSecondary,
+                                  height: 1.35,
+                                ),
+                          ),
+                        ],
+                      ),
                     ),
-                    const SizedBox(height: 4),
-                    Text(
-                      '${events.where(_isActive).length} active events',
-                      style: Theme.of(context).textTheme.bodySmall,
+                    const SizedBox(width: 12),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 5,
+                      ),
+                      decoration: BoxDecoration(
+                        color: AppColors.success.withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(5),
+                        border: Border.all(
+                          color: AppColors.success.withValues(alpha: 0.45),
+                        ),
+                      ),
+                      child: Text(
+                        '${events.where(_isActive).length} LIVE',
+                        style: const TextStyle(
+                          color: AppColors.success,
+                          fontSize: 10,
+                          fontWeight: FontWeight.w900,
+                        ),
+                      ),
                     ),
                   ],
                 ),
@@ -204,7 +287,7 @@ class _MetricDivider extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const SizedBox(
+    return SizedBox(
       height: 62,
       child: VerticalDivider(width: 18, color: AppColors.border),
     );

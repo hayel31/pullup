@@ -2,14 +2,15 @@ import 'package:pullup/l10n/app_material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../../app/constants/app_constants.dart';
 import '../../../../app/providers/app_state.dart';
+import '../../../../app/providers/entrance_flow_provider.dart';
 import '../../../../app/theme/app_colors.dart';
 import '../../../../core/utils/age_utils.dart';
 import '../../../../core/widgets/gradient_button.dart';
 import '../../../../core/widgets/pullup_logo.dart';
 import '../../../../models/enums.dart';
 import '../../../shared/domain/app_drafts.dart';
+import '../widgets/portal_entrance_animation.dart';
 import '../widgets/welcome_experience.dart';
 
 class SplashPage extends ConsumerStatefulWidget {
@@ -19,163 +20,59 @@ class SplashPage extends ConsumerStatefulWidget {
   ConsumerState<SplashPage> createState() => _SplashPageState();
 }
 
-class _SplashPageState extends ConsumerState<SplashPage>
-    with SingleTickerProviderStateMixin {
-  static const _duration = Duration(milliseconds: 2600);
-  late final AnimationController _progress;
-  late final Animation<double> _fade;
-  late final Animation<double> _scale;
-  late final Animation<double> _detailsFade;
-  late final Animation<Offset> _slide;
-  bool _isLeaving = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _progress = AnimationController(vsync: this, duration: _duration)
-      ..forward();
-    _fade = CurvedAnimation(
-      parent: _progress,
-      curve: const Interval(0, 0.25, curve: Curves.easeOutCubic),
-    );
-    _scale = Tween<double>(begin: 0.82, end: 1).animate(
-      CurvedAnimation(
-        parent: _progress,
-        curve: const Interval(0, 0.34, curve: Curves.easeOutBack),
-      ),
-    );
-    _slide = Tween<Offset>(begin: const Offset(0, 0.14), end: Offset.zero)
-        .animate(
-          CurvedAnimation(
-            parent: _progress,
-            curve: const Interval(0, 0.3, curve: Curves.easeOutCubic),
-          ),
-        );
-    _detailsFade = CurvedAnimation(
-      parent: _progress,
-      curve: const Interval(0.12, 0.4, curve: Curves.easeOut),
-    );
-    _completeSplash();
-  }
+class _SplashPageState extends ConsumerState<SplashPage> {
+  bool _completed = false;
 
   Future<void> _completeSplash() async {
-    await Future<void>.delayed(_duration);
+    if (_completed) return;
+    _completed = true;
+    await ref.read(appControllerProvider.notifier).ready;
     if (!mounted) return;
     final user = ref.read(appControllerProvider).currentUser;
     if (user == null) {
-      setState(() => _isLeaving = true);
-      await WidgetsBinding.instance.endOfFrame;
-      if (!mounted) return;
-      context.pushReplacement('/welcome');
+      ref.read(preLoginEntranceSeenProvider.notifier).state = true;
+      context.go('/welcome');
       return;
     }
     context.go(user.onboardingCompleted ? '/discover' : '/onboarding');
   }
 
   @override
-  void dispose() {
-    _progress.dispose();
-    super.dispose();
+  Widget build(BuildContext context) => PortalEntranceAnimation(
+    phase: PortalEntrancePhase.beforeSignIn,
+    onCompleted: _completeSplash,
+  );
+}
+
+class PostLoginEntrancePage extends ConsumerStatefulWidget {
+  const PostLoginEntrancePage({super.key});
+
+  @override
+  ConsumerState<PostLoginEntrancePage> createState() =>
+      _PostLoginEntrancePageState();
+}
+
+class _PostLoginEntrancePageState extends ConsumerState<PostLoginEntrancePage> {
+  bool _completed = false;
+
+  void _continue() {
+    if (_completed || !mounted) return;
+    _completed = true;
+    final user = ref.read(appControllerProvider).currentUser;
+    context.go(
+      user == null
+          ? '/welcome'
+          : user.onboardingCompleted
+          ? '/discover'
+          : '/onboarding',
+    );
   }
 
   @override
-  Widget build(BuildContext context) {
-    if (_isLeaving) {
-      return const Scaffold(
-        body: SafeArea(
-          child: Center(
-            child: PullupLogo(
-              key: Key('splash-shared-logo'),
-              size: 128,
-              heroTag: PullupLogo.splashHeroTag,
-            ),
-          ),
-        ),
-      );
-    }
-    return Scaffold(
-      body: SafeArea(
-        child: Center(
-          child: Padding(
-            padding: const EdgeInsets.all(28),
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 280),
-              child: SlideTransition(
-                position: _slide,
-                child: FadeTransition(
-                  opacity: _fade,
-                  child: ScaleTransition(
-                    scale: _scale,
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const PullupLogo(
-                          key: Key('splash-shared-logo'),
-                          size: 128,
-                          heroTag: PullupLogo.splashHeroTag,
-                        ),
-                        const SizedBox(height: 18),
-                        const Text(
-                          AppConstants.appName,
-                          style: TextStyle(
-                            fontSize: 42,
-                            fontWeight: FontWeight.w900,
-                            height: 1,
-                            letterSpacing: 0,
-                          ),
-                        ),
-                        const SizedBox(height: 10),
-                        const Text(
-                          AppConstants.signature,
-                          style: TextStyle(
-                            color: AppColors.textSecondary,
-                            fontSize: 15,
-                            height: 1.2,
-                            letterSpacing: 0,
-                          ),
-                        ),
-                        const SizedBox(height: 34),
-                        FadeTransition(
-                          opacity: _detailsFade,
-                          child: Column(
-                            children: [
-                              const Text(
-                                "Finding tonight's move",
-                                style: TextStyle(
-                                  color: AppColors.textSecondary,
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w600,
-                                  height: 1.2,
-                                  letterSpacing: 0,
-                                ),
-                              ),
-                              const SizedBox(height: 12),
-                              SizedBox(
-                                width: 180,
-                                child: AnimatedBuilder(
-                                  animation: _progress,
-                                  builder: (context, _) =>
-                                      LinearProgressIndicator(
-                                        value: _progress.value,
-                                        minHeight: 3,
-                                        borderRadius: BorderRadius.circular(2),
-                                      ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
+  Widget build(BuildContext context) => PortalEntranceAnimation(
+    phase: PortalEntrancePhase.afterSignIn,
+    onCompleted: _continue,
+  );
 }
 
 class WelcomePage extends ConsumerWidget {
@@ -183,15 +80,15 @@ class WelcomePage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final state = ref.watch(appControllerProvider);
     final controller = ref.read(appControllerProvider.notifier);
     return WelcomeExperience(
-      onExploreGuest: () => controller.signInDemo(),
-      onOpenHost: () async {
-        await controller.signInDemo(asHost: true);
-        if (context.mounted) context.go('/host');
-      },
-      onSignIn: () => context.go('/login'),
+      onSignIn: (email, password) =>
+          controller.signIn(email: email, password: password),
       onCreateAccount: () => context.go('/register'),
+      onForgotPassword: () => context.go('/forgot-password'),
+      isLoading: state.loading,
+      errorMessage: state.errorMessage,
     );
   }
 }
@@ -204,8 +101,8 @@ class LoginPage extends ConsumerStatefulWidget {
 }
 
 class _LoginPageState extends ConsumerState<LoginPage> {
-  final _email = TextEditingController(text: 'maya@pullup.demo');
-  final _password = TextEditingController(text: 'pullup-demo');
+  final _email = TextEditingController(text: 'leo@pullup.demo');
+  final _password = TextEditingController(text: 'Pullup2026!');
   bool _obscurePassword = true;
 
   @override
@@ -213,6 +110,12 @@ class _LoginPageState extends ConsumerState<LoginPage> {
     _email.dispose();
     _password.dispose();
     super.dispose();
+  }
+
+  Future<void> _submit() {
+    return ref
+        .read(appControllerProvider.notifier)
+        .signIn(email: _email.text.trim(), password: _password.text);
   }
 
   @override
@@ -244,8 +147,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
               obscureText: _obscurePassword,
               textInputAction: TextInputAction.done,
               autofillHints: const [AutofillHints.password],
-              onSubmitted: (_) =>
-                  ref.read(appControllerProvider.notifier).signInDemo(),
+              onSubmitted: (_) => _submit(),
               decoration: InputDecoration(
                 labelText: context.tr('Password'),
                 prefixIcon: const Icon(Icons.lock_outline_rounded),
@@ -267,20 +169,17 @@ class _LoginPageState extends ConsumerState<LoginPage> {
             GradientButton(
               label: 'Sign in',
               icon: Icons.login_rounded,
-              onPressed: () =>
-                  ref.read(appControllerProvider.notifier).signInDemo(),
+              onPressed: _submit,
             ),
             const SizedBox(height: 10),
             OutlinedButton.icon(
-              onPressed: () =>
-                  ref.read(appControllerProvider.notifier).signInDemo(),
+              onPressed: _submit,
               icon: const Icon(Icons.g_mobiledata_rounded),
               label: const Text('Continue with Google'),
             ),
             const SizedBox(height: 10),
             OutlinedButton.icon(
-              onPressed: () =>
-                  ref.read(appControllerProvider.notifier).signInDemo(),
+              onPressed: _submit,
               icon: const Icon(Icons.apple_rounded),
               label: const Text('Continue with Apple'),
             ),

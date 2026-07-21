@@ -127,6 +127,16 @@
     * https://docs.flutter.dev/platform-integration/web/initialization
   -->
   <script>
+    // Remove service workers created by earlier PULLUP releases. They cached the
+    // whole Flutter shell and could keep Safari on an obsolete deployment.
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.getRegistrations().then(function (registrations) {
+        registrations.forEach(function (registration) {
+          registration.unregister();
+        });
+      });
+    }
+
     window.addEventListener('flutter-first-frame', function () {
       document.getElementById('pullup-loader')?.remove();
     });

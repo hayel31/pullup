@@ -14,6 +14,7 @@ class HostRequestCard extends StatelessWidget {
     required this.request,
     required this.guest,
     required this.event,
+    this.companionProfiles = const [],
     required this.onViewProfile,
     required this.onBlock,
     this.onApprove,
@@ -25,6 +26,7 @@ class HostRequestCard extends StatelessWidget {
   final EventRequest request;
   final UserProfile guest;
   final PartyEvent event;
+  final List<UserProfile> companionProfiles;
   final VoidCallback onViewProfile;
   final VoidCallback onBlock;
   final VoidCallback? onApprove;
@@ -52,7 +54,7 @@ class HostRequestCard extends StatelessWidget {
                             ? ''
                             : guest.profilePhotos.first),
                     fit: BoxFit.cover,
-                    errorWidget: const ColoredBox(
+                    errorWidget: ColoredBox(
                       color: AppColors.surfaceSecondary,
                       child: Icon(Icons.person_rounded, size: 30),
                     ),
@@ -134,12 +136,87 @@ class HostRequestCard extends StatelessWidget {
                     ? AppColors.primary.withValues(alpha: 0.2)
                     : AppColors.surfaceSecondary,
               ),
+              if (request.guestMenCount > 0)
+                PullupChip(
+                  label: context.tr(
+                    '+{count} men',
+                    values: {'count': request.guestMenCount},
+                  ),
+                  icon: Icons.man_rounded,
+                ),
+              if (request.guestWomenCount > 0)
+                PullupChip(
+                  label: context.tr(
+                    '+{count} women',
+                    values: {'count': request.guestWomenCount},
+                  ),
+                  icon: Icons.woman_rounded,
+                ),
               for (final badge in guest.badges.take(2))
                 PullupChip(label: badge.label, icon: Icons.verified_rounded),
               for (final interest in guest.interests.take(2))
                 PullupChip(label: interest),
             ],
           ),
+          if (companionProfiles.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.all(11),
+              decoration: BoxDecoration(
+                color: AppColors.primary.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(
+                  color: AppColors.primaryBright.withValues(alpha: 0.3),
+                ),
+              ),
+              child: Row(
+                children: [
+                  SizedBox(
+                    width: 38.0 + (companionProfiles.length - 1) * 24,
+                    height: 38,
+                    child: Stack(
+                      children: [
+                        for (
+                          var index = 0;
+                          index < companionProfiles.length;
+                          index++
+                        )
+                          Positioned(
+                            left: index * 24,
+                            child: _CompanionAvatar(
+                              profile: companionProfiles[index],
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 9),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'PULLUP friends in this group',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                        Text(
+                          companionProfiles
+                              .map((profile) => profile.firstName)
+                              .join(', '),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: Theme.of(context).textTheme.bodySmall,
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
           if (request.companionNames.isNotEmpty) ...[
             const SizedBox(height: 10),
             Row(
@@ -175,7 +252,7 @@ class HostRequestCard extends StatelessWidget {
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Icon(
+                  Icon(
                     Icons.format_quote_rounded,
                     size: 19,
                     color: AppColors.primaryBright,
@@ -233,6 +310,29 @@ class HostRequestCard extends StatelessWidget {
       return context.tr('{count}h ago', values: {'count': elapsed.inHours});
     }
     return context.tr('{count}d ago', values: {'count': elapsed.inDays});
+  }
+}
+
+class _CompanionAvatar extends StatelessWidget {
+  const _CompanionAvatar({required this.profile});
+
+  final UserProfile profile;
+
+  @override
+  Widget build(BuildContext context) {
+    final source =
+        profile.mainPhotoUrl ??
+        (profile.profilePhotos.isEmpty ? '' : profile.profilePhotos.first);
+    return Container(
+      width: 38,
+      height: 38,
+      padding: const EdgeInsets.all(2),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        shape: BoxShape.circle,
+      ),
+      child: ClipOval(child: PullupImage(source: source)),
+    );
   }
 }
 

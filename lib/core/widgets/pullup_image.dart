@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
@@ -32,6 +34,23 @@ class PullupImage extends StatelessWidget {
       );
     }
 
+    if (source.startsWith('data:image/')) {
+      try {
+        final separator = source.indexOf(',');
+        if (separator == -1) return fallback;
+        return Image.memory(
+          base64Decode(source.substring(separator + 1)),
+          fit: fit,
+          alignment: alignment,
+          filterQuality: FilterQuality.medium,
+          gaplessPlayback: true,
+          errorBuilder: (_, _, _) => fallback,
+        );
+      } on FormatException {
+        return fallback;
+      }
+    }
+
     return CachedNetworkImage(
       imageUrl: source,
       fit: fit,
@@ -42,12 +61,12 @@ class PullupImage extends StatelessWidget {
     );
   }
 
-  static const Widget _defaultPlaceholder = ColoredBox(
+  static Widget get _defaultPlaceholder => ColoredBox(
     color: AppColors.surfaceSecondary,
     child: Center(child: CircularProgressIndicator()),
   );
 
-  static const Widget _defaultFallback = ColoredBox(
+  static Widget get _defaultFallback => ColoredBox(
     color: AppColors.surfaceSecondary,
     child: Center(
       child: Icon(Icons.nightlife_rounded, color: AppColors.textSecondary),

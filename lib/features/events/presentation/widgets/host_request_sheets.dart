@@ -35,6 +35,7 @@ Future<bool> showApproveRequestSheet(
   required PartyEvent event,
   required EventRequest request,
   required UserProfile guest,
+  List<UserProfile> companionProfiles = const [],
 }) async {
   final canShareAccess = event.exactAddress?.trim().isNotEmpty ?? false;
   final remaining = event.availableSpots - request.groupSize;
@@ -84,6 +85,58 @@ Future<bool> showApproveRequestSheet(
                   ),
                 ),
               ],
+            ),
+            const SizedBox(height: 16),
+            Container(
+              padding: const EdgeInsets.all(13),
+              decoration: BoxDecoration(
+                color: AppColors.primary.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(
+                  color: AppColors.primaryBright.withValues(alpha: 0.3),
+                ),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Group you are approving',
+                    style: TextStyle(fontWeight: FontWeight.w800),
+                  ),
+                  const SizedBox(height: 10),
+                  _ApprovalMember(profile: guest, isRequester: true),
+                  for (final companion in companionProfiles) ...[
+                    const SizedBox(height: 8),
+                    _ApprovalMember(profile: companion),
+                  ],
+                  if (request.guestMenCount > 0 ||
+                      request.guestWomenCount > 0) ...[
+                    const SizedBox(height: 10),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: [
+                        if (request.guestMenCount > 0)
+                          PullupChip(
+                            label: context.tr(
+                              '+{count} men without account',
+                              values: {'count': request.guestMenCount},
+                            ),
+                            icon: Icons.man_rounded,
+                          ),
+                        if (request.guestWomenCount > 0)
+                          PullupChip(
+                            label: context.tr(
+                              '+{count} women without account',
+                              values: {'count': request.guestWomenCount},
+                            ),
+                            icon: Icons.woman_rounded,
+                          ),
+                      ],
+                    ),
+                  ],
+                ],
+              ),
             ),
             const SizedBox(height: 16),
             Container(
@@ -141,7 +194,7 @@ Future<bool> showApproveRequestSheet(
               ),
             ),
             const SizedBox(height: 14),
-            const Row(
+            Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Icon(
@@ -152,7 +205,7 @@ Future<bool> showApproveRequestSheet(
                 SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    'Approval creates a match and opens a private conversation.',
+                    'Approval opens a private group chat for 12 hours.',
                   ),
                 ),
               ],
@@ -177,6 +230,46 @@ Future<bool> showApproveRequestSheet(
     ),
   );
   return result ?? false;
+}
+
+class _ApprovalMember extends StatelessWidget {
+  const _ApprovalMember({required this.profile, this.isRequester = false});
+
+  final UserProfile profile;
+  final bool isRequester;
+
+  @override
+  Widget build(BuildContext context) {
+    final photo =
+        profile.mainPhotoUrl ??
+        (profile.profilePhotos.isEmpty ? '' : profile.profilePhotos.first);
+    return Row(
+      children: [
+        ClipOval(
+          child: SizedBox(
+            width: 34,
+            height: 34,
+            child: PullupImage(source: photo),
+          ),
+        ),
+        const SizedBox(width: 9),
+        Expanded(
+          child: Text(
+            '${profile.firstName}, ${profile.age}',
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
+        if (isRequester)
+          const PullupChip(label: 'Requester', icon: Icons.person_rounded)
+        else
+          const PullupChip(
+            label: 'PULLUP friend',
+            icon: Icons.verified_user_outlined,
+          ),
+      ],
+    );
+  }
 }
 
 Future<String?> showDeclineRequestSheet(

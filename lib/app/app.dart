@@ -4,8 +4,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../l10n/app_localizations.dart';
 import 'providers/locale_provider.dart';
+import 'providers/theme_provider.dart';
 import 'router.dart';
 import 'theme/app_colors.dart';
+import 'theme/app_palette.dart';
 import 'theme/app_theme.dart';
 
 class PullupApp extends ConsumerWidget {
@@ -15,12 +17,16 @@ class PullupApp extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final router = ref.watch(routerProvider);
     final locale = ref.watch(localeProvider);
+    final themePreset = ref.watch(themePresetProvider);
+    AppColors.apply(themePreset.palette);
 
     return MaterialApp.router(
       title: 'PULLUP',
       debugShowCheckedModeBanner: false,
       themeMode: ThemeMode.dark,
       theme: AppTheme.dark(),
+      themeAnimationDuration: const Duration(milliseconds: 280),
+      themeAnimationCurve: Curves.easeOutCubic,
       locale: locale,
       supportedLocales: AppLocalizations.supportedLocales,
       localizationsDelegates: const [
@@ -43,7 +49,7 @@ class PullupApp extends ConsumerWidget {
           child: Center(
             child: DecoratedBox(
               decoration: BoxDecoration(
-                border: const Border.symmetric(
+                border: Border.symmetric(
                   vertical: BorderSide(color: AppColors.border),
                 ),
                 boxShadow: [

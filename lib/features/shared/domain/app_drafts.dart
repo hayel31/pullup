@@ -115,10 +115,16 @@ class JoinEventDraft {
   const JoinEventDraft({
     required this.note,
     required this.groupSize,
-    required this.companionNames,
+    this.companionNames = const [],
+    this.companionUserIds = const [],
+    this.guestMenCount = 0,
+    this.guestWomenCount = 0,
   });
 
   final String note;
   final int groupSize;
   final List<String> companionNames;
+  final List<String> companionUserIds;
+  final int guestMenCount;
+  final int guestWomenCount;
 }

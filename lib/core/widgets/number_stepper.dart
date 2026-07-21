@@ -126,7 +126,7 @@ class _StepperButton extends StatelessWidget {
         foregroundColor: AppColors.textPrimary,
         disabledBackgroundColor: AppColors.surfaceElevated,
         disabledForegroundColor: AppColors.textSecondary,
-        side: const BorderSide(color: AppColors.border),
+        side: BorderSide(color: AppColors.border),
       ),
       icon: Text(
         symbol,

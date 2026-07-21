@@ -23,15 +23,16 @@ class PullupLogo extends StatelessWidget {
       gaplessPlayback: true,
       excludeFromSemantics: true,
     );
+    final clippedImage = ClipPath(clipper: _PullupLogoClipper(), child: image);
     final logo = heroTag == null
-        ? image
+        ? clippedImage
         : Hero(
             tag: heroTag!,
             transitionOnUserGestures: false,
             createRectTween: (begin, end) =>
                 MaterialRectCenterArcTween(begin: begin, end: end),
             flightShuttleBuilder: _buildFlightShuttle,
-            child: image,
+            child: clippedImage,
           );
 
     return Semantics(
@@ -66,6 +67,68 @@ class PullupLogo extends StatelessWidget {
       },
     );
   }
+}
+
+class _PullupLogoClipper extends CustomClipper<Path> {
+  @override
+  Path getClip(Size size) {
+    final width = size.width;
+    final height = size.height;
+    return Path()
+      ..moveTo(width * 0.5, height * 0.015)
+      ..cubicTo(
+        width * 0.27,
+        height * 0.015,
+        width * 0.13,
+        height * 0.16,
+        width * 0.13,
+        height * 0.37,
+      )
+      ..cubicTo(
+        width * 0.13,
+        height * 0.59,
+        width * 0.32,
+        height * 0.78,
+        width * 0.45,
+        height * 0.92,
+      )
+      ..cubicTo(
+        width * 0.48,
+        height * 0.955,
+        width * 0.52,
+        height * 0.955,
+        width * 0.55,
+        height * 0.92,
+      )
+      ..cubicTo(
+        width * 0.68,
+        height * 0.78,
+        width * 0.87,
+        height * 0.59,
+        width * 0.87,
+        height * 0.37,
+      )
+      ..cubicTo(
+        width * 0.87,
+        height * 0.16,
+        width * 0.73,
+        height * 0.015,
+        width * 0.5,
+        height * 0.015,
+      )
+      ..close()
+      ..addOval(
+        Rect.fromLTRB(
+          width * 0.25,
+          height * 0.875,
+          width * 0.75,
+          height * 0.985,
+        ),
+      );
+  }
+
+  @override
+  bool shouldReclip(_PullupLogoClipper oldClipper) => false;
 }
 
 class PullupBrand extends StatelessWidget {

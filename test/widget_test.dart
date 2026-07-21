@@ -2,43 +2,73 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:pullup/app/app.dart';
-import 'package:pullup/core/widgets/pullup_logo.dart';
+import 'package:pullup/app/providers/entrance_flow_provider.dart';
+import 'package:pullup/app/router.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
+  setUp(() {
+    SharedPreferences.setMockInitialValues({});
+  });
+
   testWidgets('shows the welcome experience', (tester) async {
     await tester.pumpWidget(const ProviderScope(child: PullupApp()));
+    await tester.pump(const Duration(seconds: 3));
     await tester.pumpAndSettle();
 
     expect(find.text('PULLUP'), findsWidgets);
-    expect(find.text("What's the move tonight?"), findsOneWidget);
+    expect(find.text('Your night starts here.'), findsOneWidget);
     expect(find.byKey(const Key('welcome-hero')), findsOneWidget);
     expect(find.byKey(const Key('language-picker')), findsOneWidget);
-    expect(find.byIcon(Icons.nightlife_rounded), findsOneWidget);
-    expect(find.byIcon(Icons.home_work_outlined), findsOneWidget);
+    expect(find.byKey(const Key('auth-mode-sign-in')), findsOneWidget);
+    expect(find.byKey(const Key('auth-mode-register')), findsOneWidget);
+    expect(find.byKey(const Key('welcome-email')), findsOneWidget);
     expect(find.byIcon(Icons.mail_outline_rounded), findsOneWidget);
   });
 
-  testWidgets('keeps the branded splash visible before routing', (
+  testWidgets('plays the portal entrance before routing to sign in', (
     tester,
   ) async {
     await tester.pumpWidget(const ProviderScope(child: PullupApp()));
 
-    final sharedLogoHero = find.byWidgetPredicate(
-      (widget) => widget is Hero && widget.tag == PullupLogo.splashHeroTag,
-    );
-
-    expect(find.text("Finding tonight's move"), findsOneWidget);
-    expect(find.byType(LinearProgressIndicator), findsOneWidget);
-    expect(sharedLogoHero, findsOneWidget);
+    expect(find.byKey(const Key('portal-before-sign-in')), findsOneWidget);
+    expect(find.byKey(const Key('portal-animated-scene')), findsOneWidget);
+    expect(find.byKey(const Key('portal-walker')), findsOneWidget);
+    expect(find.text('PREVIEW 1 / BEFORE SIGN IN'), findsNothing);
+    expect(find.text('PULLUP'), findsOneWidget);
 
     await tester.pump(const Duration(seconds: 2));
-    expect(find.text("Finding tonight's move"), findsOneWidget);
+    expect(find.byKey(const Key('portal-before-sign-in')), findsOneWidget);
 
-    await tester.pump(const Duration(milliseconds: 700));
-    expect(find.text("Finding tonight's move"), findsNothing);
-    expect(sharedLogoHero, findsWidgets);
+    await tester.pump(const Duration(milliseconds: 1800));
     await tester.pumpAndSettle();
-    expect(find.text("What's the move tonight?"), findsOneWidget);
-    expect(sharedLogoHero, findsOneWidget);
+    expect(find.byKey(const Key('portal-before-sign-in')), findsNothing);
+    expect(find.text('Your night starts here.'), findsOneWidget);
+  });
+
+  testWidgets('a restored welcome URL cannot skip the pre-login entrance', (
+    tester,
+  ) async {
+    final container = ProviderContainer();
+    addTearDown(container.dispose);
+    await tester.pumpWidget(
+      UncontrolledProviderScope(container: container, child: const PullupApp()),
+    );
+    await tester.pump(const Duration(milliseconds: 3700));
+    await tester.pumpAndSettle();
+
+    container.read(routerProvider).go('/login');
+    await tester.pumpAndSettle();
+    container.read(preLoginEntranceSeenProvider.notifier).state = false;
+    await tester.pump();
+    container.read(routerProvider).go('/welcome');
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+
+    expect(
+      container.read(routerProvider).routeInformationProvider.value.uri.path,
+      '/splash',
+    );
+    expect(find.byKey(const Key('portal-before-sign-in')), findsOneWidget);
   });
 }

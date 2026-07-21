@@ -107,7 +107,10 @@ final myConversationsProvider = Provider<List<ChatConversation>>((ref) {
   final user = state.currentUser;
   if (user == null) return const [];
   return state.conversations
-      .where((conversation) => conversation.memberIds.contains(user.id))
+      .where(
+        (conversation) =>
+            conversation.memberIds.contains(user.id) && !conversation.isExpired,
+      )
       .toList()
     ..sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
 });
@@ -121,6 +124,8 @@ final myNotificationsProvider = Provider<List<NotificationItem>>((ref) {
       .toList()
     ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
 });
+
+enum AppExperience { guest, host }
 
 class PullupState {
   const PullupState({
@@ -139,6 +144,7 @@ class PullupState {
     required this.swipedEventIds,
     required this.rejectedEventIds,
     required this.filter,
+    required this.activeExperience,
     this.lastSwipedEventId,
   });
 
@@ -159,6 +165,7 @@ class PullupState {
       swipedEventIds: snapshot.swipedEventIds,
       rejectedEventIds: snapshot.rejectedEventIds,
       filter: DiscoverFilter.defaults,
+      activeExperience: AppExperience.guest,
     );
   }
 
@@ -177,6 +184,7 @@ class PullupState {
   final Map<String, Set<String>> swipedEventIds;
   final Map<String, Set<String>> rejectedEventIds;
   final DiscoverFilter filter;
+  final AppExperience activeExperience;
   final String? lastSwipedEventId;
 
   bool get isAuthenticated => currentUser != null;
@@ -201,6 +209,7 @@ class PullupState {
     Map<String, Set<String>>? swipedEventIds,
     Map<String, Set<String>>? rejectedEventIds,
     DiscoverFilter? filter,
+    AppExperience? activeExperience,
     String? lastSwipedEventId,
     bool clearLastSwiped = false,
   }) {
@@ -220,6 +229,7 @@ class PullupState {
       swipedEventIds: swipedEventIds ?? this.swipedEventIds,
       rejectedEventIds: rejectedEventIds ?? this.rejectedEventIds,
       filter: filter ?? this.filter,
+      activeExperience: activeExperience ?? this.activeExperience,
       lastSwipedEventId: clearLastSwiped
           ? null
           : lastSwipedEventId ?? this.lastSwipedEventId,
@@ -229,14 +239,28 @@ class PullupState {
 
 class AppController extends StateNotifier<PullupState> {
   AppController(this._repository)
-    : super(PullupState.fromSnapshot(_repository.snapshot));
+    : super(PullupState.fromSnapshot(_repository.snapshot)) {
+    ready = _restoreSession();
+  }
 
   final PullupRepository _repository;
+  late final Future<void> ready;
+
+  Future<void> signIn({required String email, required String password}) async {
+    await _run(() async {
+      final user = await _repository.signIn(email: email, password: password);
+      _sync(currentUserId: user.id);
+      state = state.copyWith(activeExperience: AppExperience.guest);
+    });
+  }
 
   Future<void> signInDemo({bool asHost = false}) async {
     await _run(() async {
       final user = await _repository.signInDemo(asHost: asHost);
       _sync(currentUserId: user.id);
+      state = state.copyWith(
+        activeExperience: asHost ? AppExperience.host : AppExperience.guest,
+      );
     });
   }
 
@@ -244,11 +268,21 @@ class AppController extends StateNotifier<PullupState> {
     await _run(() async {
       final user = await _repository.register(draft);
       _sync(currentUserId: user.id);
+      state = state.copyWith(activeExperience: AppExperience.guest);
     });
   }
 
   Future<void> signOut() async {
-    state = state.copyWith(clearCurrentUser: true, clearLastSwiped: true);
+    await _repository.signOut();
+    state = state.copyWith(
+      clearCurrentUser: true,
+      clearLastSwiped: true,
+      activeExperience: AppExperience.guest,
+    );
+  }
+
+  void setActiveExperience(AppExperience experience) {
+    state = state.copyWith(activeExperience: experience);
   }
 
   Future<void> completeOnboarding(ProfileUpdateDraft draft) async {
@@ -264,6 +298,22 @@ class AppController extends StateNotifier<PullupState> {
     await _run(() async {
       final updated = await _repository.updateProfile(user.id, draft);
       _sync(currentUserId: updated.id);
+    });
+  }
+
+  Future<void> addFriend(String friendId) async {
+    final user = _requireUser();
+    await _run(() async {
+      await _repository.addFriend(user.id, friendId);
+      _sync(currentUserId: user.id);
+    });
+  }
+
+  Future<void> removeFriend(String friendId) async {
+    final user = _requireUser();
+    await _run(() async {
+      await _repository.removeFriend(user.id, friendId);
+      _sync(currentUserId: user.id);
     });
   }
 
@@ -285,6 +335,7 @@ class AppController extends StateNotifier<PullupState> {
     await _run(() async {
       await _repository.createEvent(user.id, draft);
       _sync(currentUserId: user.id);
+      state = state.copyWith(activeExperience: AppExperience.host);
     });
   }
 
@@ -480,6 +531,17 @@ class AppController extends StateNotifier<PullupState> {
         loading: false,
         errorMessage: 'Unexpected error: $error',
       );
+    }
+  }
+
+  Future<void> _restoreSession() async {
+    try {
+      final user = await _repository.restoreSession();
+      _sync(currentUserId: user?.id);
+    } on AppException catch (error) {
+      state = state.copyWith(errorMessage: error.message);
+    } catch (_) {
+      // A failed local restore should never block the sign-in screen.
     }
   }
 

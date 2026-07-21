@@ -21,6 +21,8 @@ class DemoSeed {
     'event-006': ['assets/demo/events/private-dj-set.jpg'],
     'event-007': ['assets/demo/events/birthday-suite.jpg'],
     'event-008': ['assets/demo/events/pigalle-after.jpg'],
+    'event-009': ['assets/demo/events/private-dj-set.jpg'],
+    'event-010': ['assets/demo/events/villa-pool-party.jpg'],
   };
 
   static PullupSnapshot build() {
@@ -171,10 +173,17 @@ class DemoSeed {
         5,
       ),
     ];
+    _connectFriends(users, 'user-001', 'user-002');
+    _connectFriends(users, 'user-001', 'user-003');
+    _connectFriends(users, 'user-001', 'user-004');
+    _connectFriends(users, 'user-002', 'user-003');
+    _connectFriends(users, 'host-001', 'user-005');
+    _connectFriends(users, 'host-001', 'user-006');
 
     final host1 = users[1];
     final host2 = users[2];
     final host3 = users[3];
+    final host4 = users[4];
     final events = <PartyEvent>[
       _event(
         id: 'event-001',
@@ -331,6 +340,51 @@ class DemoSeed {
         boosted: false,
         exactAddress: '18 Rue Frochot, 75009 Paris',
       ),
+      _event(
+        id: 'event-009',
+        host: host4,
+        title: 'Neon DJ session',
+        category: EventCategory.privateDjSet,
+        area: 'Oberkampf',
+        city: 'Paris',
+        start: now.add(const Duration(hours: 3)),
+        end: now.add(const Duration(hours: 8)),
+        spots: 7,
+        max: 22,
+        imageId: 1062,
+        tags: [
+          EventTag.dj,
+          EventTag.indoor,
+          EventTag.dancing,
+          EventTag.invitationOnly,
+        ],
+        genres: ['Techno', 'House', 'Electro'],
+        boosted: true,
+        exactAddress: '26 Rue Oberkampf, 75011 Paris',
+      ),
+      _event(
+        id: 'event-010',
+        host: host2,
+        title: 'Villa pool night in Cannes',
+        category: EventCategory.villaParty,
+        area: 'Palm Beach',
+        city: 'Cannes',
+        start: now.add(const Duration(hours: 1, minutes: 30)),
+        end: now.add(const Duration(hours: 7)),
+        spots: 9,
+        max: 28,
+        imageId: 1091,
+        tags: [
+          EventTag.pool,
+          EventTag.outdoor,
+          EventTag.dj,
+          EventTag.groupsWelcome,
+          EventTag.lastMinute,
+        ],
+        genres: ['House', 'Afro', 'R&B'],
+        boosted: true,
+        exactAddress: '12 Avenue du Parc Madrid, 06400 Cannes',
+      ),
     ];
 
     final pending = EventRequest(
@@ -362,7 +416,9 @@ class DemoSeed {
       requesterId: 'user-006',
       note: 'Three of us, respectful and happy to bring ice and soft drinks.',
       groupSize: 3,
-      companionNames: const ['Nora', 'Yanis'],
+      companionNames: const [],
+      guestMenCount: 1,
+      guestWomenCount: 1,
       status: RequestStatus.pending,
       createdAt: now.subtract(const Duration(minutes: 41)),
     );
@@ -396,21 +452,29 @@ class DemoSeed {
       eventId: 'event-006',
       hostId: 'host-001',
       requesterId: 'user-001',
-      note: 'I am around Canal and can pull up fast.',
-      groupSize: 1,
+      note: 'Enzo and I are around Canal and can pull up fast.',
+      groupSize: 2,
       companionNames: const [],
+      companionUserIds: const ['user-002'],
       status: RequestStatus.accepted,
       createdAt: now.subtract(const Duration(hours: 1)),
       decidedAt: now.subtract(const Duration(minutes: 42)),
+    );
+    final loftIndex = events.indexWhere((event) => event.id == 'event-006');
+    events[loftIndex] = events[loftIndex].copyWith(
+      acceptedParticipantIds: const ['user-001', 'user-002'],
+      availableSpots: events[loftIndex].availableSpots - 2,
     );
 
     final conversation = ChatConversation(
       id: 'conversation-001',
       eventId: 'event-006',
-      memberIds: const ['user-001', 'host-001'],
-      lastMessagePreview: 'Exact address unlocked. See you soon.',
+      memberIds: const ['user-001', 'user-002', 'host-001'],
+      lastMessagePreview: 'Enzo: We are on our way.',
       updatedAt: now.subtract(const Duration(minutes: 40)),
       unreadByUserIds: const ['user-001'],
+      isGroup: true,
+      expiresAt: now.add(const Duration(hours: 11, minutes: 20)),
     );
     final rooftopConversation = ChatConversation(
       id: 'conversation-002',
@@ -419,6 +483,8 @@ class DemoSeed {
       lastMessagePreview: 'Access unlocked for Rooftop near Bastille.',
       updatedAt: now.subtract(const Duration(hours: 1, minutes: 34)),
       unreadByUserIds: const ['user-002'],
+      isGroup: true,
+      expiresAt: now.add(const Duration(hours: 10, minutes: 25)),
     );
     final messages = [
       ChatMessage(
@@ -429,6 +495,15 @@ class DemoSeed {
         text: 'Match created for Private DJ set in loft.',
         createdAt: now.subtract(const Duration(minutes: 42)),
         readByUserIds: const ['host-001'],
+      ),
+      ChatMessage(
+        id: 'message-005',
+        conversationId: conversation.id,
+        senderId: 'user-002',
+        type: MessageType.text,
+        text: 'We are on our way.',
+        createdAt: now.subtract(const Duration(minutes: 39)),
+        readByUserIds: const ['user-002'],
       ),
       ChatMessage(
         id: 'message-002',
@@ -599,6 +674,22 @@ class DemoSeed {
       lastActiveAt: now.subtract(const Duration(minutes: 9)),
       accountStatus: AccountStatus.active,
       onboardingCompleted: onboarded,
+    );
+  }
+
+  static void _connectFriends(
+    List<UserProfile> users,
+    String firstId,
+    String secondId,
+  ) {
+    final firstIndex = users.indexWhere((user) => user.id == firstId);
+    final secondIndex = users.indexWhere((user) => user.id == secondId);
+    if (firstIndex == -1 || secondIndex == -1) return;
+    users[firstIndex] = users[firstIndex].copyWith(
+      friendIds: {...users[firstIndex].friendIds, secondId}.toList(),
+    );
+    users[secondIndex] = users[secondIndex].copyWith(
+      friendIds: {...users[secondIndex].friendIds, firstId}.toList(),
     );
   }
 

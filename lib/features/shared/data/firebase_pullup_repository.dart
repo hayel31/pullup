@@ -25,6 +25,10 @@ class FirebasePullupRepository implements PullupRepository {
       _notConfigured();
 
   @override
+  Future<UserProfile> addFriend(String userId, String friendId) =>
+      _notConfigured();
+
+  @override
   Future<UserProfile> completeOnboarding(
     String userId,
     ProfileUpdateDraft draft,
@@ -68,6 +72,10 @@ class FirebasePullupRepository implements PullupRepository {
   ) => _notConfigured();
 
   @override
+  Future<UserProfile> removeFriend(String userId, String friendId) =>
+      _notConfigured();
+
+  @override
   Future<void> requestDj({
     required String hostId,
     required String djId,
@@ -83,7 +91,19 @@ class FirebasePullupRepository implements PullupRepository {
   ) => _notConfigured();
 
   @override
+  Future<UserProfile?> restoreSession() => _notConfigured();
+
+  @override
+  Future<UserProfile> signIn({
+    required String email,
+    required String password,
+  }) => _notConfigured();
+
+  @override
   Future<UserProfile> signInDemo({required bool asHost}) => _notConfigured();
+
+  @override
+  Future<void> signOut() => _notConfigured();
 
   @override
   Future<UserProfile> register(SignUpDraft draft) => _notConfigured();

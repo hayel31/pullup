@@ -70,20 +70,26 @@ class TonightFeaturedEventCard extends StatelessWidget {
                     top: 14,
                     child: Row(
                       children: [
-                        _StatusPill(
-                          label: tonightShortStatus(event, now),
-                          icon: isTonightHappening(event, now)
-                              ? Icons.graphic_eq_rounded
-                              : Icons.bolt_rounded,
-                          color: accent,
+                        Flexible(
+                          child: Align(
+                            alignment: Alignment.centerLeft,
+                            child: _StatusPill(
+                              label: tonightShortStatus(event, now),
+                              icon: isTonightHappening(event, now)
+                                  ? Icons.graphic_eq_rounded
+                                  : Icons.bolt_rounded,
+                              color: accent,
+                            ),
+                          ),
                         ),
-                        const Spacer(),
-                        if (event.isBoosted)
-                          const _StatusPill(
+                        if (event.isBoosted) ...[
+                          const SizedBox(width: 8),
+                          _StatusPill(
                             label: 'Boosted',
                             icon: Icons.trending_up_rounded,
                             color: AppColors.blue,
                           ),
+                        ],
                       ],
                     ),
                   ),
@@ -169,9 +175,13 @@ class _StatusPill extends StatelessWidget {
         children: [
           Icon(icon, size: 14, color: color),
           const SizedBox(width: 5),
-          Text(
-            label,
-            style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w800),
+          Flexible(
+            child: Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w800),
+            ),
           ),
         ],
       ),

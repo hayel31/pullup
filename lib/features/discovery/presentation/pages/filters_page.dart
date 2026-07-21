@@ -59,7 +59,7 @@ class _FiltersPageState extends ConsumerState<FiltersPage> {
               ),
               Text(
                 '${_filter.distanceKm.round()} km',
-                style: const TextStyle(
+                style: TextStyle(
                   color: AppColors.primaryBright,
                   fontWeight: FontWeight.w800,
                 ),
@@ -182,7 +182,7 @@ class _FiltersPageState extends ConsumerState<FiltersPage> {
         ],
       ),
       bottomNavigationBar: DecoratedBox(
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           color: AppColors.surface,
           border: Border(top: BorderSide(color: AppColors.border)),
         ),

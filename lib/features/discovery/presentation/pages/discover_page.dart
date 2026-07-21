@@ -10,9 +10,25 @@ import '../../../../app/theme/app_colors.dart';
 import '../../../../core/widgets/app_state_views.dart';
 import '../../../../core/widgets/gradient_button.dart';
 import '../../../../core/widgets/number_stepper.dart';
+import '../../../../core/widgets/pullup_image.dart';
 import '../../../../models/party_event.dart';
+import '../../../../models/user_profile.dart';
 import '../../../shared/domain/app_drafts.dart';
 import '../widgets/swipe_event_deck.dart';
+
+Future<bool> showJoinEventSheet(
+  BuildContext context, {
+  required PartyEvent event,
+}) async {
+  HapticFeedback.selectionClick();
+  return await showModalBottomSheet<bool>(
+        context: context,
+        isScrollControlled: true,
+        useSafeArea: true,
+        builder: (context) => _RequestSheet(event: event),
+      ) ??
+      false;
+}
 
 class DiscoverPage extends ConsumerStatefulWidget {
   const DiscoverPage({super.key});
@@ -133,14 +149,7 @@ class _DiscoverPageState extends ConsumerState<DiscoverPage> {
   }
 
   Future<bool> _openRequestSheet(BuildContext context, PartyEvent event) async {
-    HapticFeedback.selectionClick();
-    return await showModalBottomSheet<bool>(
-          context: context,
-          isScrollControlled: true,
-          useSafeArea: true,
-          builder: (context) => _RequestSheet(event: event),
-        ) ??
-        false;
+    return showJoinEventSheet(context, event: event);
   }
 }
 
@@ -155,9 +164,14 @@ class _RequestSheet extends ConsumerStatefulWidget {
 
 class _RequestSheetState extends ConsumerState<_RequestSheet> {
   final _note = TextEditingController();
-  int _groupSize = 1;
+  final Set<String> _selectedFriendIds = {};
+  int _guestMenCount = 0;
+  int _guestWomenCount = 0;
   bool _submitting = false;
   String? _groupLimitMessage;
+
+  int get _groupSize =>
+      1 + _selectedFriendIds.length + _guestMenCount + _guestWomenCount;
 
   int get _requestLimit {
     if (!widget.event.allowsGroups) return 1;
@@ -178,6 +192,18 @@ class _RequestSheetState extends ConsumerState<_RequestSheet> {
     final errorMessage = ref.watch(
       appControllerProvider.select((state) => state.errorMessage),
     );
+    final state = ref.watch(appControllerProvider);
+    final currentUser = state.currentUser;
+    final friends = currentUser == null
+        ? const <UserProfile>[]
+        : state.users
+              .where((user) => currentUser.friendIds.contains(user.id))
+              .where(
+                (user) =>
+                    !user.blockedUserIds.contains(widget.event.hostId) &&
+                    !currentUser.blockedUserIds.contains(user.id),
+              )
+              .toList();
     return SafeArea(
       child: SingleChildScrollView(
         keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
@@ -236,22 +262,143 @@ class _RequestSheetState extends ConsumerState<_RequestSheet> {
               ],
             ),
             const SizedBox(height: 18),
-            Text('People', style: Theme.of(context).textTheme.titleMedium),
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    'Your PULLUP friends',
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                ),
+                TextButton.icon(
+                  onPressed: _submitting ? null : _openFriends,
+                  icon: const Icon(Icons.person_add_alt_1_rounded, size: 18),
+                  label: const Text('Manage'),
+                ),
+              ],
+            ),
             const SizedBox(height: 8),
+            if (friends.isEmpty)
+              Container(
+                padding: const EdgeInsets.all(13),
+                decoration: BoxDecoration(
+                  color: AppColors.surfaceSecondary,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: AppColors.border),
+                ),
+                child: const Row(
+                  children: [
+                    Icon(
+                      Icons.group_add_outlined,
+                      color: AppColors.textSecondary,
+                    ),
+                    SizedBox(width: 10),
+                    Expanded(
+                      child: Text(
+                        'Add friends to identify them to the host and include them in the group chat.',
+                      ),
+                    ),
+                  ],
+                ),
+              )
+            else
+              SizedBox(
+                height: 98,
+                child: ListView.separated(
+                  scrollDirection: Axis.horizontal,
+                  itemCount: friends.length,
+                  separatorBuilder: (_, _) => const SizedBox(width: 9),
+                  itemBuilder: (context, index) {
+                    final friend = friends[index];
+                    return _FriendPickerItem(
+                      friend: friend,
+                      selected: _selectedFriendIds.contains(friend.id),
+                      onTap: _submitting
+                          ? null
+                          : () => _toggleFriend(friend.id),
+                    );
+                  },
+                ),
+              ),
+            const SizedBox(height: 18),
+            Text(
+              'Guests without a PULLUP account',
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+            const SizedBox(height: 4),
+            const Text(
+              'The host sees the composition, but only PULLUP members join the chat.',
+              style: TextStyle(color: AppColors.textSecondary),
+            ),
+            const SizedBox(height: 10),
             NumberStepper(
-              label: 'People in this request',
-              value: _groupSize,
-              minValue: 1,
-              maxValue: _requestLimit,
-              decreaseButtonKey: const Key('group-remove-button'),
-              increaseButtonKey: const Key('group-add-button'),
-              helperText: context.tr(_groupLimitMessage ?? _groupLimitHelper),
+              label: 'Men guests',
+              value: _guestMenCount,
+              minValue: 0,
+              maxValue: _guestMenCount + (_requestLimit - _groupSize),
+              decreaseButtonKey: const Key('guest-men-remove-button'),
+              increaseButtonKey: const Key('guest-men-add-button'),
+              helperText: context.tr('+ men'),
               onChanged: (value) => setState(() {
-                _groupSize = value;
+                _guestMenCount = value;
                 _groupLimitMessage = null;
               }),
               onMaximumPressed: _submitting ? null : _showGroupLimit,
             ),
+            const SizedBox(height: 10),
+            NumberStepper(
+              label: 'Women guests',
+              value: _guestWomenCount,
+              minValue: 0,
+              maxValue: _guestWomenCount + (_requestLimit - _groupSize),
+              decreaseButtonKey: const Key('guest-women-remove-button'),
+              increaseButtonKey: const Key('guest-women-add-button'),
+              helperText: context.tr('+ women'),
+              onChanged: (value) => setState(() {
+                _guestWomenCount = value;
+                _groupLimitMessage = null;
+              }),
+              onMaximumPressed: _submitting ? null : _showGroupLimit,
+            ),
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.all(13),
+              decoration: BoxDecoration(
+                color: AppColors.primary.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(
+                  color: AppColors.primaryBright.withValues(alpha: 0.38),
+                ),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.groups_rounded, color: AppColors.primaryBright),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      context.tr(
+                        '{count} of {max} people in this request',
+                        values: {'count': _groupSize, 'max': _requestLimit},
+                      ),
+                      style: const TextStyle(fontWeight: FontWeight.w800),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            if (_groupLimitMessage != null) ...[
+              const SizedBox(height: 8),
+              Text(
+                _groupLimitMessage!,
+                style: const TextStyle(color: AppColors.warning),
+              ),
+            ] else ...[
+              const SizedBox(height: 8),
+              Text(
+                _groupLimitHelper,
+                style: const TextStyle(color: AppColors.textSecondary),
+              ),
+            ],
             if (errorMessage != null) ...[
               const SizedBox(height: 12),
               Text(
@@ -281,6 +428,9 @@ class _RequestSheetState extends ConsumerState<_RequestSheet> {
             note: _note.text.trim(),
             groupSize: _groupSize,
             companionNames: const [],
+            companionUserIds: _selectedFriendIds.toList(),
+            guestMenCount: _guestMenCount,
+            guestWomenCount: _guestWomenCount,
           ),
         );
     if (!mounted) return;
@@ -303,6 +453,30 @@ class _RequestSheetState extends ConsumerState<_RequestSheet> {
     });
   }
 
+  void _toggleFriend(String friendId) {
+    if (_selectedFriendIds.contains(friendId)) {
+      setState(() {
+        _selectedFriendIds.remove(friendId);
+        _groupLimitMessage = null;
+      });
+      return;
+    }
+    if (_groupSize >= _requestLimit) {
+      _showGroupLimit();
+      return;
+    }
+    setState(() {
+      _selectedFriendIds.add(friendId);
+      _groupLimitMessage = null;
+    });
+  }
+
+  void _openFriends() {
+    final router = GoRouter.of(context);
+    Navigator.of(context).pop(false);
+    router.push('/friends');
+  }
+
   String get _groupLimitHelper {
     if (!widget.event.allowsGroups) {
       return 'This event accepts individual requests only.';
@@ -311,6 +485,96 @@ class _RequestSheetState extends ConsumerState<_RequestSheet> {
       return 'Only one spot is still available.';
     }
     return 'Up to $_requestLimit people, based on the host limit and spots left.';
+  }
+}
+
+class _FriendPickerItem extends StatelessWidget {
+  const _FriendPickerItem({
+    required this.friend,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final UserProfile friend;
+  final bool selected;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final photo =
+        friend.mainPhotoUrl ??
+        (friend.profilePhotos.isEmpty ? '' : friend.profilePhotos.first);
+    return Semantics(
+      button: true,
+      selected: selected,
+      label: context.tr(
+        '{name}, {status}',
+        values: {
+          'name': friend.displayName,
+          'status': selected ? 'selected' : 'not selected',
+        },
+      ),
+      child: InkWell(
+        key: Key('request-friend-${friend.id}'),
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(8),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 160),
+          width: 78,
+          padding: const EdgeInsets.all(7),
+          decoration: BoxDecoration(
+            color: selected
+                ? AppColors.primary.withValues(alpha: 0.22)
+                : AppColors.surfaceSecondary,
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(
+              color: selected ? AppColors.magenta : AppColors.border,
+              width: selected ? 1.5 : 1,
+            ),
+          ),
+          child: Column(
+            children: [
+              Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  ClipOval(
+                    child: SizedBox(
+                      width: 50,
+                      height: 50,
+                      child: PullupImage(source: photo),
+                    ),
+                  ),
+                  if (selected)
+                    Positioned(
+                      right: -3,
+                      bottom: -2,
+                      child: CircleAvatar(
+                        radius: 10,
+                        backgroundColor: AppColors.magenta,
+                        child: Icon(
+                          Icons.check_rounded,
+                          size: 14,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+              const SizedBox(height: 6),
+              Text(
+                friend.firstName,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }
 

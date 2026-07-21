@@ -11,6 +11,7 @@ import '../features/events/presentation/pages/create_event_page.dart';
 import '../features/events/presentation/pages/event_detail_page.dart';
 import '../features/events/presentation/pages/host_dashboard_page.dart';
 import '../features/events/presentation/pages/host_requests_page.dart';
+import '../features/friends/presentation/pages/friends_page.dart';
 import '../features/matches/presentation/pages/matches_page.dart';
 import '../features/notifications/presentation/pages/notifications_page.dart';
 import '../features/onboarding/presentation/pages/onboarding_page.dart';
@@ -18,10 +19,12 @@ import '../features/premium/presentation/pages/premium_page.dart';
 import '../features/profile/presentation/pages/edit_profile_page.dart';
 import '../features/profile/presentation/pages/profile_page.dart';
 import '../features/safety/presentation/pages/safety_page.dart';
+import '../features/settings/presentation/pages/appearance_page.dart';
 import '../features/settings/presentation/pages/settings_page.dart';
 import '../features/shared/presentation/main_shell.dart';
 import '../features/tonight/presentation/pages/tonight_page.dart';
 import 'providers/app_state.dart';
+import 'providers/entrance_flow_provider.dart';
 
 final routerProvider = Provider<GoRouter>((ref) {
   final refreshNotifier = _RouterRefreshNotifier();
@@ -31,6 +34,15 @@ final routerProvider = Provider<GoRouter>((ref) {
       (state) =>
           (state.currentUser?.id, state.currentUser?.onboardingCompleted),
     ),
+    (previous, next) {
+      if (previous?.$1 != null && next.$1 == null) {
+        ref.read(preLoginEntranceSeenProvider.notifier).state = false;
+      }
+      refreshNotifier.refresh();
+    },
+  );
+  ref.listen(
+    preLoginEntranceSeenProvider,
     (_, _) => refreshNotifier.refresh(),
   );
 
@@ -53,6 +65,11 @@ final routerProvider = Provider<GoRouter>((ref) {
       if (path == '/splash') {
         return null;
       }
+      if (user == null &&
+          path == '/welcome' &&
+          !ref.read(preLoginEntranceSeenProvider)) {
+        return '/splash';
+      }
       if (user == null && !isPublic) {
         return '/welcome';
       }
@@ -60,18 +77,22 @@ final routerProvider = Provider<GoRouter>((ref) {
         return '/onboarding';
       }
       if (user != null && user.onboardingCompleted && isPublic) {
-        return '/discover';
+        return '/entrance';
       }
       return null;
     },
     routes: [
       GoRoute(path: '/splash', builder: (context, state) => const SplashPage()),
       GoRoute(
+        path: '/entrance',
+        builder: (context, state) => const PostLoginEntrancePage(),
+      ),
+      GoRoute(
         path: '/welcome',
         pageBuilder: (context, state) => CustomTransitionPage<void>(
           key: state.pageKey,
-          transitionDuration: const Duration(milliseconds: 620),
-          reverseTransitionDuration: const Duration(milliseconds: 420),
+          transitionDuration: const Duration(milliseconds: 220),
+          reverseTransitionDuration: const Duration(milliseconds: 160),
           child: const WelcomePage(),
           transitionsBuilder: (context, animation, secondaryAnimation, child) {
             final entrance = CurvedAnimation(
@@ -109,8 +130,11 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => const OnboardingPage(),
       ),
       StatefulShellRoute.indexedStack(
-        builder: (context, state, navigationShell) =>
-            MainShell(navigationShell: navigationShell),
+        pageBuilder: (context, state, navigationShell) =>
+            NoTransitionPage<void>(
+              key: state.pageKey,
+              child: MainShell(navigationShell: navigationShell),
+            ),
         branches: [
           StatefulShellBranch(
             routes: [
@@ -170,7 +194,10 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/host',
-        builder: (context, state) => const HostDashboardPage(),
+        pageBuilder: (context, state) => NoTransitionPage<void>(
+          key: state.pageKey,
+          child: const HostDashboardPage(),
+        ),
       ),
       GoRoute(
         path: '/chat/:conversationId',
@@ -185,6 +212,10 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/profile/edit',
         builder: (context, state) => const EditProfilePage(),
       ),
+      GoRoute(
+        path: '/friends',
+        builder: (context, state) => const FriendsPage(),
+      ),
       GoRoute(path: '/safety', builder: (context, state) => const SafetyPage()),
       GoRoute(
         path: '/premium',
@@ -194,6 +225,10 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/settings',
         builder: (context, state) => const SettingsPage(),
+      ),
+      GoRoute(
+        path: '/settings/appearance',
+        builder: (context, state) => const AppearancePage(),
       ),
     ],
     errorBuilder: (context, state) => Scaffold(

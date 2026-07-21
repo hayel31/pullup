@@ -6,6 +6,7 @@ import '../../../app/theme/app_colors.dart';
 import '../../../core/widgets/language_picker_button.dart';
 import '../../../core/widgets/pullup_logo.dart';
 import '../../../l10n/app_material.dart';
+import 'widgets/experience_mode_switcher.dart';
 
 class MainShell extends ConsumerWidget {
   const MainShell({required this.navigationShell, super.key});
@@ -22,6 +23,7 @@ class MainShell extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    Theme.of(context);
     final notifications = ref
         .watch(myNotificationsProvider)
         .where((item) => !item.read)
@@ -34,10 +36,28 @@ class MainShell extends ConsumerWidget {
           ),
         )
         .length;
+    final pendingHostRequests = ref.watch(hostRequestsProvider).length;
 
     return Scaffold(
       appBar: AppBar(
         title: const PullupBrand(logoSize: 30),
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(60),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
+            child: ExperienceModeSwitcher(
+              selected: AppExperience.guest,
+              pendingHostRequests: pendingHostRequests,
+              onGuestSelected: () {},
+              onHostSelected: () {
+                ref
+                    .read(appControllerProvider.notifier)
+                    .setActiveExperience(AppExperience.host);
+                context.go('/host');
+              },
+            ),
+          ),
+        ),
         actions: [
           const LanguagePickerButton(),
           _BadgeIconButton(
@@ -59,7 +79,7 @@ class MainShell extends ConsumerWidget {
       bottomNavigationBar: DecoratedBox(
         decoration: BoxDecoration(
           color: AppColors.surface,
-          border: const Border(top: BorderSide(color: AppColors.border)),
+          border: Border(top: BorderSide(color: AppColors.border)),
           boxShadow: [
             BoxShadow(
               color: AppColors.primary.withValues(alpha: 0.1),

@@ -91,7 +91,7 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
                 ),
                 Text(
                   '${_distance.round()} km',
-                  style: const TextStyle(
+                  style: TextStyle(
                     color: AppColors.primaryBright,
                     fontWeight: FontWeight.w800,
                   ),
@@ -143,6 +143,7 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
     return Scaffold(
       appBar: AppBar(title: const PullupBrand(logoSize: 28)),
       body: WizardScaffold(
+        keyboardOpen: MediaQuery.viewInsetsOf(context).bottom > 0,
         eyebrow: 'Set up your profile',
         title: steps[_step].title,
         description: steps[_step].description,
@@ -316,18 +317,18 @@ class _PhotosStep extends StatelessWidget {
                 fit: BoxFit.cover,
                 loadingBuilder: (context, child, progress) => progress == null
                     ? child
-                    : const ColoredBox(
+                    : ColoredBox(
                         color: AppColors.surfaceSecondary,
                         child: Center(child: CircularProgressIndicator()),
                       ),
-                errorBuilder: (_, _, _) => const ColoredBox(
+                errorBuilder: (_, _, _) => ColoredBox(
                   color: AppColors.surfaceSecondary,
                   child: Icon(Icons.broken_image_outlined),
                 ),
               ),
             ),
             if (index == 0)
-              const Positioned(
+              Positioned(
                 left: 6,
                 bottom: 6,
                 child: DecoratedBox(
@@ -518,11 +519,7 @@ class _Rule extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Icon(
-            Icons.shield_outlined,
-            size: 20,
-            color: AppColors.primaryBright,
-          ),
+          Icon(Icons.shield_outlined, size: 20, color: AppColors.primaryBright),
           const SizedBox(width: 12),
           Expanded(child: Text(text)),
         ],

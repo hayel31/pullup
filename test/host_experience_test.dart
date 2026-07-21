@@ -10,9 +10,16 @@ import 'package:pullup/features/events/presentation/pages/host_requests_page.dar
 import 'package:pullup/features/shared/data/demo_pullup_repository.dart';
 import 'package:pullup/l10n/app_localizations.dart';
 import 'package:pullup/models/enums.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
-  testWidgets('host demo entry opens the host dashboard', (tester) async {
+  setUp(() {
+    SharedPreferences.setMockInitialValues({});
+  });
+
+  testWidgets('signed-in guest can switch to the host dashboard', (
+    tester,
+  ) async {
     _setMobileViewport(tester);
     final repository = DemoPullupRepository();
 
@@ -24,13 +31,26 @@ void main() {
     );
     await tester.pump(const Duration(seconds: 3));
     await _pumpUi(tester, const Duration(milliseconds: 900));
+    await _pumpUi(tester, const Duration(milliseconds: 250));
 
-    await tester.tap(find.byKey(const Key('open-host-view')));
+    await tester.enterText(
+      find.byKey(const Key('welcome-email')),
+      'leo@pullup.demo',
+    );
+    await tester.enterText(
+      find.byKey(const Key('welcome-password')),
+      'Pullup2026!',
+    );
+    await tester.tap(find.text('Enter PULLUP'));
+    await _pumpUi(tester, const Duration(milliseconds: 3950));
+    await tester.tap(find.byKey(const Key('switch-to-host')));
     await _pumpUi(tester, const Duration(milliseconds: 900));
 
     expect(find.byType(HostDashboardPage), findsOneWidget);
+    expect(find.text('HOST'), findsOneWidget);
     expect(find.byKey(const Key('manage-event-event-001')), findsOneWidget);
-    expect(find.text('Your nights'), findsOneWidget);
+    expect(find.text('Host control room'), findsOneWidget);
+    expect(find.textContaining('Bastille, Paris'), findsOneWidget);
   });
 
   testWidgets('host approves and declines requests with confirmation', (

@@ -10,11 +10,14 @@ import '../../../models/pullup_match.dart';
 import '../../../models/report.dart';
 import '../../../models/user_profile.dart';
 import '../domain/app_drafts.dart';
+import '../domain/demo_account.dart';
 import '../domain/pullup_repository.dart';
+import 'demo_local_store.dart';
 import 'demo_seed.dart';
 
 class DemoPullupRepository implements PullupRepository {
-  DemoPullupRepository() {
+  DemoPullupRepository({DemoLocalStore? localStore})
+    : _localStore = localStore ?? DemoLocalStore() {
     final seed = DemoSeed.build();
     _users = [...seed.users];
     _events = [...seed.events];
@@ -40,6 +43,10 @@ class DemoPullupRepository implements PullupRepository {
   late List<DjProfile> _djProfiles;
   late Map<String, Set<String>> _swipedEventIds;
   late Map<String, Set<String>> _rejectedEventIds;
+  final DemoLocalStore _localStore;
+  final Set<String> _createdEventIds = {};
+  List<StoredCredential> _credentials = const [];
+  Future<void>? _hydration;
 
   int _counter = 1000;
 
@@ -63,15 +70,82 @@ class DemoPullupRepository implements PullupRepository {
   );
 
   @override
+  Future<UserProfile?> restoreSession() async {
+    await _ensureHydrated();
+    final persisted = await _localStore.load();
+    final userId = persisted.sessionUserId;
+    if (userId == null) return null;
+    final user = _findUser(userId);
+    if (user == null || user.accountStatus != AccountStatus.active) {
+      await _localStore.clearSession();
+      return null;
+    }
+    final touched = _touchUser(user.id);
+    await _localStore.saveUser(touched);
+    return touched;
+  }
+
+  @override
+  Future<UserProfile> signIn({
+    required String email,
+    required String password,
+  }) async {
+    await _ensureHydrated();
+    final normalizedEmail = email.toLowerCase().trim();
+    if (normalizedEmail.isEmpty || password.isEmpty) {
+      throw const AppException('Enter your email and password.');
+    }
+
+    String? userId;
+    for (final account in demoAccounts) {
+      if (account.email == normalizedEmail && account.password == password) {
+        userId = account.userId;
+        break;
+      }
+    }
+    if (userId == null) {
+      for (final credential in _credentials) {
+        if (credential.email == normalizedEmail &&
+            credential.matches(password)) {
+          userId = credential.userId;
+          break;
+        }
+      }
+    }
+    if (userId == null) {
+      throw const AppException('Incorrect email or password.');
+    }
+
+    final user = _userById(userId);
+    if (user.accountStatus != AccountStatus.active) {
+      throw const AppException('This account is not available.');
+    }
+    final touched = _touchUser(user.id);
+    await _localStore.saveUser(touched);
+    await _localStore.saveSession(touched.id);
+    return touched;
+  }
+
+  @override
   Future<UserProfile> signInDemo({required bool asHost}) async {
+    await _ensureHydrated();
     final user = _users.firstWhere(
       (user) => user.id == (asHost ? 'host-001' : 'user-001'),
     );
-    return _touchUser(user.id);
+    final touched = _touchUser(user.id);
+    await _localStore.saveUser(touched);
+    await _localStore.saveSession(touched.id);
+    return touched;
+  }
+
+  @override
+  Future<void> signOut() async {
+    await _localStore.clearSession();
   }
 
   @override
   Future<UserProfile> register(SignUpDraft draft) async {
+    await _ensureHydrated();
     if (!draft.acceptedTerms || !draft.confirmedMinimumAge) {
       throw const AppException(
         'You must accept the rules and confirm the minimum age.',
@@ -82,8 +156,11 @@ class DemoPullupRepository implements PullupRepository {
     )) {
       throw const AppException('This email is already registered.');
     }
+    if (draft.password.length < 8) {
+      throw const AppException('Password must contain at least 8 characters.');
+    }
     final now = DateTime.now();
-    final id = 'user-${_nextId()}';
+    final id = 'user-${now.microsecondsSinceEpoch}';
     final user = UserProfile(
       id: id,
       email: draft.email,
@@ -121,6 +198,15 @@ class DemoPullupRepository implements PullupRepository {
       onboardingCompleted: false,
     );
     _users.add(user);
+    final credential = StoredCredential.create(
+      userId: id,
+      email: draft.email,
+      password: draft.password,
+    );
+    _credentials = [..._credentials, credential];
+    await _localStore.saveCredential(credential);
+    await _localStore.saveUser(user);
+    await _localStore.saveSession(user.id);
     return user;
   }
 
@@ -129,7 +215,8 @@ class DemoPullupRepository implements PullupRepository {
     String userId,
     ProfileUpdateDraft draft,
   ) async {
-    return _updateUser(
+    await _ensureHydrated();
+    final updated = _updateUser(
       userId,
       (user) => user.copyWith(
         displayName: draft.displayName,
@@ -147,6 +234,65 @@ class DemoPullupRepository implements PullupRepository {
         updatedAt: DateTime.now(),
       ),
     );
+    await _localStore.saveUser(updated);
+    return updated;
+  }
+
+  @override
+  Future<UserProfile> addFriend(String userId, String friendId) async {
+    await _ensureHydrated();
+    if (userId == friendId) {
+      throw const AppException('You cannot add yourself as a friend.');
+    }
+    final user = _userById(userId);
+    final friend = _userById(friendId);
+    if (user.blockedUserIds.contains(friendId) ||
+        friend.blockedUserIds.contains(userId)) {
+      throw const AppException('This friend connection is unavailable.');
+    }
+    final now = DateTime.now();
+    final updatedUser = _updateUser(
+      userId,
+      (profile) => profile.copyWith(
+        friendIds: {...profile.friendIds, friendId}.toList(),
+        updatedAt: now,
+      ),
+    );
+    final updatedFriend = _updateUser(
+      friendId,
+      (profile) => profile.copyWith(
+        friendIds: {...profile.friendIds, userId}.toList(),
+        updatedAt: now,
+      ),
+    );
+    await _localStore.saveUser(updatedUser);
+    await _localStore.saveUser(updatedFriend);
+    return updatedUser;
+  }
+
+  @override
+  Future<UserProfile> removeFriend(String userId, String friendId) async {
+    await _ensureHydrated();
+    _userById(userId);
+    _userById(friendId);
+    final now = DateTime.now();
+    final updatedUser = _updateUser(
+      userId,
+      (profile) => profile.copyWith(
+        friendIds: profile.friendIds.where((id) => id != friendId).toList(),
+        updatedAt: now,
+      ),
+    );
+    final updatedFriend = _updateUser(
+      friendId,
+      (profile) => profile.copyWith(
+        friendIds: profile.friendIds.where((id) => id != userId).toList(),
+        updatedAt: now,
+      ),
+    );
+    await _localStore.saveUser(updatedUser);
+    await _localStore.saveUser(updatedFriend);
+    return updatedUser;
   }
 
   @override
@@ -158,26 +304,32 @@ class DemoPullupRepository implements PullupRepository {
       throw const AppException('Add at least one profile photo.');
     }
     final updated = await updateProfile(userId, draft);
-    return _updateUser(
+    final completed = _updateUser(
       userId,
       (user) => updated.copyWith(onboardingCompleted: true),
     );
+    await _localStore.saveUser(completed);
+    return completed;
   }
 
   @override
   Future<void> deleteAccount(String userId) async {
-    _updateUser(
+    await _ensureHydrated();
+    final updated = _updateUser(
       userId,
       (user) => user.copyWith(accountStatus: AccountStatus.deleted),
     );
+    await _localStore.saveUser(updated);
+    await _localStore.clearSession();
   }
 
   @override
   Future<PartyEvent> createEvent(String hostId, CreateEventDraft draft) async {
+    await _ensureHydrated();
     final host = _userById(hostId);
     final now = DateTime.now();
     final event = PartyEvent(
-      id: 'event-${_nextId()}',
+      id: 'event-created-${now.microsecondsSinceEpoch}',
       hostId: hostId,
       hostPreview: HostPreview(
         id: host.id,
@@ -228,7 +380,8 @@ class DemoPullupRepository implements PullupRepository {
       expiresAt: draft.endDateTime.add(const Duration(hours: 2)),
     );
     _events.add(event);
-    _updateUser(
+    _createdEventIds.add(event.id);
+    final updatedHost = _updateUser(
       hostId,
       (user) => user.copyWith(
         isHost: true,
@@ -236,6 +389,8 @@ class DemoPullupRepository implements PullupRepository {
         updatedAt: now,
       ),
     );
+    await _localStore.saveEvent(event);
+    await _localStore.saveUser(updatedHost);
     return event;
   }
 
@@ -245,6 +400,7 @@ class DemoPullupRepository implements PullupRepository {
     String eventId,
     JoinEventDraft draft,
   ) async {
+    await _ensureHydrated();
     final event = _eventById(eventId);
     if (event.hostId == userId) {
       throw const AppException('Hosts cannot request their own event.');
@@ -253,6 +409,41 @@ class DemoPullupRepository implements PullupRepository {
       throw AppException(
         'This host accepts groups up to ${event.maxGroupSize}.',
       );
+    }
+    if (draft.guestMenCount < 0 || draft.guestWomenCount < 0) {
+      throw const AppException('Guest counts cannot be negative.');
+    }
+    final companionUserIds = draft.companionUserIds.toSet();
+    if (companionUserIds.length != draft.companionUserIds.length) {
+      throw const AppException('A friend can only be added once.');
+    }
+    final expectedGroupSize =
+        1 +
+        companionUserIds.length +
+        draft.companionNames.length +
+        draft.guestMenCount +
+        draft.guestWomenCount;
+    if (draft.groupSize != expectedGroupSize) {
+      throw const AppException('The group details do not match its size.');
+    }
+    final requester = _userById(userId);
+    for (final companionId in companionUserIds) {
+      if (companionId == userId || companionId == event.hostId) {
+        throw const AppException('This person cannot join this request.');
+      }
+      if (!requester.friendIds.contains(companionId)) {
+        throw const AppException(
+          'Only confirmed PULLUP friends can join your group.',
+        );
+      }
+      final companion = _userById(companionId);
+      if (requester.blockedUserIds.contains(companionId) ||
+          companion.blockedUserIds.contains(userId) ||
+          companion.blockedUserIds.contains(event.hostId)) {
+        throw const AppException(
+          'One selected friend is unavailable for this request.',
+        );
+      }
     }
     if (draft.groupSize > event.availableSpots) {
       throw const AppException('Not enough spots left for this group.');
@@ -275,6 +466,9 @@ class DemoPullupRepository implements PullupRepository {
       note: draft.note,
       groupSize: draft.groupSize,
       companionNames: draft.companionNames,
+      companionUserIds: companionUserIds.toList(),
+      guestMenCount: draft.guestMenCount,
+      guestWomenCount: draft.guestWomenCount,
       status: RequestStatus.pending,
       createdAt: DateTime.now(),
     );
@@ -287,6 +481,7 @@ class DemoPullupRepository implements PullupRepository {
         updatedAt: DateTime.now(),
       ),
     );
+    await _persistEventIfCreated(eventId);
     _notifications.add(
       NotificationItem(
         id: 'notification-${_nextId()}',
@@ -308,6 +503,7 @@ class DemoPullupRepository implements PullupRepository {
 
   @override
   Future<EventRequest> withdrawRequest(String userId, String requestId) async {
+    await _ensureHydrated();
     final request = _requestById(requestId);
     if (request.requesterId != userId) {
       throw const AppException('You can only withdraw your own request.');
@@ -333,23 +529,27 @@ class DemoPullupRepository implements PullupRepository {
       ),
     );
     _swipedEventIds[userId]?.remove(event.id);
+    await _persistEventIfCreated(event.id);
     return updated;
   }
 
   @override
   Future<void> passEvent(String userId, String eventId) async {
+    await _ensureHydrated();
     _swipedEventIds.putIfAbsent(userId, () => <String>{}).add(eventId);
     _rejectedEventIds.putIfAbsent(userId, () => <String>{}).add(eventId);
   }
 
   @override
   Future<void> undoSwipe(String userId, String eventId) async {
+    await _ensureHydrated();
     _swipedEventIds[userId]?.remove(eventId);
     _rejectedEventIds[userId]?.remove(eventId);
   }
 
   @override
   Future<PullupMatch> acceptRequest(String hostId, String requestId) async {
+    await _ensureHydrated();
     final request = _requestById(requestId);
     final event = _eventById(request.eventId);
     if (event.hostId != hostId) {
@@ -368,12 +568,13 @@ class DemoPullupRepository implements PullupRepository {
     );
     _replaceRequest(updatedRequest);
     final remaining = event.availableSpots - request.groupSize;
+    final acceptedUserIds = {request.requesterId, ...request.companionUserIds};
     _replaceEvent(
       event.copyWith(
-        acceptedParticipantIds: [
+        acceptedParticipantIds: {
           ...event.acceptedParticipantIds,
-          request.requesterId,
-        ],
+          ...acceptedUserIds,
+        }.toList(),
         waitingParticipantIds: event.waitingParticipantIds
             .where((id) => id != request.requesterId)
             .toList(),
@@ -384,13 +585,16 @@ class DemoPullupRepository implements PullupRepository {
       ),
     );
 
+    final memberIds = {hostId, ...acceptedUserIds}.toList();
     final conversation = ChatConversation(
       id: 'conversation-${_nextId()}',
       eventId: event.id,
-      memberIds: [request.requesterId, hostId],
-      lastMessagePreview: 'Exact address unlocked.',
+      memberIds: memberIds,
+      lastMessagePreview: 'Group chat opened for 12 hours.',
       updatedAt: now,
-      unreadByUserIds: [request.requesterId],
+      unreadByUserIds: acceptedUserIds.toList(),
+      isGroup: true,
+      expiresAt: now.add(const Duration(hours: 12)),
     );
     _conversations.add(conversation);
     _messages.addAll([
@@ -399,7 +603,8 @@ class DemoPullupRepository implements PullupRepository {
         conversationId: conversation.id,
         senderId: 'system',
         type: MessageType.system,
-        text: 'Match created for ${event.title}.',
+        text:
+            'Group confirmed for ${event.title}. This chat is available for 12 hours.',
         createdAt: now,
         readByUserIds: [hostId],
       ),
@@ -424,19 +629,23 @@ class DemoPullupRepository implements PullupRepository {
       isNew: true,
     );
     _matches.add(match);
-    _notifications.add(
-      NotificationItem(
-        id: 'notification-${_nextId()}',
-        userId: request.requesterId,
-        type: NotificationType.requestAccepted,
-        title: 'You are in',
-        body: '${event.hostPreview.firstName} accepted you for ${event.title}.',
-        createdAt: now,
-        read: false,
-        eventId: event.id,
-        conversationId: conversation.id,
-      ),
-    );
+    for (final acceptedUserId in acceptedUserIds) {
+      _notifications.add(
+        NotificationItem(
+          id: 'notification-${_nextId()}',
+          userId: acceptedUserId,
+          type: NotificationType.requestAccepted,
+          title: 'You are in',
+          body:
+              '${event.hostPreview.firstName} accepted the group for ${event.title}.',
+          createdAt: now,
+          read: false,
+          eventId: event.id,
+          conversationId: conversation.id,
+        ),
+      );
+    }
+    await _persistEventIfCreated(event.id);
     return match;
   }
 
@@ -446,6 +655,7 @@ class DemoPullupRepository implements PullupRepository {
     String requestId, {
     String? reason,
   }) async {
+    await _ensureHydrated();
     final request = _requestById(requestId);
     final event = _eventById(request.eventId);
     if (event.hostId != hostId) {
@@ -484,6 +694,7 @@ class DemoPullupRepository implements PullupRepository {
         eventId: event.id,
       ),
     );
+    await _persistEventIfCreated(event.id);
     return updated;
   }
 
@@ -494,6 +705,7 @@ class DemoPullupRepository implements PullupRepository {
     required String exactAddress,
     required String accessInstructions,
   }) async {
+    await _ensureHydrated();
     final event = _eventById(eventId);
     if (event.hostId != hostId) {
       throw const AppException('Only the host can update private access.');
@@ -522,6 +734,7 @@ class DemoPullupRepository implements PullupRepository {
         ),
       );
     }
+    await _persistEventIfCreated(event.id);
     return updated;
   }
 
@@ -531,10 +744,16 @@ class DemoPullupRepository implements PullupRepository {
     String conversationId,
     String text,
   ) async {
+    await _ensureHydrated();
     final conversation = _conversationById(conversationId);
     if (!conversation.memberIds.contains(userId)) {
       throw const AppException(
         'You are not allowed to access this conversation.',
+      );
+    }
+    if (conversation.isExpired) {
+      throw const AppException(
+        'This ephemeral conversation has expired after 12 hours.',
       );
     }
     final blocked = conversation.memberIds.any((id) {
@@ -577,6 +796,7 @@ class DemoPullupRepository implements PullupRepository {
     required String reasonName,
     required String description,
   }) async {
+    await _ensureHydrated();
     final reason = ReportReason.values.firstWhere(
       (reason) => reason.name == reasonName,
       orElse: () => ReportReason.other,
@@ -599,18 +819,36 @@ class DemoPullupRepository implements PullupRepository {
 
   @override
   Future<UserProfile> blockUser(String userId, String blockedUserId) async {
-    return _updateUser(
+    await _ensureHydrated();
+    _userById(blockedUserId);
+    final updated = _updateUser(
       userId,
       (user) => user.copyWith(
         blockedUserIds: {...user.blockedUserIds, blockedUserId}.toList(),
+        friendIds: user.friendIds
+            .where((friendId) => friendId != blockedUserId)
+            .toList(),
         updatedAt: DateTime.now(),
       ),
     );
+    final updatedBlocked = _updateUser(
+      blockedUserId,
+      (user) => user.copyWith(
+        friendIds: user.friendIds
+            .where((friendId) => friendId != userId)
+            .toList(),
+        updatedAt: DateTime.now(),
+      ),
+    );
+    await _localStore.saveUser(updated);
+    await _localStore.saveUser(updatedBlocked);
+    return updated;
   }
 
   @override
   Future<UserProfile> unblockUser(String userId, String blockedUserId) async {
-    return _updateUser(
+    await _ensureHydrated();
+    final updated = _updateUser(
       userId,
       (user) => user.copyWith(
         blockedUserIds: user.blockedUserIds
@@ -619,6 +857,8 @@ class DemoPullupRepository implements PullupRepository {
         updatedAt: DateTime.now(),
       ),
     );
+    await _localStore.saveUser(updated);
+    return updated;
   }
 
   @override
@@ -639,6 +879,7 @@ class DemoPullupRepository implements PullupRepository {
     required String eventId,
     required String message,
   }) async {
+    await _ensureHydrated();
     _notifications.add(
       NotificationItem(
         id: 'notification-${_nextId()}',
@@ -713,5 +954,43 @@ class DemoPullupRepository implements PullupRepository {
     );
     if (index == -1) throw const AppException('Conversation not found.');
     _conversations[index] = conversation;
+  }
+
+  Future<void> _ensureHydrated() {
+    return _hydration ??= _hydrate();
+  }
+
+  Future<void> _hydrate() async {
+    final persisted = await _localStore.load();
+    _credentials = persisted.credentials;
+    for (final user in persisted.users) {
+      final index = _users.indexWhere((item) => item.id == user.id);
+      if (index == -1) {
+        _users.add(user);
+      } else {
+        _users[index] = user;
+      }
+    }
+    for (final event in persisted.events) {
+      final index = _events.indexWhere((item) => item.id == event.id);
+      if (index == -1) {
+        _events.add(event);
+      } else {
+        _events[index] = event;
+      }
+      _createdEventIds.add(event.id);
+    }
+  }
+
+  UserProfile? _findUser(String id) {
+    for (final user in _users) {
+      if (user.id == id) return user;
+    }
+    return null;
+  }
+
+  Future<void> _persistEventIfCreated(String eventId) async {
+    if (!_createdEventIds.contains(eventId)) return;
+    await _localStore.saveEvent(_eventById(eventId));
   }
 }

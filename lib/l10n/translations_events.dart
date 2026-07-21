@@ -1,6 +1,31 @@
 import 'translation_types.dart';
 
 const eventTranslationRows = <String, TranslationRow>{
+  'Address suggestions': (
+    fr: "Suggestions d'adresse",
+    es: 'Sugerencias de direccion',
+    de: 'Adressvorschlage',
+  ),
+  'Start typing a street address': (
+    fr: 'Commence a saisir une adresse postale',
+    es: 'Empieza a escribir una direccion postal',
+    de: 'Strassenadresse eingeben',
+  ),
+  'Start typing a street address to see verified suggestions.': (
+    fr: 'Saisis une rue pour afficher des suggestions verifiees.',
+    es: 'Escribe una calle para ver sugerencias verificadas.',
+    de: 'Strassenadresse eingeben, um geprufte Vorschlage zu sehen.',
+  ),
+  'Address suggestions are unavailable. You can still enter the address manually.': (
+    fr: "Les suggestions sont indisponibles. Tu peux saisir l'adresse manuellement.",
+    es: 'Las sugerencias no estan disponibles. Puedes escribir la direccion manualmente.',
+    de: 'Adressvorschlage sind nicht verfugbar. Du kannst die Adresse manuell eingeben.',
+  ),
+  'No matching address found.': (
+    fr: 'Aucune adresse correspondante trouvee.',
+    es: 'No se encontro ninguna direccion.',
+    de: 'Keine passende Adresse gefunden.',
+  ),
   // Event creation and details.
   'Choose the format': (
     fr: 'Choisis le format',
@@ -120,6 +145,31 @@ const eventTranslationRows = <String, TranslationRow>{
     fr: 'Choisir des photos',
     es: 'Elegir fotos',
     de: 'Fotos auswählen',
+  ),
+  'Replace photos': (
+    fr: 'Remplacer les photos',
+    es: 'Reemplazar fotos',
+    de: 'Fotos ersetzen',
+  ),
+  'Add venue photos': (
+    fr: 'Ajouter des photos du lieu',
+    es: 'Añadir fotos del lugar',
+    de: 'Fotos des Ortes hinzufügen',
+  ),
+  'The first image becomes the cover': (
+    fr: 'La première image devient la couverture',
+    es: 'La primera imagen será la portada',
+    de: 'Das erste Bild wird zum Titelbild',
+  ),
+  'Cover photo': (
+    fr: 'Photo de couverture',
+    es: 'Foto de portada',
+    de: 'Titelbild',
+  ),
+  'Tap a photo to make it the cover. Up to 6 images.': (
+    fr: 'Appuie sur une photo pour en faire la couverture. Jusqu’à 6 images.',
+    es: 'Toca una foto para usarla como portada. Hasta 6 imágenes.',
+    de: 'Tippe auf ein Foto, um es als Titelbild festzulegen. Bis zu 6 Bilder.',
   ),
   'Change photos': (
     fr: 'Changer les photos',

@@ -9,8 +9,13 @@ import 'package:pullup/features/shared/data/demo_pullup_repository.dart';
 import 'package:pullup/features/shared/domain/app_drafts.dart';
 import 'package:pullup/l10n/app_localizations.dart';
 import 'package:pullup/models/enums.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
+  setUp(() {
+    SharedPreferences.setMockInitialValues({});
+  });
+
   testWidgets('a guest can confirm and withdraw a pending request', (
     tester,
   ) async {

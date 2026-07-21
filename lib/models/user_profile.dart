@@ -33,6 +33,7 @@ class UserProfile {
     required this.lastActiveAt,
     required this.accountStatus,
     required this.onboardingCompleted,
+    this.friendIds = const [],
     this.lastName,
     this.bio = '',
     this.mainPhotoUrl,
@@ -69,6 +70,7 @@ class UserProfile {
   final int guestAttendanceCount;
   final int reportCount;
   final List<String> blockedUserIds;
+  final List<String> friendIds;
   final DateTime createdAt;
   final DateTime updatedAt;
   final DateTime lastActiveAt;
@@ -123,6 +125,7 @@ class UserProfile {
     int? guestAttendanceCount,
     int? reportCount,
     List<String>? blockedUserIds,
+    List<String>? friendIds,
     DateTime? createdAt,
     DateTime? updatedAt,
     DateTime? lastActiveAt,
@@ -159,6 +162,7 @@ class UserProfile {
       guestAttendanceCount: guestAttendanceCount ?? this.guestAttendanceCount,
       reportCount: reportCount ?? this.reportCount,
       blockedUserIds: blockedUserIds ?? this.blockedUserIds,
+      friendIds: friendIds ?? this.friendIds,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       lastActiveAt: lastActiveAt ?? this.lastActiveAt,
@@ -198,10 +202,74 @@ class UserProfile {
     'guestAttendanceCount': guestAttendanceCount,
     'reportCount': reportCount,
     'blockedUserIds': blockedUserIds,
+    'friendIds': friendIds,
     'createdAt': createdAt.toIso8601String(),
     'updatedAt': updatedAt.toIso8601String(),
     'lastActiveAt': lastActiveAt.toIso8601String(),
     'accountStatus': accountStatus.name,
     'onboardingCompleted': onboardingCompleted,
   };
+
+  factory UserProfile.fromJson(Map<String, dynamic> json) {
+    return UserProfile(
+      id: json['id'] as String,
+      email: json['email'] as String,
+      displayName: json['displayName'] as String,
+      firstName: json['firstName'] as String,
+      lastName: json['lastName'] as String?,
+      birthDate: DateTime.parse(json['birthDate'] as String),
+      gender: _enumValue(Gender.values, json['gender'], Gender.preferNotToSay),
+      bio: json['bio'] as String? ?? '',
+      city: json['city'] as String,
+      approximateLocation: GeoPointLite.fromJson(
+        Map<String, dynamic>.from(json['approximateLocation'] as Map),
+      ),
+      profilePhotos: List<String>.from(
+        json['profilePhotos'] as List? ?? const [],
+      ),
+      mainPhotoUrl: json['mainPhotoUrl'] as String?,
+      interests: List<String>.from(json['interests'] as List? ?? const []),
+      musicPreferences: List<String>.from(
+        json['musicPreferences'] as List? ?? const [],
+      ),
+      languages: List<String>.from(json['languages'] as List? ?? const []),
+      occupation: json['occupation'] as String?,
+      instagramHandle: json['instagramHandle'] as String?,
+      verificationStatus: _enumValue(
+        VerificationStatus.values,
+        json['verificationStatus'],
+        VerificationStatus.email,
+      ),
+      phoneVerified: json['phoneVerified'] as bool? ?? false,
+      selfieVerified: json['selfieVerified'] as bool? ?? false,
+      identityVerified: json['identityVerified'] as bool? ?? false,
+      isPremium: json['isPremium'] as bool? ?? false,
+      isDj: json['isDj'] as bool? ?? false,
+      isHost: json['isHost'] as bool? ?? false,
+      hostRating: (json['hostRating'] as num?)?.toDouble() ?? 0,
+      hostedEventCount: json['hostedEventCount'] as int? ?? 0,
+      guestAttendanceCount: json['guestAttendanceCount'] as int? ?? 0,
+      reportCount: json['reportCount'] as int? ?? 0,
+      blockedUserIds: List<String>.from(
+        json['blockedUserIds'] as List? ?? const [],
+      ),
+      friendIds: List<String>.from(json['friendIds'] as List? ?? const []),
+      createdAt: DateTime.parse(json['createdAt'] as String),
+      updatedAt: DateTime.parse(json['updatedAt'] as String),
+      lastActiveAt: DateTime.parse(json['lastActiveAt'] as String),
+      accountStatus: _enumValue(
+        AccountStatus.values,
+        json['accountStatus'],
+        AccountStatus.active,
+      ),
+      onboardingCompleted: json['onboardingCompleted'] as bool? ?? false,
+    );
+  }
+}
+
+T _enumValue<T extends Enum>(Iterable<T> values, Object? name, T fallback) {
+  for (final value in values) {
+    if (value.name == name) return value;
+  }
+  return fallback;
 }

@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:pullup/l10n/app_material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -6,12 +8,17 @@ import 'package:intl/intl.dart';
 
 import '../../../../app/providers/app_state.dart';
 import '../../../../app/theme/app_colors.dart';
+import '../../../../core/utils/city_location_resolver.dart';
 import '../../../../core/widgets/night_card.dart';
 import '../../../../core/widgets/number_stepper.dart';
+import '../../../../core/widgets/pullup_chip.dart';
+import '../../../../core/widgets/pullup_image.dart';
 import '../../../../core/widgets/wizard_scaffold.dart';
 import '../../../../models/enums.dart';
 import '../../../../models/geo_point_lite.dart';
+import '../../data/address_search_service.dart';
 import '../../../shared/domain/app_drafts.dart';
+import '../widgets/event_text_editor.dart';
 
 String _demoCoverFor(EventCategory category) => switch (category) {
   EventCategory.rooftop => 'assets/demo/events/rooftop-night.jpg',
@@ -68,7 +75,9 @@ class _CreateEventPageState extends ConsumerState<CreateEventPage> {
     EventTag.dancing,
   };
   final _genres = <String>{'House', 'Afro', 'Rap'};
-  int _selectedMediaCount = 0;
+  final List<String> _selectedPhotoSources = [];
+  GeoPointLite? _selectedAddressLocation;
+  bool _isPickingMedia = false;
 
   @override
   void dispose() {
@@ -110,27 +119,35 @@ class _CreateEventPageState extends ConsumerState<CreateEventPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            TextField(
+            _EditableEventField(
+              key: const Key('create-event-title'),
               controller: _title,
-              textCapitalization: TextCapitalization.sentences,
-              textInputAction: TextInputAction.next,
-              decoration: InputDecoration(
-                labelText: context.tr('Event title'),
+              label: context.tr('Event title'),
+              hintText: context.tr('Last-minute rooftop pre-game'),
+              icon: Icons.edit_outlined,
+              onTap: () => _editField(
+                controller: _title,
+                label: context.tr('Event title'),
                 hintText: context.tr('Last-minute rooftop pre-game'),
-                prefixIcon: Icon(Icons.edit_outlined),
               ),
             ),
             const SizedBox(height: 12),
-            TextField(
+            _EditableEventField(
+              key: const Key('create-event-description'),
               controller: _description,
+              label: context.tr('Description'),
+              hintText: context.tr(
+                'Describe the atmosphere, music and guest list.',
+              ),
+              icon: Icons.notes_rounded,
               maxLines: 4,
-              textCapitalization: TextCapitalization.sentences,
-              decoration: InputDecoration(
-                labelText: context.tr('Description'),
+              onTap: () => _editField(
+                controller: _description,
+                label: context.tr('Description'),
                 hintText: context.tr(
                   'Describe the atmosphere, music and guest list.',
                 ),
-                prefixIcon: Icon(Icons.notes_rounded),
+                multiline: true,
               ),
             ),
             const SizedBox(height: 12),
@@ -197,45 +214,54 @@ class _CreateEventPageState extends ConsumerState<CreateEventPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            TextField(
+            _EditableEventField(
+              key: const Key('create-event-city'),
               controller: _city,
-              textInputAction: TextInputAction.next,
-              decoration: InputDecoration(
-                labelText: context.tr('City'),
-                prefixIcon: Icon(Icons.location_city_outlined),
+              label: context.tr('City'),
+              icon: Icons.location_city_outlined,
+              onTap: () => _editField(
+                controller: _city,
+                label: context.tr('City'),
+                onChanged: () => _selectedAddressLocation = null,
               ),
             ),
             const SizedBox(height: 12),
-            TextField(
+            _EditableEventField(
+              key: const Key('create-event-area'),
               controller: _area,
-              textInputAction: TextInputAction.next,
-              decoration: InputDecoration(
-                labelText: context.tr('Area or district'),
-                prefixIcon: Icon(Icons.map_outlined),
+              label: context.tr('Area or district'),
+              icon: Icons.map_outlined,
+              onTap: () => _editField(
+                controller: _area,
+                label: context.tr('Area or district'),
               ),
             ),
             const SizedBox(height: 12),
-            TextField(
+            _EditableEventField(
+              key: const Key('create-event-address'),
               controller: _address,
-              textInputAction: TextInputAction.next,
-              autofillHints: const [AutofillHints.fullStreetAddress],
-              decoration: InputDecoration(
-                labelText: context.tr('Private address'),
-                helperText: context.tr('Visible only to accepted guests'),
-                prefixIcon: Icon(Icons.lock_outline_rounded),
-              ),
+              label: context.tr('Private address'),
+              helperText: context.tr('Visible only to accepted guests'),
+              icon: Icons.lock_outline_rounded,
+              onTap: _editAddress,
             ),
             const SizedBox(height: 12),
-            TextField(
+            _EditableEventField(
+              key: const Key('create-event-access'),
               controller: _access,
+              label: context.tr('Access instructions'),
+              hintText: context.tr(
+                'Entrance, floor, door code or host contact.',
+              ),
+              icon: Icons.directions_outlined,
               maxLines: 3,
-              textCapitalization: TextCapitalization.sentences,
-              decoration: InputDecoration(
-                labelText: context.tr('Access instructions'),
+              onTap: () => _editField(
+                controller: _access,
+                label: context.tr('Access instructions'),
                 hintText: context.tr(
                   'Entrance, floor, door code or host contact.',
                 ),
-                prefixIcon: Icon(Icons.directions_outlined),
+                multiline: true,
               ),
             ),
             const SizedBox(height: 16),
@@ -246,52 +272,12 @@ class _CreateEventPageState extends ConsumerState<CreateEventPage> {
       _CreateStep(
         title: 'Show the place',
         description: 'Choose a strong cover and a few clear venue photos.',
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            AspectRatio(
-              aspectRatio: 16 / 10,
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  color: AppColors.surfaceSecondary,
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: AppColors.border),
-                ),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(
-                      _selectedMediaCount == 0
-                          ? Icons.add_photo_alternate_outlined
-                          : Icons.photo_library_outlined,
-                      size: 42,
-                      color: AppColors.textSecondary,
-                    ),
-                    const SizedBox(height: 12),
-                    Text(
-                      _selectedMediaCount == 0
-                          ? 'No photos selected'
-                          : '$_selectedMediaCount photo${_selectedMediaCount == 1 ? '' : 's'} selected',
-                      style: Theme.of(context).textTheme.titleMedium,
-                    ),
-                    const SizedBox(height: 6),
-                    Text(
-                      'Up to 6 images',
-                      style: Theme.of(context).textTheme.bodySmall,
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            const SizedBox(height: 14),
-            OutlinedButton.icon(
-              onPressed: _pickMedia,
-              icon: const Icon(Icons.photo_library_outlined),
-              label: Text(
-                _selectedMediaCount == 0 ? 'Choose photos' : 'Change photos',
-              ),
-            ),
-          ],
+        child: _EventMediaPicker(
+          photoSources: _selectedPhotoSources,
+          isLoading: _isPickingMedia,
+          onPick: _isPickingMedia ? null : _pickMedia,
+          onSetCover: _setCoverPhoto,
+          onRemove: _removePhoto,
         ),
       ),
       _CreateStep(
@@ -311,31 +297,38 @@ class _CreateEventPageState extends ConsumerState<CreateEventPage> {
             const SizedBox(height: 10),
             _GenrePicker(selected: _genres),
             const SizedBox(height: 18),
-            TextField(
+            _EditableEventField(
+              key: const Key('create-event-dress-code'),
               controller: _dressCode,
-              textInputAction: TextInputAction.next,
-              decoration: InputDecoration(
-                labelText: context.tr('Dress code'),
-                prefixIcon: Icon(Icons.checkroom_outlined),
+              label: context.tr('Dress code'),
+              icon: Icons.checkroom_outlined,
+              onTap: () => _editField(
+                controller: _dressCode,
+                label: context.tr('Dress code'),
               ),
             ),
             const SizedBox(height: 12),
-            TextField(
+            _EditableEventField(
+              key: const Key('create-event-contribution'),
               controller: _contribution,
-              textInputAction: TextInputAction.next,
-              decoration: InputDecoration(
-                labelText: context.tr('What guests should bring'),
-                prefixIcon: Icon(Icons.local_bar_outlined),
+              label: context.tr('What guests should bring'),
+              icon: Icons.local_bar_outlined,
+              onTap: () => _editField(
+                controller: _contribution,
+                label: context.tr('What guests should bring'),
               ),
             ),
             const SizedBox(height: 12),
-            TextField(
+            _EditableEventField(
+              key: const Key('create-event-rules'),
               controller: _rules,
+              label: context.tr('House rules'),
+              icon: Icons.gavel_outlined,
               maxLines: 3,
-              textCapitalization: TextCapitalization.sentences,
-              decoration: InputDecoration(
-                labelText: context.tr('House rules'),
-                prefixIcon: Icon(Icons.gavel_outlined),
+              onTap: () => _editField(
+                controller: _rules,
+                label: context.tr('House rules'),
+                multiline: true,
               ),
             ),
           ],
@@ -432,6 +425,7 @@ class _CreateEventPageState extends ConsumerState<CreateEventPage> {
             : Icons.arrow_forward_rounded,
         onContinue: _nextOrPublish,
         onBack: _step == 0 ? null : () => setState(() => _step--),
+        keyboardOpen: MediaQuery.viewInsetsOf(context).bottom > 0,
         child: steps[_step].child,
       ),
     );
@@ -472,10 +466,105 @@ class _CreateEventPageState extends ConsumerState<CreateEventPage> {
     });
   }
 
+  Future<void> _editField({
+    required TextEditingController controller,
+    required String label,
+    String? hintText,
+    bool multiline = false,
+    VoidCallback? onChanged,
+  }) async {
+    FocusManager.instance.primaryFocus?.unfocus();
+    final result = await EventTextEditor.open(
+      context,
+      label: label,
+      initialValue: controller.text,
+      hintText: hintText,
+      multiline: multiline,
+    );
+    if (result == null || !mounted) return;
+    setState(() {
+      controller.text = result.text;
+      onChanged?.call();
+    });
+  }
+
+  Future<void> _editAddress() async {
+    FocusManager.instance.primaryFocus?.unfocus();
+    final result = await EventTextEditor.open(
+      context,
+      label: context.tr('Private address'),
+      initialValue: _address.text,
+      hintText: context.tr('Start typing a street address'),
+      keyboardType: TextInputType.streetAddress,
+      addressSearchService: ref.read(addressSearchServiceProvider),
+      cityHint: _city.text,
+    );
+    if (result == null || !mounted) return;
+    setState(() {
+      _address.text = result.text;
+      final suggestion = result.address;
+      if (suggestion != null) {
+        _selectedAddressLocation = suggestion.location;
+        if (suggestion.city.isNotEmpty) _city.text = suggestion.city;
+      } else {
+        _selectedAddressLocation = null;
+      }
+    });
+  }
+
   Future<void> _pickMedia() async {
-    final files = await ImagePicker().pickMultiImage(imageQuality: 85);
-    if (files.isEmpty || !mounted) return;
-    setState(() => _selectedMediaCount = files.take(6).length);
+    setState(() => _isPickingMedia = true);
+    try {
+      final files = await ImagePicker().pickMultiImage(
+        imageQuality: 70,
+        maxWidth: 1280,
+        maxHeight: 1280,
+      );
+      if (files.isEmpty || !mounted) return;
+
+      const maxStoredBytes = 3 * 1024 * 1024;
+      var totalBytes = 0;
+      var skipped = 0;
+      final sources = <String>[];
+      for (final file in files.take(6)) {
+        final bytes = await file.readAsBytes();
+        if (totalBytes + bytes.length > maxStoredBytes) {
+          skipped++;
+          continue;
+        }
+        totalBytes += bytes.length;
+        final mimeType = file.mimeType ?? _mimeTypeFor(file.name);
+        sources.add('data:$mimeType;base64,${base64Encode(bytes)}');
+      }
+      if (!mounted) return;
+      setState(() {
+        _selectedPhotoSources
+          ..clear()
+          ..addAll(sources);
+      });
+      if (skipped > 0) {
+        _showMessage(
+          '$skipped photo${skipped == 1 ? '' : 's'} skipped to keep the event fast to load.',
+        );
+      }
+    } catch (_) {
+      if (mounted) _showMessage('Photos could not be opened. Try again.');
+    } finally {
+      if (mounted) setState(() => _isPickingMedia = false);
+    }
+  }
+
+  void _setCoverPhoto(int index) {
+    if (index <= 0 || index >= _selectedPhotoSources.length) return;
+    setState(() {
+      final source = _selectedPhotoSources.removeAt(index);
+      _selectedPhotoSources.insert(0, source);
+    });
+  }
+
+  void _removePhoto(int index) {
+    if (index < 0 || index >= _selectedPhotoSources.length) return;
+    setState(() => _selectedPhotoSources.removeAt(index));
   }
 
   Future<void> _nextOrPublish() async {
@@ -496,6 +585,17 @@ class _CreateEventPageState extends ConsumerState<CreateEventPage> {
       return;
     }
     final demoCover = _demoCoverFor(_category);
+    final photoSources = _selectedPhotoSources.isEmpty
+        ? <String>[demoCover]
+        : List<String>.unmodifiable(_selectedPhotoSources);
+    final city = _city.text.trim();
+    final currentUser = ref.read(appControllerProvider).currentUser;
+    final fallbackLocation =
+        currentUser?.approximateLocation ??
+        const GeoPointLite(latitude: 48.8566, longitude: 2.3522);
+    final eventLocation =
+        _selectedAddressLocation ??
+        CityLocationResolver.resolve(city, fallback: fallbackLocation);
     await ref
         .read(appControllerProvider.notifier)
         .createEvent(
@@ -503,19 +603,16 @@ class _CreateEventPageState extends ConsumerState<CreateEventPage> {
             title: _title.text.trim(),
             description: _description.text.trim(),
             category: _category,
-            coverPhotoUrl: demoCover,
-            photoUrls: [demoCover],
-            city: _city.text.trim(),
+            coverPhotoUrl: photoSources.first,
+            photoUrls: photoSources,
+            city: city,
             areaName: _area.text.trim(),
-            approximateGeoPoint: const GeoPointLite(
-              latitude: 48.8566,
-              longitude: 2.3522,
-            ),
+            approximateGeoPoint: eventLocation,
             exactAddress: _address.text.trim(),
             accessInstructions: _access.text.trim(),
             startDateTime: _start,
             endDateTime: _end,
-            timezone: 'Europe/Paris',
+            timezone: CityLocationResolver.timezoneFor(city),
             ageRequirement: _ageRequirement,
             maxParticipants: _maxParticipants,
             allowsGroups: _allowsGroups,
@@ -535,13 +632,21 @@ class _CreateEventPageState extends ConsumerState<CreateEventPage> {
             approvalMode: _approval,
           ),
         );
-    if (mounted) context.go('/tonight');
+    if (mounted) context.go('/host');
   }
 
   void _showMessage(String message) {
     ScaffoldMessenger.of(
       context,
     ).showSnackBar(SnackBar(content: Text(message)));
+  }
+
+  static String _mimeTypeFor(String fileName) {
+    final lowerName = fileName.toLowerCase();
+    if (lowerName.endsWith('.png')) return 'image/png';
+    if (lowerName.endsWith('.webp')) return 'image/webp';
+    if (lowerName.endsWith('.gif')) return 'image/gif';
+    return 'image/jpeg';
   }
 }
 
@@ -555,6 +660,214 @@ class _CreateStep {
   final String title;
   final String description;
   final Widget child;
+}
+
+class _EditableEventField extends StatelessWidget {
+  const _EditableEventField({
+    required this.controller,
+    required this.label,
+    required this.icon,
+    required this.onTap,
+    this.hintText,
+    this.helperText,
+    this.maxLines = 1,
+    super.key,
+  });
+
+  final TextEditingController controller;
+  final String label;
+  final IconData icon;
+  final VoidCallback onTap;
+  final String? hintText;
+  final String? helperText;
+  final int maxLines;
+
+  @override
+  Widget build(BuildContext context) {
+    return TextField(
+      controller: controller,
+      readOnly: true,
+      showCursor: false,
+      enableInteractiveSelection: false,
+      maxLines: maxLines,
+      onTap: onTap,
+      decoration: InputDecoration(
+        labelText: label,
+        hintText: hintText,
+        helperText: helperText,
+        prefixIcon: Icon(icon),
+        suffixIcon: const Icon(Icons.open_in_full_rounded, size: 19),
+      ),
+    );
+  }
+}
+
+class _EventMediaPicker extends StatelessWidget {
+  const _EventMediaPicker({
+    required this.photoSources,
+    required this.isLoading,
+    required this.onPick,
+    required this.onSetCover,
+    required this.onRemove,
+  });
+
+  final List<String> photoSources;
+  final bool isLoading;
+  final VoidCallback? onPick;
+  final ValueChanged<int> onSetCover;
+  final ValueChanged<int> onRemove;
+
+  @override
+  Widget build(BuildContext context) {
+    final hasPhotos = photoSources.isNotEmpty;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        AspectRatio(
+          aspectRatio: 16 / 10,
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(8),
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                if (hasPhotos)
+                  PullupImage(source: photoSources.first)
+                else
+                  ColoredBox(color: AppColors.surfaceSecondary),
+                if (!hasPhotos)
+                  Center(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(
+                          Icons.add_photo_alternate_outlined,
+                          size: 42,
+                          color: AppColors.textSecondary,
+                        ),
+                        const SizedBox(height: 10),
+                        Text(
+                          context.tr('Add venue photos'),
+                          style: Theme.of(context).textTheme.titleMedium,
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          context.tr('The first image becomes the cover'),
+                          style: Theme.of(context).textTheme.bodySmall,
+                        ),
+                      ],
+                    ),
+                  ),
+                if (hasPhotos)
+                  Positioned(
+                    left: 10,
+                    top: 10,
+                    child: PullupChip(
+                      label: context.tr('Cover photo'),
+                      icon: Icons.star_rounded,
+                    ),
+                  ),
+                if (isLoading)
+                  ColoredBox(
+                    color: AppColors.background.withValues(alpha: 0.72),
+                    child: const Center(child: CircularProgressIndicator()),
+                  ),
+              ],
+            ),
+          ),
+        ),
+        if (hasPhotos) ...[
+          const SizedBox(height: 12),
+          SizedBox(
+            height: 76,
+            child: ListView.separated(
+              scrollDirection: Axis.horizontal,
+              itemCount: photoSources.length,
+              separatorBuilder: (_, _) => const SizedBox(width: 8),
+              itemBuilder: (context, index) => _PhotoThumbnail(
+                source: photoSources[index],
+                isCover: index == 0,
+                onTap: () => onSetCover(index),
+                onRemove: () => onRemove(index),
+              ),
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            context.tr('Tap a photo to make it the cover. Up to 6 images.'),
+            style: Theme.of(context).textTheme.bodySmall,
+          ),
+        ],
+        const SizedBox(height: 14),
+        OutlinedButton.icon(
+          onPressed: onPick,
+          icon: isLoading
+              ? const SizedBox.square(
+                  dimension: 18,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : const Icon(Icons.photo_library_outlined),
+          label: Text(
+            context.tr(hasPhotos ? 'Replace photos' : 'Choose photos'),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _PhotoThumbnail extends StatelessWidget {
+  const _PhotoThumbnail({
+    required this.source,
+    required this.isCover,
+    required this.onTap,
+    required this.onRemove,
+  });
+
+  final String source;
+  final bool isCover;
+  final VoidCallback onTap;
+  final VoidCallback onRemove;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox.square(
+      dimension: 76,
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          Positioned.fill(
+            child: Material(
+              color: AppColors.surfaceSecondary,
+              clipBehavior: Clip.antiAlias,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+                side: BorderSide(
+                  color: isCover ? AppColors.magenta : AppColors.border,
+                  width: isCover ? 2 : 1,
+                ),
+              ),
+              child: InkWell(
+                onTap: onTap,
+                child: PullupImage(source: source),
+              ),
+            ),
+          ),
+          Positioned(
+            right: -4,
+            top: -4,
+            child: IconButton.filled(
+              constraints: const BoxConstraints.tightFor(width: 28, height: 28),
+              padding: EdgeInsets.zero,
+              tooltip: context.tr('Remove photo'),
+              onPressed: onRemove,
+              iconSize: 16,
+              icon: const Icon(Icons.close_rounded),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 class _DateTimeField extends StatelessWidget {
@@ -609,7 +922,7 @@ class _PrivacyNotice extends StatelessWidget {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Icon(Icons.shield_outlined, color: AppColors.primaryBright),
+        Icon(Icons.shield_outlined, color: AppColors.primaryBright),
         const SizedBox(width: 10),
         Expanded(
           child: Text(

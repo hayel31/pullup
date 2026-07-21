@@ -156,11 +156,7 @@ class _Rule extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Icon(
-            Icons.shield_outlined,
-            size: 20,
-            color: AppColors.primaryBright,
-          ),
+          Icon(Icons.shield_outlined, size: 20, color: AppColors.primaryBright),
           const SizedBox(width: 10),
           Expanded(child: Text(text)),
         ],

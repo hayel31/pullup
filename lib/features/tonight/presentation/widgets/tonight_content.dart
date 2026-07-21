@@ -164,7 +164,7 @@ class TonightMapContent extends StatelessWidget {
             borderRadius: BorderRadius.circular(8),
             border: Border.all(color: AppColors.blue.withValues(alpha: 0.28)),
           ),
-          child: const Row(
+          child: Row(
             children: [
               Icon(Icons.shield_outlined, color: AppColors.blue, size: 20),
               SizedBox(width: 9),

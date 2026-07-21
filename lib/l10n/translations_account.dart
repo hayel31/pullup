@@ -2,6 +2,72 @@ import 'translation_types.dart';
 
 const accountTranslationRows = <String, TranslationRow>{
   // Authentication.
+  'Your night starts here.': (
+    fr: 'Ta soirée commence ici.',
+    es: 'Tu noche empieza aquí.',
+    de: 'Deine Nacht beginnt hier.',
+  ),
+  'Sign in, discover the right plan, then switch to host mode whenever you need it.': (
+    fr: 'Connecte-toi, découvre le bon plan puis passe en mode hôte dès que tu en as besoin.',
+    es: 'Inicia sesión, descubre el plan adecuado y cambia al modo anfitrión cuando lo necesites.',
+    de: 'Melde dich an, entdecke den passenden Plan und wechsle bei Bedarf in den Gastgebermodus.',
+  ),
+  'Signing in...': (
+    fr: 'Connexion...',
+    es: 'Iniciando sesión...',
+    de: 'Anmeldung...',
+  ),
+  'Use a demo account': (
+    fr: 'Utiliser un compte de démonstration',
+    es: 'Usar una cuenta de demostración',
+    de: 'Demokonto verwenden',
+  ),
+  'or': (fr: 'ou', es: 'o', de: 'oder'),
+  'Create your PULLUP profile': (
+    fr: 'Crée ton profil PULLUP',
+    es: 'Crea tu perfil PULLUP',
+    de: 'Erstelle dein PULLUP-Profil',
+  ),
+  'One account lets you join nights and host your own events.': (
+    fr: 'Un seul compte permet de rejoindre des soirées et d’organiser les tiennes.',
+    es: 'Una sola cuenta te permite unirte a fiestas y organizar las tuyas.',
+    de: 'Mit einem Konto kannst du Abende besuchen und eigene Events veranstalten.',
+  ),
+  'Start registration': (
+    fr: 'Commencer l’inscription',
+    es: 'Empezar el registro',
+    de: 'Registrierung starten',
+  ),
+  'PULLUP is reserved for adults aged 18 and over.': (
+    fr: 'PULLUP est réservé aux personnes âgées de 18 ans et plus.',
+    es: 'PULLUP está reservado para mayores de 18 años.',
+    de: 'PULLUP ist Personen ab 18 Jahren vorbehalten.',
+  ),
+  'Demo host accounts': (
+    fr: 'Comptes hôtes de démonstration',
+    es: 'Cuentas anfitrión de demostración',
+    de: 'Demo-Gastgeberkonten',
+  ),
+  'Choose a profile to test its events and incoming requests.': (
+    fr: 'Choisis un profil pour tester ses annonces et les demandes reçues.',
+    es: 'Elige un perfil para probar sus eventos y solicitudes recibidas.',
+    de: 'Wähle ein Profil, um dessen Events und eingehende Anfragen zu testen.',
+  ),
+  'Enter your email and password.': (
+    fr: 'Saisis ton adresse e-mail et ton mot de passe.',
+    es: 'Introduce tu correo y contraseña.',
+    de: 'Gib deine E-Mail-Adresse und dein Passwort ein.',
+  ),
+  'Incorrect email or password.': (
+    fr: 'Adresse e-mail ou mot de passe incorrect.',
+    es: 'Correo o contraseña incorrectos.',
+    de: 'E-Mail-Adresse oder Passwort ist falsch.',
+  ),
+  'This account is not available.': (
+    fr: 'Ce compte n’est pas disponible.',
+    es: 'Esta cuenta no está disponible.',
+    de: 'Dieses Konto ist nicht verfügbar.',
+  ),
   'Explore as guest': (
     fr: 'Explorer en invité',
     es: 'Explorar como invitado',
@@ -333,4 +399,47 @@ const accountTranslationRows = <String, TranslationRow>{
   ),
   'Premium': (fr: 'Premium', es: 'Premium', de: 'Premium'),
   'DJ profiles': (fr: 'Profils DJ', es: 'Perfiles DJ', de: 'DJ-Profile'),
+  'About': (fr: 'À propos', es: 'Acerca de', de: 'Über mich'),
+  'Add a short bio so hosts know who is requesting.': (
+    fr: 'Ajoute une courte bio pour aider les hôtes à te connaître.',
+    es: 'Añade una breve biografía para que los anfitriones te conozcan.',
+    de: 'Füge eine kurze Bio hinzu, damit Gastgeber dich kennenlernen.',
+  ),
+  'Night identity': (
+    fr: 'Identité nocturne',
+    es: 'Identidad nocturna',
+    de: 'Nachtprofil',
+  ),
+  'Your spaces': (fr: 'Tes espaces', es: 'Tus espacios', de: 'Deine Bereiche'),
+  'Manage your nights and account tools.': (
+    fr: 'Gère tes soirées et les outils de ton compte.',
+    es: 'Gestiona tus noches y las herramientas de tu cuenta.',
+    de: 'Verwalte deine Nächte und Kontowerkzeuge.',
+  ),
+  'Manage 1 published event and its requests.': (
+    fr: 'Gère 1 soirée publiée et ses demandes.',
+    es: 'Gestiona 1 evento publicado y sus solicitudes.',
+    de: 'Verwalte 1 veröffentlichtes Event und seine Anfragen.',
+  ),
+  'Manage {count} published events and their requests.': (
+    fr: 'Gère {count} soirées publiées et leurs demandes.',
+    es: 'Gestiona {count} eventos publicados y sus solicitudes.',
+    de: 'Verwalte {count} veröffentlichte Events und ihre Anfragen.',
+  ),
+  '{count} friends available for group requests.': (
+    fr: '{count} amis disponibles pour les demandes de groupe.',
+    es: '{count} amigos disponibles para solicitudes de grupo.',
+    de: '{count} Freunde für Gruppenanfragen verfügbar.',
+  ),
+  'Blocking, reports and community guidelines.': (
+    fr: 'Blocages, signalements et règles de la communauté.',
+    es: 'Bloqueos, reportes y normas de la comunidad.',
+    de: 'Blockierungen, Meldungen und Community-Regeln.',
+  ),
+  'Attended': (fr: 'Participations', es: 'Asistencias', de: 'Teilnahmen'),
+  'Not added yet': (
+    fr: 'Pas encore renseigné',
+    es: 'Aún no añadido',
+    de: 'Noch nicht hinzugefügt',
+  ),
 };

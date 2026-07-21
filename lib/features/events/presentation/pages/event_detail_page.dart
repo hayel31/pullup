@@ -12,7 +12,7 @@ import '../../../../core/widgets/night_card.dart';
 import '../../../../core/widgets/pullup_chip.dart';
 import '../../../../core/widgets/pullup_image.dart';
 import '../../../../models/enums.dart';
-import '../../../shared/domain/app_drafts.dart';
+import '../../../discovery/presentation/pages/discover_page.dart';
 import '../../../shared/presentation/withdraw_request_flow.dart';
 import '../widgets/approximate_map.dart';
 
@@ -87,7 +87,7 @@ class EventDetailPage extends ConsumerWidget {
                     child: PullupImage(
                       source: photo,
                       fit: BoxFit.cover,
-                      errorWidget: const ColoredBox(
+                      errorWidget: ColoredBox(
                         color: AppColors.surfaceSecondary,
                       ),
                     ),
@@ -260,14 +260,7 @@ class EventDetailPage extends ConsumerWidget {
             GradientButton(
               label: 'Request to join',
               icon: Icons.favorite_rounded,
-              onPressed: () => controller.requestToJoin(
-                event.id,
-                const JoinEventDraft(
-                  note: 'I can pull up respectfully.',
-                  groupSize: 1,
-                  companionNames: [],
-                ),
-              ),
+              onPressed: () => showJoinEventSheet(context, event: event),
             ),
         ],
       ),

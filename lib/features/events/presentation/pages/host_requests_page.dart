@@ -97,7 +97,7 @@ class HostRequestsPage extends ConsumerWidget {
                   : () => _editAccess(context, ref, event),
             ),
             DecoratedBox(
-              decoration: const BoxDecoration(
+              decoration: BoxDecoration(
                 color: AppColors.surface,
                 border: Border(
                   top: BorderSide(color: AppColors.border),
@@ -141,6 +141,7 @@ class HostRequestsPage extends ConsumerWidget {
                       request: request,
                       guest: guest,
                       event: event,
+                      companionProfiles: _companionsFor(controller, request),
                       onViewProfile: () =>
                           showGuestProfileSheet(context, guest: guest),
                       onBlock: () => _blockGuest(context, ref, guest),
@@ -167,6 +168,7 @@ class HostRequestsPage extends ConsumerWidget {
                         request: request,
                         guest: guest,
                         event: event,
+                        companionProfiles: _companionsFor(controller, request),
                         onViewProfile: () =>
                             showGuestProfileSheet(context, guest: guest),
                         onBlock: () => _blockGuest(context, ref, guest),
@@ -186,6 +188,7 @@ class HostRequestsPage extends ConsumerWidget {
                       request: request,
                       guest: guest,
                       event: event,
+                      companionProfiles: _companionsFor(controller, request),
                       onViewProfile: () =>
                           showGuestProfileSheet(context, guest: guest),
                       onBlock: () => _blockGuest(context, ref, guest),
@@ -218,6 +221,16 @@ class HostRequestsPage extends ConsumerWidget {
     return null;
   }
 
+  static List<UserProfile> _companionsFor(
+    AppController controller,
+    EventRequest request,
+  ) {
+    return request.companionUserIds
+        .map(controller.userById)
+        .whereType<UserProfile>()
+        .toList();
+  }
+
   Future<void> _approve(
     BuildContext context,
     WidgetRef ref,
@@ -230,6 +243,10 @@ class HostRequestsPage extends ConsumerWidget {
       event: event,
       request: request,
       guest: guest,
+      companionProfiles: _companionsFor(
+        ref.read(appControllerProvider.notifier),
+        request,
+      ),
     );
     if (!confirmed || !context.mounted) return;
     await ref.read(appControllerProvider.notifier).acceptRequest(request.id);
@@ -392,7 +409,7 @@ class _EventGuestListHeader extends StatelessWidget {
                 ),
                 child: Row(
                   children: [
-                    const Icon(
+                    Icon(
                       Icons.lock_outline_rounded,
                       color: AppColors.primaryBright,
                     ),
@@ -415,7 +432,7 @@ class _EventGuestListHeader extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(width: 8),
-                    const Text(
+                    Text(
                       'Edit',
                       style: TextStyle(
                         color: AppColors.primaryBright,
@@ -423,7 +440,7 @@ class _EventGuestListHeader extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(width: 4),
-                    const Icon(
+                    Icon(
                       Icons.chevron_right_rounded,
                       color: AppColors.primaryBright,
                     ),

@@ -33,6 +33,7 @@ migrate_working_dir/
 /build/
 /coverage/
 .vercel/
+.tooling_home/
 
 # Firebase Cloud Functions build output and local dependencies
 /functions/lib/

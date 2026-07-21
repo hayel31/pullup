@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 # PULLUP
 
 PULLUP is a Flutter MVP for private night-plan discovery.
@@ -14,23 +13,25 @@ Completed in the Flutter app:
 - Dark premium Material 3 theme.
 - Feature-first architecture with Riverpod and GoRouter.
 - Persistent in-app language picker with English, French, Spanish and German UI copy.
-- Demo authentication, registration, email reset and email verification screens.
+- Demo email/password authentication with persistent registration and session restore.
 - User onboarding: photos, profile, preferences and safety rules.
 - User profile, edit profile, settings, sign out and delete account flow.
 - Party event creation flow with type, info, location, media placeholder, vibe/rules and publishing.
-- Discover feed with swipe gestures, pass/request actions, Premium undo simulation, report/share actions and request note modal.
+- Discover feed with swipe gestures, pass/request actions, Premium undo simulation and a structured join-request modal.
+- Reciprocal PULLUP friends with search, add/remove actions and local persistence.
+- Group requests with identified PULLUP friends plus anonymous men/women guest counts, all constrained by event capacity.
 - Recommendation engine with documented scoring formula.
 - Tonight mode with `Happening now`, `Starting soon`, `Near you`, `Few spots left`, `Trending tonight` and approximate map.
 - Event detail page with private address shown only to host or accepted participants.
 - Host request review with accept, reject, block and profile preview.
 - Local transaction-style match creation, spot decrement and conversation creation.
 - Matches page with recent, upcoming, pending and chat tabs.
-- Firestore-like chat model with text/system messages, unread markers and blocked-user checks.
+- Ephemeral 12-hour event group chats with member access checks, author avatars, text/system messages and unread markers.
 - Notifications page.
 - Safety Center with reports, blocked users and account deletion.
 - DJ profiles, DJ request flow and DJ data models.
 - Premium/paywall architecture prepared for RevenueCat or native subscriptions.
-- Demo dataset with 12 users, 8 events, 3 DJs, requests, matches, conversations and notifications.
+- Demo dataset with 12 users, 9 events, 4 host accounts, 3 DJs, requests, matches, conversations and notifications.
 - Firestore rules, indexes, Firebase config and Cloud Functions skeleton.
 - Unit, widget and integration tests.
 
@@ -71,6 +72,7 @@ lib/
     authentication/
     onboarding/
     profile/
+    friends/
     discovery/
     tonight/
     events/
@@ -91,6 +93,23 @@ flutter run --dart-define=USE_FIREBASE=true
 ```
 
 The Firebase repository is intentionally guarded until Firebase project credentials and collection setup are added.
+
+## Demo accounts
+
+The Vercel build includes four host profiles. Every account owns at least one
+published event and can also use the guest discovery experience.
+
+| Profile | Email | Password | Existing events |
+| --- | --- | --- | --- |
+| Leo | `leo@pullup.demo` | `Pullup2026!` | Rooftop, pre-game and private loft DJ set |
+| Jade | `jade@pullup.demo` | `Pullup2026!` | Pool party, student apartment and after |
+| Noah | `noah@pullup.demo` | `Pullup2026!` | Boat party and birthday suite |
+| Nina Volt | `nina@pullup.demo` | `Pullup2026!` | Neon private DJ session |
+
+Accounts created in demo mode, their password digests, the active session and
+their newly published events are saved with `shared_preferences`. This storage
+is local to the browser/device. Configure Firebase Authentication and Firestore
+for shared accounts and data across devices.
 
 ## Main models
 
@@ -115,6 +134,7 @@ users/{userId}
 users/{userId}/swipes/{swipeId}
 users/{userId}/notifications/{notificationId}
 users/{userId}/blockedUsers/{blockedUserId}
+users/{userId}/friends/{friendId}
 
 events/{eventId}
 events/{eventId}/private/access
@@ -250,12 +270,13 @@ flutter test integration_test
 ## Known limits
 
 - Live Firebase repository methods are prepared but intentionally not connected without credentials.
-- Demo images use remote placeholder URLs.
-- Image upload uses `image_picker` in UX but stores demo URLs.
+- Demo event covers use bundled local nightlife imagery.
+- Image upload uses `image_picker` in UX but stores demo references.
 - Payments, boosts and identity checks are simulated.
 - Voice/video messages, reactions, replies and temporary live location are not active.
 - Moderation automation is prepared in Cloud Functions and rules but not connected to a staff UI.
 - Map uses approximate event coordinates only.
+- Demo registrations and newly created events are local to each browser until Firebase is configured.
 
 ## Production recommendations
 
@@ -268,6 +289,3 @@ flutter test integration_test
 - Add crash reporting, analytics consent and privacy policy flows.
 - Add CI running `flutter analyze`, `flutter test`, rules tests and functions build.
 - Replace demo recommendation with a server-assisted ranking service once data volume grows.
-=======
-# pullup
->>>>>>> 7795d6b6ab838df55cea5f09c3db582740cac2fa

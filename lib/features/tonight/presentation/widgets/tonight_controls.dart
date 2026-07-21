@@ -102,9 +102,7 @@ class TonightViewSelector extends StatelessWidget {
                 ? AppColors.textPrimary
                 : AppColors.textSecondary,
           ),
-          side: const WidgetStatePropertyAll(
-            BorderSide(color: AppColors.border),
-          ),
+          side: WidgetStatePropertyAll(BorderSide(color: AppColors.border)),
           textStyle: const WidgetStatePropertyAll(
             TextStyle(fontWeight: FontWeight.w800),
           ),

@@ -5,15 +5,20 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:pullup/app/app.dart';
 import 'package:pullup/app/providers/app_state.dart';
+import 'package:pullup/app/router.dart';
 import 'package:pullup/app/theme/app_colors.dart';
-import 'package:pullup/core/widgets/number_stepper.dart';
 import 'package:pullup/features/discovery/presentation/pages/discover_page.dart';
 import 'package:pullup/features/discovery/presentation/widgets/swipe_event_deck.dart';
 import 'package:pullup/features/events/presentation/pages/event_detail_page.dart';
 import 'package:pullup/features/events/presentation/widgets/approximate_map.dart';
 import 'package:pullup/features/tonight/presentation/pages/tonight_page.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
+  setUp(() {
+    SharedPreferences.setMockInitialValues({});
+  });
+
   testWidgets('app actions never reopen the splash screen', (tester) async {
     final container = await _pumpSignedInApp(tester);
     final controller = container.read(appControllerProvider.notifier);
@@ -22,15 +27,63 @@ void main() {
     await controller.passEvent(eventId);
     await tester.pump();
 
-    expect(find.text("Finding tonight's move"), findsNothing);
+    expect(find.byKey(const Key('portal-before-sign-in')), findsNothing);
+    expect(find.byKey(const Key('portal-after-sign-in')), findsNothing);
     expect(find.byType(DiscoverPage), findsOneWidget);
 
     final conversation = container.read(myConversationsProvider).first;
     await controller.sendMessage(conversation.id, 'Still pulling up.');
     await tester.pump();
 
-    expect(find.text("Finding tonight's move"), findsNothing);
+    expect(find.byKey(const Key('portal-before-sign-in')), findsNothing);
+    expect(find.byKey(const Key('portal-after-sign-in')), findsNothing);
     expect(find.byType(DiscoverPage), findsOneWidget);
+  });
+
+  testWidgets('ephemeral group chat shows authors and the expiry window', (
+    tester,
+  ) async {
+    final container = await _pumpSignedInApp(tester);
+    final conversation = container
+        .read(myConversationsProvider)
+        .firstWhere((item) => item.id == 'conversation-001');
+
+    container.read(routerProvider).go('/chat/${conversation.id}');
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 350));
+
+    expect(find.text('Enzo'), findsWidgets);
+    expect(find.text('We are on our way.'), findsOneWidget);
+    expect(find.textContaining('Messages disappear'), findsOneWidget);
+    expect(find.byTooltip('Group members'), findsOneWidget);
+  });
+
+  testWidgets('friends page adds and removes a reciprocal connection', (
+    tester,
+  ) async {
+    final container = await _pumpSignedInApp(tester);
+    container.read(routerProvider).go('/friends');
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+
+    final addFriend = find.byKey(const Key('add-friend-host-001'));
+    await tester.ensureVisible(addFriend);
+    await tester.tap(addFriend);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 250));
+
+    expect(
+      container.read(appControllerProvider).currentUser!.friendIds,
+      contains('host-001'),
+    );
+    expect(
+      container
+          .read(appControllerProvider)
+          .users
+          .firstWhere((user) => user.id == 'host-001')
+          .friendIds,
+      contains('user-001'),
+    );
   });
 
   testWidgets('swipe direction highlights pass and request actions', (
@@ -123,10 +176,10 @@ void main() {
       container.read(appControllerProvider).swipedEventIds['user-001'],
       contains(originalEventId),
     );
-    expect(find.text("Finding tonight's move"), findsNothing);
+    expect(find.byKey(const Key('portal-after-sign-in')), findsNothing);
   });
 
-  testWidgets('request group controls stay visible and explain the event max', (
+  testWidgets('request builds a group with a friend and gendered guests', (
     tester,
   ) async {
     final container = await _pumpSignedInApp(tester);
@@ -141,37 +194,31 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 350));
 
-    final addFinder = find.byKey(const Key('group-add-button'));
-    await tester.ensureVisible(addFinder);
+    final friendFinder = find.byKey(const Key('request-friend-user-002'));
+    await tester.ensureVisible(friendFinder);
     await tester.pump(const Duration(milliseconds: 200));
-    expect(addFinder.hitTestable(), findsOneWidget);
+    expect(friendFinder.hitTestable(), findsOneWidget);
+    await tester.tap(friendFinder);
+    await tester.pump(const Duration(milliseconds: 180));
 
-    final removeButton = tester.widget<IconButton>(
-      find.byKey(const Key('group-remove-button')),
-    );
-    final addButton = tester.widget<IconButton>(addFinder);
-    expect(
-      removeButton.style?.foregroundColor?.resolve({WidgetState.disabled}),
-      AppColors.textSecondary,
-    );
-    expect(
-      addButton.style?.foregroundColor?.resolve(<WidgetState>{}),
-      AppColors.textPrimary,
-    );
+    final menAdd = find.byKey(const Key('guest-men-add-button'));
+    await tester.ensureVisible(menAdd);
+    expect(menAdd.hitTestable(), findsOneWidget);
+    await tester.tap(menAdd);
+    await tester.pump(const Duration(milliseconds: 160));
 
-    for (var value = 1; value < requestLimit; value++) {
-      await tester.tap(addFinder);
+    final womenAdd = find.byKey(const Key('guest-women-add-button'));
+    await tester.ensureVisible(womenAdd);
+    for (var value = 3; value < requestLimit; value++) {
+      await tester.tap(womenAdd);
       await tester.pump(const Duration(milliseconds: 160));
     }
     expect(
-      find.descendant(
-        of: find.byType(NumberStepper),
-        matching: find.text('$requestLimit'),
-      ),
+      find.text('$requestLimit of $requestLimit people in this request'),
       findsOneWidget,
     );
 
-    await tester.tap(addFinder);
+    await tester.tap(womenAdd);
     await tester.pump(const Duration(milliseconds: 200));
     expect(
       find.text(
@@ -220,11 +267,14 @@ Future<ProviderContainer> _pumpSignedInApp(WidgetTester tester) async {
   await tester.pumpWidget(
     UncontrolledProviderScope(container: container, child: const PullupApp()),
   );
-  await tester.pump(const Duration(milliseconds: 2700));
+  await tester.pump(const Duration(milliseconds: 3700));
   await tester.pump(const Duration(milliseconds: 250));
 
   await container.read(appControllerProvider.notifier).signInDemo();
   await tester.pump();
+  await tester.pump(const Duration(milliseconds: 250));
+  expect(find.byKey(const Key('portal-after-sign-in')), findsOneWidget);
+  await tester.pump(const Duration(milliseconds: 3700));
   await tester.pump(const Duration(milliseconds: 250));
   expect(find.byType(DiscoverPage), findsOneWidget);
   return container;

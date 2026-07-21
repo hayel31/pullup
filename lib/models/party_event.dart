@@ -24,6 +24,24 @@ class HostPreview {
     'badges': badges.map((badge) => badge.name).toList(),
     'hostedEventCount': hostedEventCount,
   };
+
+  factory HostPreview.fromJson(Map<String, dynamic> json) {
+    return HostPreview(
+      id: json['id'] as String,
+      firstName: json['firstName'] as String,
+      photoUrl: json['photoUrl'] as String,
+      badges: (json['badges'] as List? ?? const [])
+          .map(
+            (name) => _enumValue(
+              VerificationBadge.values,
+              name,
+              VerificationBadge.emailVerified,
+            ),
+          )
+          .toList(),
+      hostedEventCount: json['hostedEventCount'] as int? ?? 0,
+    );
+  }
 }
 
 class PartyEvent {
@@ -250,6 +268,7 @@ class PartyEvent {
     'areaName': areaName,
     'approximateGeoPoint': approximateGeoPoint.toJson(),
     if (includePrivateAddress) 'exactAddress': exactAddress,
+    if (includePrivateAddress) 'accessInstructions': accessInstructions,
     'startDateTime': startDateTime.toIso8601String(),
     'endDateTime': endDateTime.toIso8601String(),
     'timezone': timezone,
@@ -280,4 +299,96 @@ class PartyEvent {
     'updatedAt': updatedAt.toIso8601String(),
     'expiresAt': expiresAt.toIso8601String(),
   };
+
+  factory PartyEvent.fromJson(Map<String, dynamic> json) {
+    return PartyEvent(
+      id: json['id'] as String,
+      hostId: json['hostId'] as String,
+      hostPreview: HostPreview.fromJson(
+        Map<String, dynamic>.from(json['hostPreview'] as Map),
+      ),
+      title: json['title'] as String,
+      description: json['description'] as String,
+      category: _enumValue(
+        EventCategory.values,
+        json['category'],
+        EventCategory.otherNightPlan,
+      ),
+      coverPhotoUrl: json['coverPhotoUrl'] as String,
+      photoUrls: List<String>.from(json['photoUrls'] as List? ?? const []),
+      city: json['city'] as String,
+      areaName: json['areaName'] as String,
+      approximateGeoPoint: GeoPointLite.fromJson(
+        Map<String, dynamic>.from(json['approximateGeoPoint'] as Map),
+      ),
+      exactAddress: json['exactAddress'] as String?,
+      accessInstructions: json['accessInstructions'] as String?,
+      startDateTime: DateTime.parse(json['startDateTime'] as String),
+      endDateTime: DateTime.parse(json['endDateTime'] as String),
+      timezone: json['timezone'] as String,
+      ageRequirement: json['ageRequirement'] as int,
+      maxParticipants: json['maxParticipants'] as int,
+      availableSpots: json['availableSpots'] as int,
+      acceptedParticipantIds: List<String>.from(
+        json['acceptedParticipantIds'] as List? ?? const [],
+      ),
+      waitingParticipantIds: List<String>.from(
+        json['waitingParticipantIds'] as List? ?? const [],
+      ),
+      rejectedParticipantIds: List<String>.from(
+        json['rejectedParticipantIds'] as List? ?? const [],
+      ),
+      eventTags: (json['eventTags'] as List? ?? const [])
+          .map((name) => _enumValue(EventTag.values, name, EventTag.lastMinute))
+          .toList(),
+      musicGenres: List<String>.from(json['musicGenres'] as List? ?? const []),
+      dressCode: json['dressCode'] as String?,
+      contributionText: json['contributionText'] as String?,
+      houseRules: json['houseRules'] as String?,
+      alcoholPolicy: _enumValue(
+        AlcoholPolicy.values,
+        json['alcoholPolicy'],
+        AlcoholPolicy.unspecified,
+      ),
+      smokingPolicy: _enumValue(
+        SmokingPolicy.values,
+        json['smokingPolicy'],
+        SmokingPolicy.unspecified,
+      ),
+      visibility: _enumValue(
+        EventVisibility.values,
+        json['visibility'],
+        EventVisibility.public,
+      ),
+      status: _enumValue(
+        EventStatus.values,
+        json['status'],
+        EventStatus.published,
+      ),
+      approvalMode: _enumValue(
+        ApprovalMode.values,
+        json['approvalMode'],
+        ApprovalMode.manual,
+      ),
+      allowsGroups: json['allowsGroups'] as bool? ?? false,
+      maxGroupSize: json['maxGroupSize'] as int? ?? 1,
+      isBoosted: json['isBoosted'] as bool? ?? false,
+      boostEndDate: json['boostEndDate'] == null
+          ? null
+          : DateTime.parse(json['boostEndDate'] as String),
+      likeCount: json['likeCount'] as int? ?? 0,
+      requestCount: json['requestCount'] as int? ?? 0,
+      matchCount: json['matchCount'] as int? ?? 0,
+      createdAt: DateTime.parse(json['createdAt'] as String),
+      updatedAt: DateTime.parse(json['updatedAt'] as String),
+      expiresAt: DateTime.parse(json['expiresAt'] as String),
+    );
+  }
+}
+
+T _enumValue<T extends Enum>(Iterable<T> values, Object? name, T fallback) {
+  for (final value in values) {
+    if (value.name == name) return value;
+  }
+  return fallback;
 }

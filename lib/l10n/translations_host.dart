@@ -1,6 +1,23 @@
 import 'translation_types.dart';
 
 const hostTranslationRows = <String, TranslationRow>{
+  'Choose your PULLUP space': (
+    fr: 'Choisis ton espace PULLUP',
+    es: 'Elige tu espacio PULLUP',
+    de: 'Wähle deinen PULLUP-Bereich',
+  ),
+  'Guest': (fr: 'Invité', es: 'Invitado', de: 'Gast'),
+  'Host': (fr: 'Hôte', es: 'Anfitrión', de: 'Gastgeber'),
+  'Host control room': (
+    fr: 'Tableau de bord hôte',
+    es: 'Panel de anfitrión',
+    de: 'Gastgeber-Zentrale',
+  ),
+  'Manage your events, guests and private access from one place.': (
+    fr: 'Gère tes annonces, tes invités et les accès privés au même endroit.',
+    es: 'Gestiona tus eventos, invitados y accesos privados en un solo lugar.',
+    de: 'Verwalte Events, Gäste und private Zugänge an einem Ort.',
+  ),
   'Host space': (
     fr: 'Espace hôte',
     es: 'Espacio anfitrión',

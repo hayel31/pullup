@@ -11,6 +11,9 @@ class EventRequest {
     required this.companionNames,
     required this.status,
     required this.createdAt,
+    this.companionUserIds = const [],
+    this.guestMenCount = 0,
+    this.guestWomenCount = 0,
     this.decidedAt,
     this.decisionReason,
   });
@@ -22,6 +25,9 @@ class EventRequest {
   final String note;
   final int groupSize;
   final List<String> companionNames;
+  final List<String> companionUserIds;
+  final int guestMenCount;
+  final int guestWomenCount;
   final RequestStatus status;
   final DateTime createdAt;
   final DateTime? decidedAt;
@@ -35,6 +41,9 @@ class EventRequest {
     String? note,
     int? groupSize,
     List<String>? companionNames,
+    List<String>? companionUserIds,
+    int? guestMenCount,
+    int? guestWomenCount,
     RequestStatus? status,
     DateTime? createdAt,
     DateTime? decidedAt,
@@ -48,6 +57,9 @@ class EventRequest {
       note: note ?? this.note,
       groupSize: groupSize ?? this.groupSize,
       companionNames: companionNames ?? this.companionNames,
+      companionUserIds: companionUserIds ?? this.companionUserIds,
+      guestMenCount: guestMenCount ?? this.guestMenCount,
+      guestWomenCount: guestWomenCount ?? this.guestWomenCount,
       status: status ?? this.status,
       createdAt: createdAt ?? this.createdAt,
       decidedAt: decidedAt ?? this.decidedAt,

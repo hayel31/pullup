@@ -13,13 +13,13 @@ class TonightEventImage extends StatelessWidget {
     return PullupImage(
       source: url,
       fit: BoxFit.cover,
-      placeholder: const ColoredBox(
+      placeholder: ColoredBox(
         color: AppColors.surfaceSecondary,
         child: Center(
           child: Icon(Icons.nightlife_rounded, color: AppColors.textSecondary),
         ),
       ),
-      errorWidget: const ColoredBox(
+      errorWidget: ColoredBox(
         color: AppColors.surfaceSecondary,
         child: Center(
           child: Icon(

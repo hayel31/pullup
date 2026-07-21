@@ -39,11 +39,21 @@ class PullupSnapshot {
 abstract class PullupRepository {
   PullupSnapshot get snapshot;
 
+  Future<UserProfile?> restoreSession();
+
+  Future<UserProfile> signIn({required String email, required String password});
+
   Future<UserProfile> signInDemo({required bool asHost});
+
+  Future<void> signOut();
 
   Future<UserProfile> register(SignUpDraft draft);
 
   Future<UserProfile> updateProfile(String userId, ProfileUpdateDraft draft);
+
+  Future<UserProfile> addFriend(String userId, String friendId);
+
+  Future<UserProfile> removeFriend(String userId, String friendId);
 
   Future<UserProfile> completeOnboarding(
     String userId,
