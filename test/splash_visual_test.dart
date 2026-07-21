@@ -18,29 +18,23 @@ void main() {
     );
     final context = tester.element(find.byType(PortalEntranceAnimation));
     await tester.runAsync(() async {
-      await Future.wait([
-        precacheImage(
-          const AssetImage('assets/branding/pullup-midnight-logo.png'),
-          context,
-        ),
-        precacheImage(
-          const AssetImage('assets/branding/pullup-walker.png'),
-          context,
-        ),
-      ]);
+      await precacheImage(
+        const AssetImage('assets/branding/pullup-midnight-logo.png'),
+        context,
+      );
     });
     await tester.pump();
 
-    await tester.pump(const Duration(milliseconds: 1450));
+    await tester.pump(const Duration(milliseconds: 650));
     await expectLater(
       find.byType(PortalEntranceAnimation),
-      matchesGoldenFile('goldens/splash_walk.png'),
+      matchesGoldenFile('goldens/splash_aperture.png'),
     );
 
-    await tester.pump(const Duration(milliseconds: 1750));
+    await tester.pump(const Duration(milliseconds: 700));
     await expectLater(
       find.byType(PortalEntranceAnimation),
-      matchesGoldenFile('goldens/splash_arrival.png'),
+      matchesGoldenFile('goldens/splash_brand_reveal.png'),
     );
 
     await tester.pump(const Duration(milliseconds: 900));
@@ -65,23 +59,17 @@ void main() {
     );
     final context = tester.element(find.byType(PortalEntranceAnimation));
     await tester.runAsync(() async {
-      await Future.wait([
-        precacheImage(
-          const AssetImage('assets/branding/pullup-midnight-logo.png'),
-          context,
-        ),
-        precacheImage(
-          const AssetImage('assets/branding/pullup-walker.png'),
-          context,
-        ),
-      ]);
+      await precacheImage(
+        const AssetImage('assets/branding/pullup-midnight-logo.png'),
+        context,
+      );
     });
     await tester.pump();
-    await tester.pump(const Duration(milliseconds: 1450));
+    await tester.pump(const Duration(milliseconds: 1350));
 
     await expectLater(
       find.byType(PortalEntranceAnimation),
-      matchesGoldenFile('goldens/splash_walk_wide.png'),
+      matchesGoldenFile('goldens/splash_brand_reveal_wide.png'),
     );
   });
 }

@@ -34,16 +34,16 @@ void main() {
 
     expect(find.byKey(const Key('portal-before-sign-in')), findsOneWidget);
     expect(find.byKey(const Key('portal-animated-scene')), findsOneWidget);
-    expect(find.byKey(const Key('portal-walker')), findsOneWidget);
+    expect(find.byKey(const Key('portal-logo-reveal')), findsOneWidget);
     expect(find.byKey(const Key('portal-target-mark')), findsOneWidget);
     expect(find.byKey(const Key('portal-brand-lockup')), findsOneWidget);
     expect(find.text('PREVIEW 1 / BEFORE SIGN IN'), findsNothing);
     expect(find.text('PULLUP'), findsOneWidget);
 
-    await tester.pump(const Duration(seconds: 2));
+    await tester.pump(const Duration(milliseconds: 1500));
     expect(find.byKey(const Key('portal-before-sign-in')), findsOneWidget);
 
-    await tester.pump(const Duration(milliseconds: 2800));
+    await tester.pump(const Duration(milliseconds: 2100));
     await tester.pumpAndSettle();
     expect(find.byKey(const Key('portal-before-sign-in')), findsNothing);
     expect(find.text('Your night starts here.'), findsOneWidget);
