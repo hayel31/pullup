@@ -1,5 +1,6 @@
 import '../../../models/enums.dart';
 import '../../../models/geo_point_lite.dart';
+import '../../../models/professional_profile.dart';
 
 class SignUpDraft {
   const SignUpDraft({
@@ -14,6 +15,8 @@ class SignUpDraft {
     required this.confirmedMinimumAge,
     this.lastName,
     this.phoneNumber,
+    this.accountType = AccountType.personal,
+    this.professionalCategory,
   });
 
   final String firstName;
@@ -27,6 +30,8 @@ class SignUpDraft {
   final String password;
   final bool acceptedTerms;
   final bool confirmedMinimumAge;
+  final AccountType accountType;
+  final ProfessionalCategory? professionalCategory;
 }
 
 class ProfileUpdateDraft {
@@ -40,6 +45,7 @@ class ProfileUpdateDraft {
     required this.profilePhotos,
     this.occupation,
     this.instagramHandle,
+    this.professionalProfile,
   });
 
   final String displayName;
@@ -51,6 +57,7 @@ class ProfileUpdateDraft {
   final List<String> profilePhotos;
   final String? occupation;
   final String? instagramHandle;
+  final ProfessionalProfile? professionalProfile;
 }
 
 class CreateEventDraft {
@@ -81,6 +88,8 @@ class CreateEventDraft {
     this.dressCode,
     this.contributionText,
     this.houseRules,
+    this.publishAsProfessional = false,
+    this.professionalNeeds = const [],
   });
 
   final String title;
@@ -109,6 +118,8 @@ class CreateEventDraft {
   final SmokingPolicy smokingPolicy;
   final EventVisibility visibility;
   final ApprovalMode approvalMode;
+  final bool publishAsProfessional;
+  final List<ProfessionalCategory> professionalNeeds;
 }
 
 class JoinEventDraft {

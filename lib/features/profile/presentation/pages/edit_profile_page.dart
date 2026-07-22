@@ -6,6 +6,7 @@ import '../../../../app/providers/app_state.dart';
 import '../../../../core/widgets/gradient_button.dart';
 import '../../../../models/enums.dart';
 import '../../../shared/domain/app_drafts.dart';
+import '../widgets/professional_profile_form.dart';
 
 class EditProfilePage extends ConsumerStatefulWidget {
   const EditProfilePage({super.key});
@@ -22,6 +23,7 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
   late final TextEditingController _instagram;
   late final Set<String> _genres;
   late final Set<String> _interests;
+  ProfessionalProfileFormController? _professionalController;
 
   @override
   void initState() {
@@ -34,6 +36,13 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
     _instagram = TextEditingController(text: user.instagramHandle);
     _genres = user.musicPreferences.toSet();
     _interests = user.interests.toSet();
+    if (user.isProfessional) {
+      _professionalController = ProfessionalProfileFormController(
+        initialCategory:
+            user.professionalCategory ?? ProfessionalCategory.other,
+        initialProfile: user.professionalProfile,
+      );
+    }
   }
 
   @override
@@ -43,6 +52,7 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
     _city.dispose();
     _occupation.dispose();
     _instagram.dispose();
+    _professionalController?.dispose();
     super.dispose();
   }
 
@@ -130,11 +140,38 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
               'Cocktails',
             ],
           ),
+          if (_professionalController != null) ...[
+            const SizedBox(height: 28),
+            Text(
+              context.tr('Professional profile'),
+              style: Theme.of(context).textTheme.headlineSmall,
+            ),
+            const SizedBox(height: 6),
+            Text(
+              context.tr(
+                'Update the services, portfolio and references hosts see.',
+              ),
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+            const SizedBox(height: 18),
+            ProfessionalProfileForm(controller: _professionalController!),
+          ],
           const SizedBox(height: 20),
           GradientButton(
             label: 'Save profile',
             icon: Icons.check_rounded,
             onPressed: () async {
+              if (_professionalController != null &&
+                  !_professionalController!.isValid) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text(
+                      'Add your professional name, headline and at least one service.',
+                    ),
+                  ),
+                );
+                return;
+              }
               await ref
                   .read(appControllerProvider.notifier)
                   .updateProfile(
@@ -148,6 +185,8 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
                       profilePhotos: user.profilePhotos,
                       occupation: _occupation.text.trim(),
                       instagramHandle: _instagram.text.trim(),
+                      professionalProfile: _professionalController
+                          ?.buildProfile(),
                     ),
                   );
               if (context.mounted) context.pop();

@@ -363,6 +363,25 @@ class AppController extends StateNotifier<PullupState> {
     });
   }
 
+  Future<void> likeEvent(String eventId) async {
+    final user = _requireUser();
+    await _run(() async {
+      await _repository.likeEvent(user.id, eventId);
+      _sync(currentUserId: user.id, lastSwipedEventId: eventId);
+    });
+  }
+
+  Future<void> applyAsProfessional(
+    String eventId, {
+    required String message,
+  }) async {
+    final user = _requireUser();
+    await _run(() async {
+      await _repository.applyAsProfessional(user.id, eventId, message: message);
+      _sync(currentUserId: user.id, lastSwipedEventId: eventId);
+    });
+  }
+
   Future<void> undoLastSwipe() async {
     final user = _requireUser();
     final last = state.lastSwipedEventId;

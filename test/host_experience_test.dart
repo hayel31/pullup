@@ -55,7 +55,7 @@ void main() {
     expect(find.text('HOST'), findsOneWidget);
     expect(find.byKey(const Key('manage-event-event-001')), findsOneWidget);
     expect(find.text('Host control room'), findsOneWidget);
-    expect(find.textContaining('Bastille, Paris'), findsOneWidget);
+    expect(find.textContaining('Capitole, Toulouse'), findsOneWidget);
   });
 
   testWidgets('host approves and declines requests with confirmation', (
@@ -81,7 +81,7 @@ void main() {
     await _pumpUi(tester);
 
     expect(find.text('Approve Lina?'), findsOneWidget);
-    expect(find.text('14 Rue Keller, 75011 Paris'), findsWidgets);
+    expect(find.text('8 Rue du Taur, 31000 Toulouse'), findsWidgets);
     await tester.tap(find.byKey(const Key('confirm-approve-request')));
     await _pumpUi(tester);
 

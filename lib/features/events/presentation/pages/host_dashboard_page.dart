@@ -228,7 +228,7 @@ class HostDashboardPage extends ConsumerWidget {
   static int _acceptedSeats(Iterable<EventRequest> requests) {
     return requests
         .where((request) => request.status == RequestStatus.accepted)
-        .fold(0, (total, request) => total + request.groupSize);
+        .fold(0, (total, request) => total + request.reservedSpots);
   }
 
   static bool _isActive(PartyEvent event) {

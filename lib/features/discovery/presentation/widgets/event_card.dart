@@ -24,6 +24,9 @@ class EventCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final professionalRole = viewer.professionalCategory;
+    final matchingProfessional =
+        professionalRole != null && event.needsProfessional(professionalRole);
     final distance = DistanceUtils.kilometersBetween(
       viewer.approximateLocation,
       event.approximateGeoPoint,
@@ -60,8 +63,49 @@ class EventCard extends StatelessWidget {
                 ),
               ),
             ),
+            if (event.isProfessionalEvent || matchingProfessional)
+              Positioned(
+                top: 0,
+                left: 0,
+                right: 0,
+                child: Container(
+                  height: 42,
+                  padding: const EdgeInsets.symmetric(horizontal: 14),
+                  color: matchingProfessional
+                      ? AppColors.success.withValues(alpha: 0.94)
+                      : AppColors.blue.withValues(alpha: 0.94),
+                  child: Row(
+                    children: [
+                      Icon(
+                        matchingProfessional
+                            ? Icons.work_history_outlined
+                            : event.isVenueEvent
+                            ? Icons.storefront_outlined
+                            : Icons.workspace_premium_outlined,
+                        size: 19,
+                        color: Colors.white,
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          matchingProfessional
+                              ? 'PRO OPPORTUNITY · ${viewer.professionalCategory!.label.toUpperCase()} NEEDED'
+                              : 'PRO EVENT · ${event.hostPreview.professionalCategory?.label.toUpperCase() ?? 'PROFESSIONAL'} · ${event.hostPreview.businessName ?? event.hostPreview.firstName}',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w900,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
             Positioned(
-              top: 16,
+              top: event.isProfessionalEvent || matchingProfessional ? 54 : 16,
               left: 16,
               right: 16,
               child: Wrap(
@@ -95,6 +139,14 @@ class EventCard extends StatelessWidget {
                     const PullupChip(
                       label: 'Boosted',
                       icon: Icons.rocket_launch_rounded,
+                    ),
+                  for (final role in event.professionalNeeds.take(2))
+                    PullupChip(
+                      label: '${role.label} needed',
+                      icon: Icons.handyman_outlined,
+                      color: matchingProfessional
+                          ? AppColors.success.withValues(alpha: 0.86)
+                          : AppColors.blue.withValues(alpha: 0.74),
                     ),
                 ],
               ),
@@ -136,15 +188,21 @@ class EventCard extends StatelessWidget {
                     children: [
                       for (final genre in event.musicGenres.take(3))
                         PullupChip(label: genre),
-                      PullupChip(
-                        label: context.tr(
-                          '{available}/{maximum} open',
-                          values: {
-                            'available': event.availableSpots,
-                            'maximum': event.maxParticipants,
-                          },
+                      if (event.acceptsOpenInterest)
+                        const PullupChip(
+                          label: 'Open entry',
+                          icon: Icons.confirmation_number_outlined,
+                        )
+                      else
+                        PullupChip(
+                          label: context.tr(
+                            '{available}/{maximum} open',
+                            values: {
+                              'available': event.availableSpots,
+                              'maximum': event.maxParticipants,
+                            },
+                          ),
                         ),
-                      ),
                     ],
                   ),
                   const SizedBox(height: 14),
@@ -161,7 +219,8 @@ class EventCard extends StatelessWidget {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              event.hostPreview.firstName,
+                              event.hostPreview.businessName ??
+                                  event.hostPreview.firstName,
                               style: const TextStyle(
                                 fontWeight: FontWeight.w800,
                               ),
@@ -193,6 +252,18 @@ class EventCard extends StatelessWidget {
   }
 
   String _hostTrust(PartyEvent event) {
+    if (event.isVenueEvent) {
+      return event.hostPreview.badges.contains(VerificationBadge.verifiedVenue)
+          ? 'Verified venue'
+          : 'Professional venue';
+    }
+    if (event.isProfessionalEvent) {
+      return event.hostPreview.badges.contains(
+            VerificationBadge.verifiedProfessional,
+          )
+          ? 'Verified professional'
+          : 'Professional host';
+    }
     if (event.hostPreview.badges.contains(VerificationBadge.superHost)) {
       return 'Super Host';
     }

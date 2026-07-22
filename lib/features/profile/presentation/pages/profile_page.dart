@@ -7,6 +7,7 @@ import '../../../../app/theme/app_colors.dart';
 import '../../../../core/widgets/pullup_chip.dart';
 import '../../../../core/widgets/pullup_image.dart';
 import '../../../../models/enums.dart';
+import '../../../../models/professional_profile.dart';
 import '../../../../models/user_profile.dart';
 
 class ProfilePage extends ConsumerWidget {
@@ -75,6 +76,10 @@ class ProfilePage extends ConsumerWidget {
               ),
           ],
         ),
+        if (user.professionalProfile case final professional?) ...[
+          const SizedBox(height: 28),
+          _ProfessionalShowcase(profile: professional),
+        ],
         const SizedBox(height: 28),
         _SectionTitle(title: context.tr('Night identity')),
         _ProfileTags(
@@ -144,14 +149,6 @@ class ProfilePage extends ConsumerWidget {
             const SizedBox(width: 10),
             Expanded(
               child: _CompactAction(
-                icon: Icons.headphones_rounded,
-                label: context.tr('DJ profiles'),
-                onTap: () => context.push('/dj'),
-              ),
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: _CompactAction(
                 icon: Icons.settings_rounded,
                 label: context.tr('Settings'),
                 onTap: () => context.push('/settings'),
@@ -171,9 +168,21 @@ class _ProfileHero extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final professional = user.professionalProfile;
     final imageSource =
         user.mainPhotoUrl ?? 'https://picsum.photos/seed/${user.id}/900/1200';
-    final mainBadge = user.badges.isEmpty ? null : user.badges.last;
+    final mainBadge = switch (professional) {
+      ProfessionalProfile(
+        isVerified: true,
+        category: ProfessionalCategory.dj,
+      ) =>
+        VerificationBadge.verifiedDj,
+      ProfessionalProfile(isVerified: true, isVenue: true) =>
+        VerificationBadge.verifiedVenue,
+      ProfessionalProfile(isVerified: true) =>
+        VerificationBadge.verifiedProfessional,
+      _ => user.badges.isEmpty ? null : user.badges.last,
+    };
     return AspectRatio(
       aspectRatio: 0.92,
       child: ClipRRect(
@@ -200,8 +209,12 @@ class _ProfileHero extends StatelessWidget {
               left: 12,
               top: 12,
               child: PullupChip(
-                label: context.tr('Profile'),
-                icon: Icons.person_outline_rounded,
+                label: professional == null
+                    ? context.tr('Profile')
+                    : 'PRO · ${professional.category.label.toUpperCase()}',
+                icon: professional == null
+                    ? Icons.person_outline_rounded
+                    : Icons.workspace_premium_outlined,
                 color: AppColors.surface.withValues(alpha: 0.88),
               ),
             ),
@@ -232,7 +245,8 @@ class _ProfileHero extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    '${user.displayName}, ${user.age}',
+                    professional?.businessName ??
+                        '${user.displayName}, ${user.age}',
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                     style: Theme.of(context).textTheme.headlineMedium?.copyWith(
@@ -241,6 +255,18 @@ class _ProfileHero extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 7),
+                  if (professional != null) ...[
+                    Text(
+                      professional.headline,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                        color: AppColors.textPrimary,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const SizedBox(height: 7),
+                  ],
                   Row(
                     children: [
                       const Icon(
@@ -263,7 +289,9 @@ class _ProfileHero extends StatelessWidget {
                       ),
                     ],
                   ),
-                  if (mainBadge != null || user.isPremium || user.isDj) ...[
+                  if (mainBadge != null ||
+                      user.isPremium ||
+                      user.isProfessional) ...[
                     const SizedBox(height: 12),
                     Wrap(
                       spacing: 7,
@@ -280,10 +308,11 @@ class _ProfileHero extends StatelessWidget {
                             label: context.tr('Premium'),
                             icon: Icons.auto_awesome_rounded,
                           ),
-                        if (user.isDj)
-                          const PullupChip(
-                            label: 'DJ',
-                            icon: Icons.graphic_eq_rounded,
+                        if (professional != null && !professional.isVerified)
+                          PullupChip(
+                            label: context.tr('Professional'),
+                            icon: Icons.work_outline_rounded,
+                            color: AppColors.blue.withValues(alpha: 0.32),
                           ),
                       ],
                     ),
@@ -293,6 +322,233 @@ class _ProfileHero extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _ProfessionalShowcase extends StatelessWidget {
+  const _ProfessionalShowcase({required this.profile});
+
+  final ProfessionalProfile profile;
+
+  @override
+  Widget build(BuildContext context) {
+    final references = [
+      ...profile.establishments,
+      ...profile.completedProjects,
+    ];
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _SectionTitle(
+          title: context.tr('Professional showcase'),
+          subtitle: context.tr(
+            'Services, selected work and trusted references.',
+          ),
+        ),
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            color: AppColors.blue.withValues(alpha: 0.1),
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: AppColors.blue.withValues(alpha: 0.42)),
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 48,
+                height: 48,
+                decoration: BoxDecoration(
+                  color: AppColors.blue.withValues(alpha: 0.18),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(
+                  profile.isVenue
+                      ? Icons.storefront_outlined
+                      : Icons.workspace_premium_outlined,
+                  color: AppColors.blue,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      profile.category.label,
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
+                    const SizedBox(height: 3),
+                    Text(
+                      '${profile.yearsExperience} years · ${profile.travelRadiusKm.round()} km radius',
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                  ],
+                ),
+              ),
+              if (profile.isVerified)
+                const Icon(Icons.verified_rounded, color: AppColors.success),
+            ],
+          ),
+        ),
+        if (profile.description.trim().isNotEmpty) ...[
+          const SizedBox(height: 14),
+          Text(
+            profile.description,
+            style: Theme.of(
+              context,
+            ).textTheme.bodyLarge?.copyWith(height: 1.45),
+          ),
+        ],
+        if (profile.services.isNotEmpty) ...[
+          const SizedBox(height: 16),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              for (final service in profile.services)
+                PullupChip(
+                  label: service,
+                  icon: Icons.check_circle_outline_rounded,
+                  color: AppColors.blue.withValues(alpha: 0.16),
+                ),
+            ],
+          ),
+        ],
+        if (profile.portfolioItems.isNotEmpty) ...[
+          const SizedBox(height: 20),
+          Text(
+            context.tr('Selected work'),
+            style: Theme.of(context).textTheme.titleMedium,
+          ),
+          const SizedBox(height: 10),
+          SizedBox(
+            height: 142,
+            child: ListView.separated(
+              scrollDirection: Axis.horizontal,
+              itemCount: profile.portfolioItems.length,
+              separatorBuilder: (_, _) => const SizedBox(width: 10),
+              itemBuilder: (context, index) {
+                final item = profile.portfolioItems[index];
+                return _PortfolioTile(item: item);
+              },
+            ),
+          ),
+        ],
+        if (references.isNotEmpty) ...[
+          const SizedBox(height: 20),
+          Text(
+            context.tr('Experience and references'),
+            style: Theme.of(context).textTheme.titleMedium,
+          ),
+          const SizedBox(height: 8),
+          for (final reference in references.take(5))
+            Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Icon(
+                    Icons.verified_outlined,
+                    size: 18,
+                    color: AppColors.success,
+                  ),
+                  const SizedBox(width: 9),
+                  Expanded(child: Text(reference)),
+                ],
+              ),
+            ),
+        ],
+        if (profile.socialLinks.isNotEmpty || profile.website != null) ...[
+          const SizedBox(height: 14),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              for (final social in profile.socialLinks.entries)
+                _DetailPill(
+                  icon: Icons.alternate_email_rounded,
+                  label: '${social.key}: ${social.value}',
+                ),
+              if (profile.website case final website?)
+                _DetailPill(icon: Icons.language_rounded, label: website),
+            ],
+          ),
+        ],
+        if (profile.availability.isNotEmpty ||
+            profile.indicativeRate != null) ...[
+          const SizedBox(height: 14),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              if (profile.availability.isNotEmpty)
+                _DetailPill(
+                  icon: Icons.event_available_outlined,
+                  label: profile.availability,
+                ),
+              if (profile.indicativeRate case final rate?)
+                _DetailPill(icon: Icons.payments_outlined, label: rate),
+            ],
+          ),
+        ],
+      ],
+    );
+  }
+}
+
+class _PortfolioTile extends StatelessWidget {
+  const _PortfolioTile({required this.item});
+
+  final ProfessionalPortfolioItem item;
+
+  @override
+  Widget build(BuildContext context) {
+    final isImage = item.type == PortfolioMediaType.image;
+    return Container(
+      width: 132,
+      clipBehavior: Clip.antiAlias,
+      decoration: BoxDecoration(
+        color: AppColors.surfaceSecondary,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          if (isImage)
+            PullupImage(source: item.url)
+          else
+            Center(
+              child: Icon(
+                item.type == PortfolioMediaType.audio
+                    ? Icons.graphic_eq_rounded
+                    : Icons.play_circle_outline_rounded,
+                size: 42,
+                color: AppColors.blue,
+              ),
+            ),
+          Positioned(
+            left: 0,
+            right: 0,
+            bottom: 0,
+            child: Container(
+              padding: const EdgeInsets.all(8),
+              color: Colors.black.withValues(alpha: 0.72),
+              child: Text(
+                item.title,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

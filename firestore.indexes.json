@@ -26,6 +26,22 @@
       ]
     },
     {
+      "collectionGroup": "events",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "organizerType", "order": "ASCENDING" },
+        { "fieldPath": "startDateTime", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "events",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "professionalNeeds", "arrayConfig": "CONTAINS" },
+        { "fieldPath": "startDateTime", "order": "ASCENDING" }
+      ]
+    },
+    {
       "collectionGroup": "requests",
       "queryScope": "COLLECTION_GROUP",
       "fields": [

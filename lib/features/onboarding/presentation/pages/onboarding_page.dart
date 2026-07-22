@@ -8,6 +8,7 @@ import '../../../../app/theme/app_colors.dart';
 import '../../../../core/widgets/pullup_logo.dart';
 import '../../../../core/widgets/wizard_scaffold.dart';
 import '../../../../models/enums.dart';
+import '../../../profile/presentation/widgets/professional_profile_form.dart';
 import '../../../shared/domain/app_drafts.dart';
 
 class OnboardingPage extends ConsumerStatefulWidget {
@@ -19,6 +20,7 @@ class OnboardingPage extends ConsumerStatefulWidget {
 
 class _OnboardingPageState extends ConsumerState<OnboardingPage> {
   int _step = 0;
+  ProfessionalProfileFormController? _professionalController;
   final _bio = TextEditingController(
     text: 'Good music, clean energy, last-minute plans.',
   );
@@ -36,11 +38,28 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
   bool _smallGroups = true;
 
   @override
+  void initState() {
+    super.initState();
+    final user = ref.read(appControllerProvider).currentUser;
+    if (user != null) {
+      _city.text = user.city;
+      if (user.isProfessional) {
+        _professionalController = ProfessionalProfileFormController(
+          initialCategory:
+              user.professionalCategory ?? ProfessionalCategory.other,
+          initialProfile: user.professionalProfile,
+        );
+      }
+    }
+  }
+
+  @override
   void dispose() {
     _bio.dispose();
     _occupation.dispose();
     _instagram.dispose();
     _city.dispose();
+    _professionalController?.dispose();
     super.dispose();
   }
 
@@ -58,6 +77,13 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
           onRemove: _removePhoto,
         ),
       ),
+      if (_professionalController != null)
+        _OnboardingStep(
+          title: 'Build your professional showcase',
+          description:
+              'Present your services, work and references to event hosts.',
+          child: ProfessionalProfileForm(controller: _professionalController!),
+        ),
       _OnboardingStep(
         title: 'Make your profile useful',
         description:
@@ -205,10 +231,23 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
   });
 
   void _nextOrSubmit() {
-    if (_step < 3) {
+    final lastStep = _professionalController == null ? 3 : 4;
+    if (_step < lastStep) {
       if (_step == 0 && _photos.isEmpty) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Add at least one photo.')),
+        );
+        return;
+      }
+      if (_professionalController != null &&
+          _step == 2 &&
+          !_professionalController!.isValid) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Add your professional name, headline and at least one service.',
+            ),
+          ),
         );
         return;
       }
@@ -230,6 +269,7 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
             profilePhotos: _photos,
             occupation: _occupation.text.trim(),
             instagramHandle: _instagram.text.trim(),
+            professionalProfile: _professionalController?.buildProfile(),
           ),
         );
   }

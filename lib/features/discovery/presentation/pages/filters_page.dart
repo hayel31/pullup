@@ -109,6 +109,75 @@ class _FiltersPageState extends ConsumerState<FiltersPage> {
             subtitle: const Text('Premium advanced filter'),
           ),
           const Divider(),
+          Text('Event source', style: Theme.of(context).textTheme.titleMedium),
+          const SizedBox(height: 5),
+          Text(
+            'Distinguish private plans from professional venues.',
+            style: Theme.of(context).textTheme.bodySmall,
+          ),
+          const SizedBox(height: 8),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              for (final source in EventOrganizerType.values)
+                FilterChip(
+                  avatar: Icon(
+                    source == EventOrganizerType.venue
+                        ? Icons.storefront_outlined
+                        : source == EventOrganizerType.professional
+                        ? Icons.workspace_premium_outlined
+                        : Icons.person_outline_rounded,
+                    size: 17,
+                  ),
+                  selected: _filter.organizerTypes.contains(source),
+                  label: Text(source.label),
+                  onSelected: (_) {
+                    final next = {..._filter.organizerTypes};
+                    next.contains(source)
+                        ? next.remove(source)
+                        : next.add(source);
+                    setState(
+                      () => _filter = _filter.copyWith(organizerTypes: next),
+                    );
+                  },
+                ),
+            ],
+          ),
+          const SizedBox(height: 24),
+          Text(
+            'Professional opportunities',
+            style: Theme.of(context).textTheme.titleMedium,
+          ),
+          const SizedBox(height: 5),
+          Text(
+            'Show events actively looking for a specific professional.',
+            style: Theme.of(context).textTheme.bodySmall,
+          ),
+          const SizedBox(height: 8),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              for (final role in professionalCategoryOptions.where(
+                (role) =>
+                    role != ProfessionalCategory.bar &&
+                    role != ProfessionalCategory.venue,
+              ))
+                FilterChip(
+                  selected: _filter.professionalNeeds.contains(role),
+                  label: Text(role.label),
+                  onSelected: (_) {
+                    final next = {..._filter.professionalNeeds};
+                    next.contains(role) ? next.remove(role) : next.add(role);
+                    setState(
+                      () => _filter = _filter.copyWith(professionalNeeds: next),
+                    );
+                  },
+                ),
+            ],
+          ),
+          const SizedBox(height: 24),
           Text('Party type', style: Theme.of(context).textTheme.titleMedium),
           const SizedBox(height: 8),
           Wrap(

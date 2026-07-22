@@ -35,7 +35,9 @@ class HostRequestCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final canFit = event.availableSpots >= request.groupSize;
+    final isProfessional = request.kind == EventRequestKind.professionalService;
+    final professional = guest.professionalProfile;
+    final canFit = event.availableSpots >= request.reservedSpots;
     return NightCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -67,14 +69,18 @@ class HostRequestCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      '${guest.firstName}, ${guest.age}',
+                      isProfessional && professional != null
+                          ? professional.businessName
+                          : '${guest.firstName}, ${guest.age}',
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: Theme.of(context).textTheme.titleMedium,
                     ),
                     const SizedBox(height: 3),
                     Text(
-                      '${guest.city} - ${context.tr('{count} nights joined', values: {'count': guest.guestAttendanceCount})}',
+                      isProfessional && professional != null
+                          ? '${professional.category.label} · ${professional.headline}'
+                          : '${guest.city} - ${context.tr('{count} nights joined', values: {'count': guest.guestAttendanceCount})}',
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: Theme.of(context).textTheme.bodySmall,
@@ -126,16 +132,24 @@ class HostRequestCard extends StatelessWidget {
             spacing: 7,
             runSpacing: 7,
             children: [
-              PullupChip(
-                label: context.tr(
-                  'Group of {count}',
-                  values: {'count': request.groupSize},
+              if (isProfessional)
+                PullupChip(
+                  label:
+                      '${request.professionalCategory?.label ?? 'Professional'} application',
+                  icon: Icons.work_history_outlined,
+                  color: AppColors.success.withValues(alpha: 0.18),
+                )
+              else
+                PullupChip(
+                  label: context.tr(
+                    'Group of {count}',
+                    values: {'count': request.groupSize},
+                  ),
+                  icon: Icons.group_outlined,
+                  color: request.groupSize > 1
+                      ? AppColors.primary.withValues(alpha: 0.2)
+                      : AppColors.surfaceSecondary,
                 ),
-                icon: Icons.group_outlined,
-                color: request.groupSize > 1
-                    ? AppColors.primary.withValues(alpha: 0.2)
-                    : AppColors.surfaceSecondary,
-              ),
               if (request.guestMenCount > 0)
                 PullupChip(
                   label: context.tr(
@@ -154,8 +168,16 @@ class HostRequestCard extends StatelessWidget {
                 ),
               for (final badge in guest.badges.take(2))
                 PullupChip(label: badge.label, icon: Icons.verified_rounded),
-              for (final interest in guest.interests.take(2))
-                PullupChip(label: interest),
+              if (isProfessional && professional != null) ...[
+                for (final service in professional.services.take(3))
+                  PullupChip(label: service),
+                PullupChip(
+                  label: '${professional.portfolioItems.length} works',
+                  icon: Icons.collections_outlined,
+                ),
+              ] else
+                for (final interest in guest.interests.take(2))
+                  PullupChip(label: interest),
             ],
           ),
           if (companionProfiles.isNotEmpty) ...[
@@ -273,6 +295,7 @@ class HostRequestCard extends StatelessWidget {
             ),
             RequestStatus.accepted => _AcceptedStatus(
               event: event,
+              professional: isProfessional,
               onOpenChat: onOpenChat,
             ),
             RequestStatus.rejected => _DecisionStatus(
@@ -382,7 +405,11 @@ class _PendingActions extends StatelessWidget {
                 key: Key('approve-request-${request.id}'),
                 onPressed: canFit ? onApprove : null,
                 icon: const Icon(Icons.check_rounded),
-                label: const Text('Approve'),
+                label: Text(
+                  request.kind == EventRequestKind.professionalService
+                      ? 'Connect'
+                      : 'Approve',
+                ),
               ),
             ),
             const SizedBox(width: 8),
@@ -406,9 +433,14 @@ class _PendingActions extends StatelessWidget {
 }
 
 class _AcceptedStatus extends StatelessWidget {
-  const _AcceptedStatus({required this.event, this.onOpenChat});
+  const _AcceptedStatus({
+    required this.event,
+    required this.professional,
+    this.onOpenChat,
+  });
 
   final PartyEvent event;
+  final bool professional;
   final VoidCallback? onOpenChat;
 
   @override
@@ -423,19 +455,27 @@ class _AcceptedStatus extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Row(
+          Row(
             children: [
-              Icon(Icons.lock_open_rounded, size: 19, color: AppColors.success),
-              SizedBox(width: 8),
+              Icon(
+                professional
+                    ? Icons.handshake_outlined
+                    : Icons.lock_open_rounded,
+                size: 19,
+                color: AppColors.success,
+              ),
+              const SizedBox(width: 8),
               Text(
-                'Access granted',
-                style: TextStyle(fontWeight: FontWeight.w800),
+                professional ? 'Professional connected' : 'Access granted',
+                style: const TextStyle(fontWeight: FontWeight.w800),
               ),
             ],
           ),
           const SizedBox(height: 7),
           Text(
-            event.exactAddress ?? 'Address pending',
+            professional
+                ? 'A private 12-hour conversation is open to discuss the brief.'
+                : event.exactAddress ?? 'Address pending',
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
           ),

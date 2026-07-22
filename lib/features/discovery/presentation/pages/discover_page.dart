@@ -11,6 +11,7 @@ import '../../../../core/widgets/app_state_views.dart';
 import '../../../../core/widgets/gradient_button.dart';
 import '../../../../core/widgets/number_stepper.dart';
 import '../../../../core/widgets/pullup_image.dart';
+import '../../../../models/enums.dart';
 import '../../../../models/party_event.dart';
 import '../../../../models/user_profile.dart';
 import '../../../shared/domain/app_drafts.dart';
@@ -28,6 +29,36 @@ Future<bool> showJoinEventSheet(
         builder: (context) => _RequestSheet(event: event),
       ) ??
       false;
+}
+
+Future<bool> showEventEngagementSheet(
+  BuildContext context, {
+  required PartyEvent event,
+}) async {
+  HapticFeedback.selectionClick();
+  return await showModalBottomSheet<bool>(
+        context: context,
+        isScrollControlled: true,
+        useSafeArea: true,
+        builder: (context) => _EventEngagementSheet(event: event),
+      ) ??
+      false;
+}
+
+String eventEngagementLabel(
+  BuildContext context,
+  UserProfile user,
+  PartyEvent event,
+) {
+  final category = user.professionalCategory;
+  if (category != null && event.needsProfessional(category)) {
+    return context.tr(
+      'Apply as {role}',
+      values: {'role': context.tr(category.label)},
+    );
+  }
+  if (event.acceptsOpenInterest) return context.tr("I'm interested");
+  return context.tr('Request to join');
 }
 
 class DiscoverPage extends ConsumerStatefulWidget {
@@ -68,6 +99,7 @@ class _DiscoverPageState extends ConsumerState<DiscoverPage> {
 
     final event = ranked.first.event;
     final nextEvent = ranked.length > 1 ? ranked[1].event : null;
+    final engagementLabel = eventEngagementLabel(context, user, event);
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
       child: Column(
@@ -128,7 +160,7 @@ class _DiscoverPageState extends ConsumerState<DiscoverPage> {
                 _SwipeActionButton(
                   iconKey: const Key('request-action-icon'),
                   icon: Icons.favorite_rounded,
-                  label: 'Request to join',
+                  label: engagementLabel,
                   activeColor: AppColors.magenta,
                   intensity: progress.clamp(0, 1),
                   onTap: () => _deckController.request(),
@@ -149,7 +181,298 @@ class _DiscoverPageState extends ConsumerState<DiscoverPage> {
   }
 
   Future<bool> _openRequestSheet(BuildContext context, PartyEvent event) async {
-    return showJoinEventSheet(context, event: event);
+    return showEventEngagementSheet(context, event: event);
+  }
+}
+
+class _EventEngagementSheet extends ConsumerWidget {
+  const _EventEngagementSheet({required this.event});
+
+  final PartyEvent event;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final user = ref.watch(appControllerProvider).currentUser;
+    if (user == null) return const SizedBox.shrink();
+    final category = user.professionalCategory;
+    if (category != null && event.needsProfessional(category)) {
+      return _ProfessionalApplicationSheet(event: event, user: user);
+    }
+    if (event.acceptsOpenInterest) {
+      return _OpenInterestSheet(event: event);
+    }
+    return _RequestSheet(event: event);
+  }
+}
+
+class _ProfessionalApplicationSheet extends ConsumerStatefulWidget {
+  const _ProfessionalApplicationSheet({
+    required this.event,
+    required this.user,
+  });
+
+  final PartyEvent event;
+  final UserProfile user;
+
+  @override
+  ConsumerState<_ProfessionalApplicationSheet> createState() =>
+      _ProfessionalApplicationSheetState();
+}
+
+class _ProfessionalApplicationSheetState
+    extends ConsumerState<_ProfessionalApplicationSheet> {
+  late final TextEditingController _message;
+  bool _submitting = false;
+
+  @override
+  void initState() {
+    super.initState();
+    final profile = widget.user.professionalProfile!;
+    _message = TextEditingController(
+      text:
+          'Hi, ${profile.businessName} is available for this event. I would be happy to discuss the brief.',
+    );
+  }
+
+  @override
+  void dispose() {
+    _message.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final profile = widget.user.professionalProfile!;
+    final error = ref.watch(
+      appControllerProvider.select((state) => state.errorMessage),
+    );
+    return SafeArea(
+      child: SingleChildScrollView(
+        keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+        padding: EdgeInsets.fromLTRB(
+          18,
+          10,
+          18,
+          MediaQuery.viewInsetsOf(context).bottom + 18,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              children: [
+                Container(
+                  width: 48,
+                  height: 48,
+                  decoration: BoxDecoration(
+                    color: AppColors.success.withValues(alpha: 0.16),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Icon(
+                    Icons.work_history_outlined,
+                    color: AppColors.success,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Apply as ${profile.category.label}',
+                        style: Theme.of(context).textTheme.headlineSmall,
+                      ),
+                      const SizedBox(height: 3),
+                      Text(
+                        widget.event.title,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: Theme.of(context).textTheme.bodySmall,
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 18),
+            Container(
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: AppColors.surfaceSecondary,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: AppColors.border),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    profile.businessName,
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                  const SizedBox(height: 3),
+                  Text(profile.headline),
+                  const SizedBox(height: 10),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      for (final service in profile.services.take(4))
+                        Chip(label: Text(service)),
+                      Chip(
+                        avatar: const Icon(
+                          Icons.collections_outlined,
+                          size: 17,
+                        ),
+                        label: Text(
+                          '${profile.portfolioItems.length} portfolio items',
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'Message to the host',
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+            const SizedBox(height: 8),
+            TextField(
+              controller: _message,
+              minLines: 3,
+              maxLines: 5,
+              textCapitalization: TextCapitalization.sentences,
+              decoration: const InputDecoration(
+                hintText: 'Availability, offer and useful details',
+              ),
+            ),
+            const SizedBox(height: 10),
+            const Text(
+              'Your full professional profile and portfolio will be attached. This does not reserve a guest spot.',
+              style: TextStyle(color: AppColors.textSecondary),
+            ),
+            if (error != null) ...[
+              const SizedBox(height: 10),
+              Text(error, style: const TextStyle(color: AppColors.danger)),
+            ],
+            const SizedBox(height: 18),
+            GradientButton(
+              label: _submitting
+                  ? 'Sending application...'
+                  : 'Send application',
+              icon: Icons.send_rounded,
+              onPressed: _submitting ? null : _submit,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _submit() async {
+    if (_message.text.trim().isEmpty) return;
+    setState(() => _submitting = true);
+    await ref
+        .read(appControllerProvider.notifier)
+        .applyAsProfessional(widget.event.id, message: _message.text.trim());
+    if (!mounted) return;
+    if (ref.read(appControllerProvider).errorMessage == null) {
+      Navigator.of(context).pop(true);
+    } else {
+      setState(() => _submitting = false);
+    }
+  }
+}
+
+class _OpenInterestSheet extends ConsumerStatefulWidget {
+  const _OpenInterestSheet({required this.event});
+
+  final PartyEvent event;
+
+  @override
+  ConsumerState<_OpenInterestSheet> createState() => _OpenInterestSheetState();
+}
+
+class _OpenInterestSheetState extends ConsumerState<_OpenInterestSheet> {
+  bool _submitting = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final hostName =
+        widget.event.hostPreview.businessName ??
+        widget.event.hostPreview.firstName;
+    final error = ref.watch(
+      appControllerProvider.select((state) => state.errorMessage),
+    );
+    return SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(18, 10, 18, 18),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Container(
+              width: 58,
+              height: 58,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: AppColors.blue.withValues(alpha: 0.16),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                Icons.storefront_outlined,
+                color: AppColors.blue,
+                size: 30,
+              ),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              "Interested in ${widget.event.title}?",
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.headlineSmall,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              '$hostName runs this as an open professional event. Your like is saved instantly; no approval request is sent.',
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: AppColors.textSecondary,
+                height: 1.4,
+              ),
+            ),
+            if (error != null) ...[
+              const SizedBox(height: 10),
+              Text(error, style: const TextStyle(color: AppColors.danger)),
+            ],
+            const SizedBox(height: 20),
+            GradientButton(
+              label: _submitting ? 'Saving...' : "I'm interested",
+              icon: Icons.favorite_rounded,
+              onPressed: _submitting ? null : _submit,
+            ),
+            const SizedBox(height: 8),
+            TextButton(
+              onPressed: _submitting
+                  ? null
+                  : () => Navigator.pop(context, false),
+              child: const Text('Keep browsing'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _submit() async {
+    setState(() => _submitting = true);
+    await ref.read(appControllerProvider.notifier).likeEvent(widget.event.id);
+    if (!mounted) return;
+    if (ref.read(appControllerProvider).errorMessage == null) {
+      Navigator.of(context).pop(true);
+    } else {
+      setState(() => _submitting = false);
+    }
   }
 }
 

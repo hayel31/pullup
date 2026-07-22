@@ -36,13 +36,56 @@ service cloud.firestore {
       ]);
     }
 
+    function validProfessionalVerificationOnCreate() {
+      return !request.resource.data.keys().hasAny(['professionalProfile']) ||
+        request.resource.data.professionalProfile.isVerified == false;
+    }
+
+    function professionalVerificationUnchanged() {
+      return !request.resource.data.keys().hasAny(['professionalProfile']) ||
+        request.resource.data.professionalProfile.isVerified ==
+          (resource.data.keys().hasAny(['professionalProfile'])
+            ? resource.data.professionalProfile.isVerified
+            : false);
+    }
+
+    function validEventOrganizer(eventData) {
+      return eventData.organizerType == 'privateHost' ||
+        (
+          userDoc(request.auth.uid).data.accountType == 'professional' &&
+          userDoc(request.auth.uid).data.keys().hasAny(['professionalProfile']) &&
+          (
+            eventData.organizerType == 'professional' ||
+            (
+              eventData.organizerType == 'venue' &&
+              userDoc(request.auth.uid).data.professionalProfile.category in ['bar', 'venue']
+            )
+          )
+        );
+    }
+
+    function validProfessionalRequest(eventId, requestData) {
+      return requestData.kind != 'professionalService' ||
+        (
+          userDoc(request.auth.uid).data.accountType == 'professional' &&
+          userDoc(request.auth.uid).data.keys().hasAny(['professionalProfile']) &&
+          requestData.professionalCategory ==
+            userDoc(request.auth.uid).data.professionalProfile.category &&
+          requestData.professionalCategory in
+            get(/databases/$(database)/documents/events/$(eventId)).data.professionalNeeds
+        );
+    }
+
     match /users/{userId} {
       allow read: if signedIn() && !isBlockedBy(userId);
       allow create: if isUser(userId)
         && request.resource.data.accountStatus == 'active'
         && request.resource.data.isPremium == false
-        && request.resource.data.role == null;
-      allow update: if isUser(userId) && immutableSensitiveUserFields();
+        && request.resource.data.role == null
+        && validProfessionalVerificationOnCreate();
+      allow update: if isUser(userId)
+        && immutableSensitiveUserFields()
+        && professionalVerificationUnchanged();
       allow delete: if isUser(userId);
 
       match /swipes/{swipeId} {
@@ -74,10 +117,12 @@ service cloud.firestore {
         && !('exactAddress' in resource.data);
       allow create: if signedIn()
         && request.resource.data.hostId == request.auth.uid
-        && !('exactAddress' in request.resource.data);
+        && !('exactAddress' in request.resource.data)
+        && validEventOrganizer(request.resource.data);
       allow update: if signedIn()
         && resource.data.hostId == request.auth.uid
         && request.resource.data.hostId == resource.data.hostId
+        && validEventOrganizer(request.resource.data)
         && !request.resource.data.diff(resource.data).affectedKeys().hasAny([
           'acceptedParticipantIds',
           'waitingParticipantIds',
@@ -106,7 +151,12 @@ service cloud.firestore {
         allow create: if signedIn()
           && request.resource.data.requesterId == request.auth.uid
           && request.resource.data.status == 'pending'
-          && !isBlockedBy(request.resource.data.hostId);
+          && !isBlockedBy(request.resource.data.hostId)
+          && validProfessionalRequest(eventId, request.resource.data)
+          && (
+            request.resource.data.kind == 'professionalService' ||
+            get(/databases/$(database)/documents/events/$(eventId)).data.guestInteractionMode != 'openInterest'
+          );
         allow update: if signedIn()
           && resource.data.hostId == request.auth.uid
           && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'decidedAt']);

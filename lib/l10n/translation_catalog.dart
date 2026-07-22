@@ -4,6 +4,7 @@ import 'translations_core.dart';
 import 'translations_discovery.dart';
 import 'translations_events.dart';
 import 'translations_host.dart';
+import 'translations_professional.dart';
 import 'translations_services.dart';
 import 'translations_social.dart';
 
@@ -12,6 +13,7 @@ const _translationRows = <String, TranslationRow>{
   ...accountTranslationRows,
   ...eventTranslationRows,
   ...hostTranslationRows,
+  ...professionalTranslationRows,
   ...discoveryTranslationRows,
   ...serviceTranslationRows,
   ...socialTranslationRows,

@@ -26,7 +26,7 @@ void main() {
       ),
     );
 
-    expect(find.text('Rooftop near Bastille'), findsOneWidget);
+    expect(find.text('Rooftop above Capitole'), findsOneWidget);
     expect(find.text('House party'), findsNothing);
     expect(find.text('Rooftop'), findsOneWidget);
     expect(find.textContaining('spots left'), findsWidgets);

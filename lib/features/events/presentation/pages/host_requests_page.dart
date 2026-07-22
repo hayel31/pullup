@@ -61,11 +61,11 @@ class HostRequestsPage extends ConsumerWidget {
         .toList();
     final seatsRequested = pending.fold<int>(
       0,
-      (total, request) => total + request.groupSize,
+      (total, request) => total + request.reservedSpots,
     );
     final confirmed = accepted.fold<int>(
       0,
-      (total, request) => total + request.groupSize,
+      (total, request) => total + request.reservedSpots,
     );
 
     return DefaultTabController(

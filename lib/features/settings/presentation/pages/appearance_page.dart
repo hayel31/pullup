@@ -196,7 +196,7 @@ class _ThemeLivePreview extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Rooftop near Bastille',
+                          'Rooftop above the Garonne',
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: TextStyle(
@@ -207,7 +207,7 @@ class _ThemeLivePreview extends StatelessWidget {
                         ),
                         const SizedBox(height: 3),
                         Text(
-                          'Bastille, Paris / Starts in 32 min',
+                          'Carmes, Toulouse / Starts in 32 min',
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: TextStyle(

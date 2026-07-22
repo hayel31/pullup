@@ -9,6 +9,7 @@ import '../../../../core/widgets/gradient_button.dart';
 import '../../../../core/widgets/language_picker_button.dart';
 import '../../../../core/widgets/pullup_logo.dart';
 import '../../../../core/widgets/theme_preset_selector.dart';
+import '../../../../models/enums.dart';
 import '../../../shared/domain/demo_account.dart';
 
 enum _AuthEntryMode { signIn, register }
@@ -663,13 +664,13 @@ Future<void> _showDemoAccounts(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Text(
-              context.tr('Demo host accounts'),
+              context.tr('Demo accounts'),
               style: Theme.of(context).textTheme.titleLarge,
             ),
             const SizedBox(height: 5),
             Text(
               context.tr(
-                'Choose a profile to test its events and incoming requests.',
+                'Choose a client, host or professional profile to test every flow.',
               ),
               style: Theme.of(
                 context,
@@ -694,7 +695,32 @@ Future<void> _showDemoAccounts(
                     ),
                   ),
                 ),
-                title: Text(account.displayName),
+                title: Row(
+                  children: [
+                    Expanded(child: Text(account.displayName)),
+                    if (account.isProfessional)
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 7,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: AppColors.blue.withValues(alpha: 0.16),
+                          borderRadius: BorderRadius.circular(6),
+                          border: Border.all(
+                            color: AppColors.blue.withValues(alpha: 0.42),
+                          ),
+                        ),
+                        child: Text(
+                          'PRO · ${account.professionalCategory!.label.toUpperCase()}',
+                          style: const TextStyle(
+                            fontSize: 9,
+                            fontWeight: FontWeight.w900,
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
                 subtitle: Text(
                   '${account.eventLabel}\n${account.email}',
                   maxLines: 2,

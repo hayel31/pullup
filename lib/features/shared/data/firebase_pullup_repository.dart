@@ -48,6 +48,16 @@ class FirebasePullupRepository implements PullupRepository {
   Future<void> passEvent(String userId, String eventId) => _notConfigured();
 
   @override
+  Future<void> likeEvent(String userId, String eventId) => _notConfigured();
+
+  @override
+  Future<EventRequest> applyAsProfessional(
+    String userId,
+    String eventId, {
+    required String message,
+  }) => _notConfigured();
+
+  @override
   Future<EventRequest> rejectRequest(
     String hostId,
     String requestId, {

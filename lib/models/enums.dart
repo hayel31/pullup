@@ -1,5 +1,28 @@
 enum Gender { woman, man, nonBinary, other, preferNotToSay }
 
+enum AccountType { personal, professional }
+
+enum ProfessionalCategory {
+  dj,
+  photographer,
+  videographer,
+  bartender,
+  security,
+  venue,
+  bar,
+  promoter,
+  eventPlanner,
+  other,
+}
+
+enum PortfolioMediaType { image, video, audio, link }
+
+enum EventOrganizerType { privateHost, professional, venue }
+
+enum GuestInteractionMode { approvalRequest, openInterest }
+
+enum EventRequestKind { guest, professionalService }
+
 enum VerificationBadge {
   emailVerified,
   phoneVerified,
@@ -7,6 +30,8 @@ enum VerificationBadge {
   identityVerified,
   verifiedHost,
   verifiedDj,
+  verifiedProfessional,
+  verifiedVenue,
   superHost,
 }
 
@@ -92,6 +117,7 @@ enum NotificationType {
   eventFull,
   djRequest,
   djProposal,
+  professionalRequest,
   premiumLike,
   boostExpired,
 }
@@ -148,6 +174,22 @@ extension PullupEnumLabel on Enum {
         return 'DJ needed';
       case VerificationBadge.verifiedDj:
         return 'Verified DJ';
+      case VerificationBadge.verifiedProfessional:
+        return 'Verified professional';
+      case VerificationBadge.verifiedVenue:
+        return 'Verified venue';
+      case ProfessionalCategory.dj:
+        return 'DJ';
+      case ProfessionalCategory.bar:
+        return 'Bar';
+      case ProfessionalCategory.eventPlanner:
+        return 'Event planner';
+      case EventOrganizerType.privateHost:
+        return 'Private event';
+      case EventOrganizerType.professional:
+        return 'Professional event';
+      case EventOrganizerType.venue:
+        return 'Venue event';
       default:
         final words = name.replaceAllMapped(
           RegExp(r'([A-Z])'),
@@ -157,6 +199,19 @@ extension PullupEnumLabel on Enum {
     }
   }
 }
+
+const professionalCategoryOptions = <ProfessionalCategory>[
+  ProfessionalCategory.dj,
+  ProfessionalCategory.photographer,
+  ProfessionalCategory.videographer,
+  ProfessionalCategory.bartender,
+  ProfessionalCategory.security,
+  ProfessionalCategory.venue,
+  ProfessionalCategory.bar,
+  ProfessionalCategory.promoter,
+  ProfessionalCategory.eventPlanner,
+  ProfessionalCategory.other,
+];
 
 const musicGenreOptions = [
   'House',

@@ -21,12 +21,15 @@ export const createMatchFromAcceptedRequest = onCall(async (request) => {
 
     const event = eventSnap.data()!;
     const joinRequest = requestSnap.data()!;
+    const isProfessionalService =
+      joinRequest.kind === "professionalService";
+    const reservedSpots = isProfessionalService ? 0 : Number(joinRequest.groupSize);
     if (event.hostId !== uid) throw new HttpsError("permission-denied", "Only host can accept.");
     if (joinRequest.status !== "pending") throw new HttpsError("failed-precondition", "Request is not pending.");
-    if ((event.availableSpots ?? 0) < joinRequest.groupSize) {
+    if ((event.availableSpots ?? 0) < reservedSpots) {
       throw new HttpsError("failed-precondition", "Not enough spots.");
     }
-    const companionUserIds = [
+    const companionUserIds = isProfessionalService ? [] : [
       ...new Set((joinRequest.companionUserIds ?? []) as string[])
     ];
     const guestMenCount = Number(joinRequest.guestMenCount ?? 0);
@@ -38,24 +41,45 @@ export const createMatchFromAcceptedRequest = onCall(async (request) => {
       companionNames.length +
       guestMenCount +
       guestWomenCount;
-    if (
+    if (!isProfessionalService &&
+      (
       expectedGroupSize !== Number(joinRequest.groupSize) ||
       guestMenCount < 0 ||
       guestWomenCount < 0
-    ) {
+      )) {
       throw new HttpsError(
         "failed-precondition",
         "Group details do not match the requested capacity."
       );
     }
-    if (
+    if (!isProfessionalService &&
+      (
       companionUserIds.includes(uid) ||
       companionUserIds.includes(joinRequest.requesterId)
-    ) {
+      )) {
       throw new HttpsError(
         "failed-precondition",
         "Invalid companion in this request."
       );
+    }
+    if (isProfessionalService) {
+      const professionalSnap = await tx.get(
+        db.doc(`users/${joinRequest.requesterId}`)
+      );
+      const professional = professionalSnap.data();
+      const category = professional?.professionalProfile?.category;
+      const eventNeeds = (event.professionalNeeds ?? []) as string[];
+      if (
+        !professionalSnap.exists ||
+        professional?.accountType !== "professional" ||
+        category !== joinRequest.professionalCategory ||
+        !eventNeeds.includes(category)
+      ) {
+        throw new HttpsError(
+          "failed-precondition",
+          "Professional profile does not match this event need."
+        );
+      }
     }
     for (const companionId of companionUserIds) {
       const friendship = await tx.get(
@@ -76,7 +100,7 @@ export const createMatchFromAcceptedRequest = onCall(async (request) => {
       ...companionUserIds
     ];
     const memberIds = [uid, ...identifiedGuestIds];
-    const remaining = event.availableSpots - joinRequest.groupSize;
+    const remaining = event.availableSpots - reservedSpots;
     const expiresAt = admin.firestore.Timestamp.fromMillis(
       Date.now() + 12 * 60 * 60 * 1000
     );
@@ -89,14 +113,15 @@ export const createMatchFromAcceptedRequest = onCall(async (request) => {
       waitingParticipantIds: admin.firestore.FieldValue.arrayRemove(joinRequest.requesterId),
       availableSpots: remaining,
       matchCount: admin.firestore.FieldValue.increment(1),
-      status: remaining === 0 ? "full" : event.status,
+      status: reservedSpots > 0 && remaining === 0 ? "full" : event.status,
       updatedAt: admin.firestore.FieldValue.serverTimestamp()
     });
     identifiedGuestIds.forEach((guestId) => {
       tx.set(eventRef.collection("participants").doc(guestId), {
         userId: guestId,
         requestId,
-        groupSize: joinRequest.groupSize,
+        groupSize: reservedSpots,
+        requestKind: joinRequest.kind ?? "guest",
         acceptedAt: admin.firestore.FieldValue.serverTimestamp()
       });
     });
@@ -114,14 +139,17 @@ export const createMatchFromAcceptedRequest = onCall(async (request) => {
       memberIds,
       isGroup: true,
       expiresAt,
-      lastMessagePreview: "Group chat opened for 12 hours.",
+      lastMessagePreview: isProfessionalService ?
+        "Professional connection opened for 12 hours." :
+        "Group chat opened for 12 hours.",
       updatedAt: admin.firestore.FieldValue.serverTimestamp(),
       unreadByUserIds: identifiedGuestIds
     });
     tx.set(conversationRef.collection("messages").doc(), {
       senderId: "system",
       type: "system",
-      text:
+      text: isProfessionalService ?
+        "Professional application accepted. This chat closes in 12 hours." :
         "Group confirmed. Exact access is available and this chat closes in 12 hours.",
       createdAt: admin.firestore.FieldValue.serverTimestamp(),
       readByUserIds: [uid]

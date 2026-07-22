@@ -37,8 +37,11 @@ Future<bool> showApproveRequestSheet(
   required UserProfile guest,
   List<UserProfile> companionProfiles = const [],
 }) async {
+  final isProfessional = request.kind == EventRequestKind.professionalService;
+  final professional = guest.professionalProfile;
   final canShareAccess = event.exactAddress?.trim().isNotEmpty ?? false;
-  final remaining = event.availableSpots - request.groupSize;
+  final canApprove = isProfessional || canShareAccess;
+  final remaining = event.availableSpots - request.reservedSpots;
   final result = await showModalBottomSheet<bool>(
     context: context,
     isScrollControlled: true,
@@ -55,15 +58,22 @@ Future<bool> showApproveRequestSheet(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Text(
-              context.tr('Approve {name}?', values: {'name': guest.firstName}),
+              isProfessional && professional != null
+                  ? 'Connect with ${professional.businessName}?'
+                  : context.tr(
+                      'Approve {name}?',
+                      values: {'name': guest.firstName},
+                    ),
               style: Theme.of(context).textTheme.titleLarge,
             ),
             const SizedBox(height: 6),
             Text(
-              context.tr(
-                '{count} spots will be reserved.',
-                values: {'count': request.groupSize},
-              ),
+              isProfessional
+                  ? 'Accept this professional application without using a guest spot.'
+                  : context.tr(
+                      '{count} spots will be reserved.',
+                      values: {'count': request.reservedSpots},
+                    ),
               style: Theme.of(context).textTheme.bodySmall,
             ),
             const SizedBox(height: 18),
@@ -71,9 +81,13 @@ Future<bool> showApproveRequestSheet(
               children: [
                 Expanded(
                   child: _DecisionMetric(
-                    label: 'Group size',
-                    value: '${request.groupSize}',
-                    icon: Icons.group_outlined,
+                    label: isProfessional ? 'Professional' : 'Group size',
+                    value: isProfessional
+                        ? request.professionalCategory?.label ?? 'Pro'
+                        : '${request.groupSize}',
+                    icon: isProfessional
+                        ? Icons.work_history_outlined
+                        : Icons.group_outlined,
                   ),
                 ),
                 const SizedBox(width: 10),
@@ -99,12 +113,32 @@ Future<bool> showApproveRequestSheet(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
-                    'Group you are approving',
-                    style: TextStyle(fontWeight: FontWeight.w800),
+                  Text(
+                    isProfessional
+                        ? 'Professional profile attached'
+                        : 'Group you are approving',
+                    style: const TextStyle(fontWeight: FontWeight.w800),
                   ),
                   const SizedBox(height: 10),
                   _ApprovalMember(profile: guest, isRequester: true),
+                  if (isProfessional && professional != null) ...[
+                    const SizedBox(height: 10),
+                    Text(professional.headline),
+                    const SizedBox(height: 8),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: [
+                        for (final service in professional.services.take(4))
+                          PullupChip(label: service),
+                        PullupChip(
+                          label:
+                              '${professional.portfolioItems.length} portfolio items',
+                          icon: Icons.collections_outlined,
+                        ),
+                      ],
+                    ),
+                  ],
                   for (final companion in companionProfiles) ...[
                     const SizedBox(height: 8),
                     _ApprovalMember(profile: companion),
@@ -139,60 +173,61 @@ Future<bool> showApproveRequestSheet(
               ),
             ),
             const SizedBox(height: 16),
-            Container(
-              padding: const EdgeInsets.all(14),
-              decoration: BoxDecoration(
-                color: AppColors.surfaceSecondary,
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(
-                  color: canShareAccess
-                      ? AppColors.success.withValues(alpha: 0.55)
-                      : AppColors.warning,
+            if (!isProfessional)
+              Container(
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: AppColors.surfaceSecondary,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: canShareAccess
+                        ? AppColors.success.withValues(alpha: 0.55)
+                        : AppColors.warning,
+                  ),
                 ),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Icon(
-                        canShareAccess
-                            ? Icons.lock_open_rounded
-                            : Icons.warning_amber_rounded,
-                        color: canShareAccess
-                            ? AppColors.success
-                            : AppColors.warning,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(
+                          canShareAccess
+                              ? Icons.lock_open_rounded
+                              : Icons.warning_amber_rounded,
+                          color: canShareAccess
+                              ? AppColors.success
+                              : AppColors.warning,
+                        ),
+                        const SizedBox(width: 8),
+                        const Expanded(
+                          child: Text(
+                            'Access that will unlock',
+                            style: TextStyle(fontWeight: FontWeight.w800),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 10),
+                    Text(event.exactAddress ?? 'Address not configured'),
+                    if ((event.accessInstructions ?? '').trim().isNotEmpty) ...[
+                      const SizedBox(height: 5),
+                      Text(
+                        event.accessInstructions!,
+                        style: Theme.of(context).textTheme.bodySmall,
                       ),
-                      const SizedBox(width: 8),
-                      const Expanded(
-                        child: Text(
-                          'Access that will unlock',
-                          style: TextStyle(fontWeight: FontWeight.w800),
+                    ],
+                    if (!canShareAccess) ...[
+                      const SizedBox(height: 7),
+                      Text(
+                        'Add private access before accepting guests.',
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: AppColors.warning,
                         ),
                       ),
                     ],
-                  ),
-                  const SizedBox(height: 10),
-                  Text(event.exactAddress ?? 'Address not configured'),
-                  if ((event.accessInstructions ?? '').trim().isNotEmpty) ...[
-                    const SizedBox(height: 5),
-                    Text(
-                      event.accessInstructions!,
-                      style: Theme.of(context).textTheme.bodySmall,
-                    ),
                   ],
-                  if (!canShareAccess) ...[
-                    const SizedBox(height: 7),
-                    Text(
-                      'Add private access before accepting guests.',
-                      style: Theme.of(
-                        context,
-                      ).textTheme.bodySmall?.copyWith(color: AppColors.warning),
-                    ),
-                  ],
-                ],
+                ),
               ),
-            ),
             const SizedBox(height: 14),
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -213,11 +248,15 @@ Future<bool> showApproveRequestSheet(
             const SizedBox(height: 20),
             FilledButton.icon(
               key: const Key('confirm-approve-request'),
-              onPressed: canShareAccess
+              onPressed: canApprove
                   ? () => Navigator.of(context).pop(true)
                   : null,
               icon: const Icon(Icons.check_circle_outline_rounded),
-              label: const Text('Approve and unlock access'),
+              label: Text(
+                isProfessional
+                    ? 'Connect and open chat'
+                    : 'Approve and unlock access',
+              ),
             ),
             const SizedBox(height: 8),
             TextButton(
@@ -354,6 +393,100 @@ Future<void> showGuestProfileSheet(
           Text(guest.city, style: Theme.of(context).textTheme.bodySmall),
           const SizedBox(height: 14),
           Text(guest.bio),
+          if (guest.professionalProfile case final professional?) ...[
+            const SizedBox(height: 16),
+            Container(
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: AppColors.blue.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(
+                  color: AppColors.blue.withValues(alpha: 0.42),
+                ),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.workspace_premium_outlined,
+                        color: AppColors.blue,
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          '${professional.businessName} · ${professional.category.label}',
+                          style: Theme.of(context).textTheme.titleMedium,
+                        ),
+                      ),
+                      if (professional.isVerified)
+                        const Icon(
+                          Icons.verified_rounded,
+                          color: AppColors.success,
+                        ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Text(professional.headline),
+                  if (professional.description.isNotEmpty) ...[
+                    const SizedBox(height: 8),
+                    Text(
+                      professional.description,
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                  ],
+                  const SizedBox(height: 10),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      for (final service in professional.services)
+                        PullupChip(label: service),
+                      PullupChip(
+                        label:
+                            '${professional.portfolioItems.length} portfolio items',
+                        icon: Icons.collections_outlined,
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            if (professional.completedProjects.isNotEmpty ||
+                professional.establishments.isNotEmpty) ...[
+              const SizedBox(height: 14),
+              Text(
+                'References and completed events',
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
+              const SizedBox(height: 8),
+              for (final reference in [
+                ...professional.establishments,
+                ...professional.completedProjects,
+              ])
+                ListTile(
+                  dense: true,
+                  contentPadding: EdgeInsets.zero,
+                  leading: const Icon(
+                    Icons.verified_outlined,
+                    color: AppColors.success,
+                  ),
+                  title: Text(reference),
+                ),
+            ],
+            if (professional.socialLinks.isNotEmpty) ...[
+              const SizedBox(height: 10),
+              for (final link in professional.socialLinks.entries)
+                ListTile(
+                  dense: true,
+                  contentPadding: EdgeInsets.zero,
+                  leading: const Icon(Icons.alternate_email_rounded),
+                  title: Text(link.key),
+                  subtitle: Text(link.value),
+                ),
+            ],
+          ],
           const SizedBox(height: 16),
           Wrap(
             spacing: 8,

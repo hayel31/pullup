@@ -13,6 +13,7 @@ import 'package:pullup/features/discovery/presentation/widgets/swipe_event_deck.
 import 'package:pullup/features/events/presentation/pages/event_detail_page.dart';
 import 'package:pullup/features/events/presentation/widgets/approximate_map.dart';
 import 'package:pullup/features/tonight/presentation/pages/tonight_page.dart';
+import 'package:pullup/models/enums.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
@@ -184,6 +185,15 @@ void main() {
     tester,
   ) async {
     final container = await _pumpSignedInApp(tester);
+    final currentFilter = container.read(appControllerProvider).filter;
+    container
+        .read(appControllerProvider.notifier)
+        .updateFilter(
+          currentFilter.copyWith(
+            organizerTypes: const {EventOrganizerType.privateHost},
+          ),
+        );
+    await tester.pump();
     final event = container.read(recommendedEventsProvider).first.event;
     final requestLimit = event.allowsGroups
         ? math.min(event.maxGroupSize, event.availableSpots)

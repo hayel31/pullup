@@ -15,8 +15,9 @@ class RecommendationEngine {
   const RecommendationEngine._();
 
   /// MVP scoring formula:
-  /// distance 25%, music overlap 20%, category preference 15%, date urgency 15%,
-  /// availability 10%, host trust 5%, popularity 5%, freshness 3%, boost 2%.
+  /// distance 23%, music overlap 18%, category preference 12%, date urgency 14%,
+  /// availability 9%, host trust 5%, popularity 5%, freshness 3%, boost 3%,
+  /// professional fit 8%.
   /// Blocked, own, expired, cancelled, ended, rejected and already-swiped events
   /// are filtered before scoring so they never enter the feed.
   static List<RecommendationScore> rank({
@@ -77,17 +78,22 @@ class RecommendationEngine {
             1.0,
           );
       final boostScore = event.isBoosted ? 1.0 : 0.0;
+      final professionalRole = user.professionalCategory;
+      final professionalFitScore = professionalRole != null
+          ? (event.needsProfessional(professionalRole) ? 1.0 : 0.2)
+          : 0.5;
 
       final score =
-          distanceScore * 0.25 +
-          musicScore * 0.20 +
-          categoryScore * 0.15 +
-          dateScore * 0.15 +
-          availabilityScore * 0.10 +
+          distanceScore * 0.23 +
+          musicScore * 0.18 +
+          categoryScore * 0.12 +
+          dateScore * 0.14 +
+          availabilityScore * 0.09 +
           hostTrustScore * 0.05 +
           popularityScore * 0.05 +
           freshnessScore * 0.03 +
-          boostScore * 0.02;
+          boostScore * 0.03 +
+          professionalFitScore * 0.08;
       ranked.add(RecommendationScore(event: event, score: score));
     }
 
@@ -137,6 +143,17 @@ class RecommendationEngine {
     }
     if (filter.tags.isNotEmpty &&
         event.eventTags.toSet().intersection(filter.tags).isEmpty) {
+      return false;
+    }
+    if (filter.organizerTypes.isNotEmpty &&
+        !filter.organizerTypes.contains(event.organizerType)) {
+      return false;
+    }
+    if (filter.professionalNeeds.isNotEmpty &&
+        event.professionalNeeds
+            .toSet()
+            .intersection(filter.professionalNeeds)
+            .isEmpty) {
       return false;
     }
     if (filter.tonightOnly && !event.isTonight) {

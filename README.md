@@ -15,8 +15,10 @@ Completed in the Flutter app:
 - Persistent in-app language picker with English, French, Spanish and German UI copy.
 - Demo email/password authentication with persistent registration and session restore.
 - User onboarding: photos, profile, preferences and safety rules.
+- Personal/professional account choice with dedicated professional onboarding, services, portfolio media, social links, rates and references.
 - User profile, edit profile, settings, sign out and delete account flow.
 - Party event creation flow with type, info, location, media placeholder, vibe/rules and publishing.
+- Private, professional and venue event identities, with professional-needs tags and filters.
 - Discover feed with swipe gestures, pass/request actions, Premium undo simulation and a structured join-request modal.
 - Reciprocal PULLUP friends with search, add/remove actions and local persistence.
 - Group requests with identified PULLUP friends plus anonymous men/women guest counts, all constrained by event capacity.
@@ -24,6 +26,8 @@ Completed in the Flutter app:
 - Tonight mode with `Happening now`, `Starting soon`, `Near you`, `Few spots left`, `Trending tonight` and approximate map.
 - Event detail page with private address shown only to host or accepted participants.
 - Host request review with accept, reject, block and profile preview.
+- Professional applications attach the provider portfolio and create a match without consuming guest capacity.
+- Open bar/venue events collect interest likes without creating individual approval requests.
 - Local transaction-style match creation, spot decrement and conversation creation.
 - Matches page with recent, upcoming, pending and chat tabs.
 - Ephemeral 12-hour event group chats with member access checks, author avatars, text/system messages and unread markers.
@@ -31,7 +35,7 @@ Completed in the Flutter app:
 - Safety Center with reports, blocked users and account deletion.
 - DJ profiles, DJ request flow and DJ data models.
 - Premium/paywall architecture prepared for RevenueCat or native subscriptions.
-- Demo dataset with 12 users, 9 events, 4 host accounts, 3 DJs, requests, matches, conversations and notifications.
+- Toulouse-centered demo dataset with 13 users, 10 events, 5 demo accounts, 3 DJs, requests, matches, conversations and notifications.
 - Firestore rules, indexes, Firebase config and Cloud Functions skeleton.
 - Unit, widget and integration tests.
 
@@ -96,8 +100,9 @@ The Firebase repository is intentionally guarded until Firebase project credenti
 
 ## Demo accounts
 
-The Vercel build includes four host profiles. Every account owns at least one
-published event and can also use the guest discovery experience.
+The Vercel build includes five host profiles, including a professional DJ and
+a professional bar. Every account owns at least one published event and can
+also use the guest discovery experience.
 
 | Profile | Email | Password | Existing events |
 | --- | --- | --- | --- |
@@ -105,6 +110,7 @@ published event and can also use the guest discovery experience.
 | Jade | `jade@pullup.demo` | `Pullup2026!` | Pool party, student apartment and after |
 | Noah | `noah@pullup.demo` | `Pullup2026!` | Boat party and birthday suite |
 | Nina Volt | `nina@pullup.demo` | `Pullup2026!` | Neon private DJ session |
+| Le Halo Toulouse | `halo@pullup.demo` | `Pullup2026!` | Professional bar and open venue events |
 
 Accounts created in demo mode, their password digests, the active session and
 their newly published events are saved with `shared_preferences`. This storage
@@ -114,6 +120,8 @@ for shared accounts and data across devices.
 ## Main models
 
 - `UserProfile`
+- `ProfessionalProfile`
+- `ProfessionalPortfolioItem`
 - `PartyEvent`
 - `EventRequest`
 - `PullupMatch`

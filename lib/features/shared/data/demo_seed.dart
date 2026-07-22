@@ -6,6 +6,7 @@ import '../../../models/geo_point_lite.dart';
 import '../../../models/notification_item.dart';
 import '../../../models/party_event.dart';
 import '../../../models/pullup_match.dart';
+import '../../../models/professional_profile.dart';
 import '../../../models/user_profile.dart';
 import '../domain/pullup_repository.dart';
 
@@ -33,7 +34,7 @@ class DemoSeed {
         'Maya',
         'Rossi',
         'maya@pullup.demo',
-        'Paris',
+        'Toulouse',
         1999,
         true,
         false,
@@ -45,7 +46,7 @@ class DemoSeed {
         'Leo',
         'Carter',
         'leo@pullup.demo',
-        'Paris',
+        'Toulouse',
         1996,
         true,
         false,
@@ -57,7 +58,7 @@ class DemoSeed {
         'Jade',
         'Morgan',
         'jade@pullup.demo',
-        'Paris',
+        'Toulouse',
         1998,
         true,
         false,
@@ -69,7 +70,7 @@ class DemoSeed {
         'Noah',
         'Bennett',
         'noah@pullup.demo',
-        'Cannes',
+        'Toulouse',
         1994,
         true,
         false,
@@ -81,19 +82,20 @@ class DemoSeed {
         'Nina',
         'Volt',
         'nina@pullup.demo',
-        'Paris',
+        'Toulouse',
         1995,
         true,
         true,
         true,
         5,
+        professionalProfile: _ninaProfessionalProfile(),
       ),
       _user(
         'dj-002',
         'Sami',
         'Wave',
         'sami@pullup.demo',
-        'Marseille',
+        'Toulouse',
         1997,
         true,
         true,
@@ -105,7 +107,7 @@ class DemoSeed {
         'Iris',
         'K',
         'iris@pullup.demo',
-        'Lyon',
+        'Toulouse',
         1993,
         true,
         true,
@@ -117,7 +119,7 @@ class DemoSeed {
         'Enzo',
         'Lima',
         'enzo@pullup.demo',
-        'Paris',
+        'Toulouse',
         2000,
         true,
         false,
@@ -129,7 +131,7 @@ class DemoSeed {
         'Lina',
         'Park',
         'lina@pullup.demo',
-        'Paris',
+        'Toulouse',
         2001,
         true,
         false,
@@ -141,7 +143,7 @@ class DemoSeed {
         'Adam',
         'Cole',
         'adam@pullup.demo',
-        'Lyon',
+        'Toulouse',
         1998,
         true,
         false,
@@ -153,7 +155,7 @@ class DemoSeed {
         'Clara',
         'Stone',
         'clara@pullup.demo',
-        'Nice',
+        'Toulouse',
         1999,
         true,
         false,
@@ -165,12 +167,25 @@ class DemoSeed {
         'Rayan',
         'Diaz',
         'rayan@pullup.demo',
-        'Paris',
+        'Toulouse',
         1997,
         true,
         false,
         false,
         5,
+      ),
+      _user(
+        'pro-bar-001',
+        'Le Halo',
+        'Toulouse',
+        'halo@pullup.demo',
+        'Toulouse',
+        1992,
+        true,
+        false,
+        true,
+        18,
+        professionalProfile: _barProfessionalProfile(),
       ),
     ];
     _connectFriends(users, 'user-001', 'user-002');
@@ -180,18 +195,19 @@ class DemoSeed {
     _connectFriends(users, 'host-001', 'user-005');
     _connectFriends(users, 'host-001', 'user-006');
 
-    final host1 = users[1];
-    final host2 = users[2];
-    final host3 = users[3];
-    final host4 = users[4];
+    final host1 = users.firstWhere((user) => user.id == 'host-001');
+    final host2 = users.firstWhere((user) => user.id == 'host-002');
+    final host3 = users.firstWhere((user) => user.id == 'host-003');
+    final host4 = users.firstWhere((user) => user.id == 'dj-001');
+    final venueHost = users.firstWhere((user) => user.id == 'pro-bar-001');
     final events = <PartyEvent>[
       _event(
         id: 'event-001',
         host: host1,
-        title: 'Rooftop near Bastille',
+        title: 'Rooftop above Capitole',
         category: EventCategory.rooftop,
-        area: 'Bastille',
-        city: 'Paris',
+        area: 'Capitole',
+        city: 'Toulouse',
         start: now.add(const Duration(minutes: 35)),
         end: now.add(const Duration(hours: 5)),
         spots: 3,
@@ -206,15 +222,16 @@ class DemoSeed {
         ],
         genres: ['House', 'Afro', 'Commercial'],
         boosted: true,
-        exactAddress: '14 Rue Keller, 75011 Paris',
+        exactAddress: '8 Rue du Taur, 31000 Toulouse',
+        professionalNeeds: const [ProfessionalCategory.photographer],
       ),
       _event(
         id: 'event-002',
         host: host2,
-        title: 'Villa pool after',
+        title: 'Villa pool after in Compans',
         category: EventCategory.poolParty,
-        area: 'Boulogne',
-        city: 'Paris',
+        area: 'Compans-Caffarelli',
+        city: 'Toulouse',
         start: now.add(const Duration(hours: 2)),
         end: now.add(const Duration(hours: 7)),
         spots: 6,
@@ -228,15 +245,19 @@ class DemoSeed {
         ],
         genres: ['R&B', 'Reggaeton', 'Rap'],
         boosted: false,
-        exactAddress: '22 Avenue Robert Schuman, 92100 Boulogne',
+        exactAddress: '12 Esplanade Compans Caffarelli, 31000 Toulouse',
+        professionalNeeds: const [
+          ProfessionalCategory.bartender,
+          ProfessionalCategory.security,
+        ],
       ),
       _event(
         id: 'event-003',
         host: host1,
-        title: 'Pre-game before club',
+        title: 'Pre-game in Les Carmes',
         category: EventCategory.preGame,
-        area: 'Le Marais',
-        city: 'Paris',
+        area: 'Les Carmes',
+        city: 'Toulouse',
         start: now.add(const Duration(hours: 1)),
         end: now.add(const Duration(hours: 3)),
         spots: 2,
@@ -245,15 +266,15 @@ class DemoSeed {
         tags: [EventTag.byob, EventTag.indoor, EventTag.invitationOnly],
         genres: ['Hip-hop', 'Rap', 'Commercial'],
         boosted: false,
-        exactAddress: '8 Rue Vieille du Temple, 75004 Paris',
+        exactAddress: '6 Rue des Filatiers, 31000 Toulouse',
       ),
       _event(
         id: 'event-004',
         host: host3,
-        title: 'Boat party sunset',
+        title: 'Canal sunset boat party',
         category: EventCategory.boatParty,
-        area: 'Vieux Port',
-        city: 'Cannes',
+        area: 'Canal du Midi',
+        city: 'Toulouse',
         start: now.add(const Duration(days: 1, hours: 2)),
         end: now.add(const Duration(days: 1, hours: 7)),
         spots: 8,
@@ -266,15 +287,16 @@ class DemoSeed {
         ],
         genres: ['House', 'Techno'],
         boosted: true,
-        exactAddress: 'Port de Cannes, Quai Saint-Pierre',
+        exactAddress: "Port de l'Embouchure, 31200 Toulouse",
+        professionalNeeds: const [ProfessionalCategory.dj],
       ),
       _event(
         id: 'event-005',
         host: host2,
-        title: 'Student night apartment',
+        title: 'Student apartment night in Rangueil',
         category: EventCategory.studentParty,
-        area: 'Quartier Latin',
-        city: 'Paris',
+        area: 'Rangueil',
+        city: 'Toulouse',
         start: now.add(const Duration(hours: 4)),
         end: now.add(const Duration(hours: 8)),
         spots: 12,
@@ -283,15 +305,15 @@ class DemoSeed {
         tags: [EventTag.indoor, EventTag.groupsWelcome, EventTag.byob],
         genres: ['Student nights', 'Commercial', 'Rap'],
         boosted: false,
-        exactAddress: '31 Rue des Ecoles, 75005 Paris',
+        exactAddress: '31 Avenue Jules Julien, 31400 Toulouse',
       ),
       _event(
         id: 'event-006',
         host: host1,
-        title: 'Private DJ set in loft',
+        title: 'Private DJ set in Saint-Cyprien',
         category: EventCategory.privateDjSet,
-        area: 'Canal Saint-Martin',
-        city: 'Paris',
+        area: 'Saint-Cyprien',
+        city: 'Toulouse',
         start: now.subtract(const Duration(minutes: 20)),
         end: now.add(const Duration(hours: 4)),
         spots: 5,
@@ -300,15 +322,16 @@ class DemoSeed {
         tags: [EventTag.dj, EventTag.musicLoud, EventTag.invitationOnly],
         genres: ['Techno', 'House'],
         boosted: true,
-        exactAddress: '5 Quai de Valmy, 75010 Paris',
+        exactAddress: '5 Place Olivier, 31300 Toulouse',
+        professionalNeeds: const [ProfessionalCategory.videographer],
       ),
       _event(
         id: 'event-007',
         host: host3,
-        title: 'Birthday suite after',
+        title: 'Birthday villa in Côte Pavée',
         category: EventCategory.birthday,
-        area: 'Croisette',
-        city: 'Cannes',
+        area: 'Côte Pavée',
+        city: 'Toulouse',
         start: now.add(const Duration(hours: 5)),
         end: now.add(const Duration(hours: 10)),
         spots: 4,
@@ -321,15 +344,16 @@ class DemoSeed {
         ],
         genres: ['Afro', 'R&B'],
         boosted: false,
-        exactAddress: '73 Boulevard de la Croisette, 06400 Cannes',
+        exactAddress: '73 Avenue Jean Rieux, 31500 Toulouse',
+        professionalNeeds: const [ProfessionalCategory.photographer],
       ),
       _event(
         id: 'event-008',
-        host: host2,
-        title: 'Improvised after in Pigalle',
+        host: venueHost,
+        title: 'After hours at Le Halo',
         category: EventCategory.after,
-        area: 'Pigalle',
-        city: 'Paris',
+        area: 'Jean-Jaurès',
+        city: 'Toulouse',
         start: now.add(const Duration(minutes: 10)),
         end: now.add(const Duration(hours: 6)),
         spots: 1,
@@ -338,15 +362,16 @@ class DemoSeed {
         tags: [EventTag.lastMinute, EventTag.indoor, EventTag.noPhotos],
         genres: ['Techno', 'Afro', 'House'],
         boosted: false,
-        exactAddress: '18 Rue Frochot, 75009 Paris',
+        exactAddress: '18 Allées Jean Jaurès, 31000 Toulouse',
+        professionalNeeds: const [ProfessionalCategory.dj],
       ),
       _event(
         id: 'event-009',
         host: host4,
-        title: 'Neon DJ session',
+        title: 'Nina Volt neon session',
         category: EventCategory.privateDjSet,
-        area: 'Oberkampf',
-        city: 'Paris',
+        area: 'Saint-Aubin',
+        city: 'Toulouse',
         start: now.add(const Duration(hours: 3)),
         end: now.add(const Duration(hours: 8)),
         spots: 7,
@@ -360,15 +385,16 @@ class DemoSeed {
         ],
         genres: ['Techno', 'House', 'Electro'],
         boosted: true,
-        exactAddress: '26 Rue Oberkampf, 75011 Paris',
+        exactAddress: '26 Rue de la Colombette, 31000 Toulouse',
+        professionalNeeds: const [ProfessionalCategory.photographer],
       ),
       _event(
         id: 'event-010',
-        host: host2,
-        title: 'Villa pool night in Cannes',
+        host: venueHost,
+        title: 'Le Halo rooftop pool night',
         category: EventCategory.villaParty,
-        area: 'Palm Beach',
-        city: 'Cannes',
+        area: 'Les Carmes',
+        city: 'Toulouse',
         start: now.add(const Duration(hours: 1, minutes: 30)),
         end: now.add(const Duration(hours: 7)),
         spots: 9,
@@ -383,7 +409,11 @@ class DemoSeed {
         ],
         genres: ['House', 'Afro', 'R&B'],
         boosted: true,
-        exactAddress: '12 Avenue du Parc Madrid, 06400 Cannes',
+        exactAddress: '12 Rue Pharaon, 31000 Toulouse',
+        professionalNeeds: const [
+          ProfessionalCategory.photographer,
+          ProfessionalCategory.bartender,
+        ],
       ),
     ];
 
@@ -403,7 +433,7 @@ class DemoSeed {
       eventId: 'event-001',
       hostId: 'host-001',
       requesterId: 'user-004',
-      note: 'I am in Paris tonight and can arrive before the DJ starts.',
+      note: 'I am in Toulouse tonight and can arrive before the DJ starts.',
       groupSize: 1,
       companionNames: const [],
       status: RequestStatus.pending,
@@ -427,7 +457,7 @@ class DemoSeed {
       eventId: 'event-001',
       hostId: 'host-001',
       requesterId: 'user-002',
-      note: 'Coming solo, I already know the Bastille area.',
+      note: 'Coming solo, I already know the Capitole area.',
       groupSize: 1,
       companionNames: const [],
       status: RequestStatus.accepted,
@@ -439,7 +469,7 @@ class DemoSeed {
       eventId: 'event-001',
       hostId: 'host-001',
       requesterId: 'user-005',
-      note: 'We would be a group of four coming from Nice.',
+      note: 'We would be a group of four coming from Saint-Cyprien.',
       groupSize: 4,
       companionNames: const ['Lou', 'Sarah', 'Tom'],
       status: RequestStatus.rejected,
@@ -452,7 +482,7 @@ class DemoSeed {
       eventId: 'event-006',
       hostId: 'host-001',
       requesterId: 'user-001',
-      note: 'Enzo and I are around Canal and can pull up fast.',
+      note: 'Enzo and I are near Saint-Cyprien and can pull up fast.',
       groupSize: 2,
       companionNames: const [],
       companionUserIds: const ['user-002'],
@@ -480,7 +510,7 @@ class DemoSeed {
       id: 'conversation-002',
       eventId: 'event-001',
       memberIds: const ['user-002', 'host-001'],
-      lastMessagePreview: 'Access unlocked for Rooftop near Bastille.',
+      lastMessagePreview: 'Access unlocked for Rooftop above Capitole.',
       updatedAt: now.subtract(const Duration(hours: 1, minutes: 34)),
       unreadByUserIds: const ['user-002'],
       isGroup: true,
@@ -492,7 +522,7 @@ class DemoSeed {
         conversationId: conversation.id,
         senderId: 'system',
         type: MessageType.system,
-        text: 'Match created for Private DJ set in loft.',
+        text: 'Match created for Private DJ set in Saint-Cyprien.',
         createdAt: now.subtract(const Duration(minutes: 42)),
         readByUserIds: const ['host-001'],
       ),
@@ -528,7 +558,7 @@ class DemoSeed {
         conversationId: rooftopConversation.id,
         senderId: 'system',
         type: MessageType.system,
-        text: 'Access unlocked for Rooftop near Bastille.',
+        text: 'Access unlocked for Rooftop above Capitole.',
         createdAt: now.subtract(const Duration(hours: 1, minutes: 34)),
         readByUserIds: const ['host-001'],
       ),
@@ -593,7 +623,7 @@ class DemoSeed {
           userId: 'user-001',
           type: NotificationType.requestAccepted,
           title: 'You are in',
-          body: 'Leo accepted you for Private DJ set in loft.',
+          body: 'Leo accepted you for Private DJ set in Saint-Cyprien.',
           createdAt: now.subtract(const Duration(minutes: 42)),
           read: false,
           eventId: 'event-006',
@@ -604,7 +634,7 @@ class DemoSeed {
           userId: 'host-001',
           type: NotificationType.requestReceived,
           title: 'New request',
-          body: 'Lina wants to join Rooftop near Bastille.',
+          body: 'Lina wants to join Rooftop above Capitole.',
           createdAt: now.subtract(const Duration(minutes: 12)),
           read: false,
           eventId: 'event-001',
@@ -627,8 +657,9 @@ class DemoSeed {
     bool onboarded,
     bool isDj,
     bool isHost,
-    int hostedCount,
-  ) {
+    int hostedCount, {
+    ProfessionalProfile? professionalProfile,
+  }) {
     final now = DateTime.now();
     final photoSeed = id.hashCode.abs() % 80 + 10;
     return UserProfile(
@@ -640,12 +671,11 @@ class DemoSeed {
       birthDate: DateTime(birthYear, 4, 12),
       gender: Gender.preferNotToSay,
       bio: 'Night plans, good music, respectful energy.',
-      city: city,
-      approximateLocation: city == 'Paris'
-          ? const GeoPointLite(latitude: 48.8566, longitude: 2.3522)
-          : city == 'Cannes'
-          ? const GeoPointLite(latitude: 43.5528, longitude: 7.0174)
-          : const GeoPointLite(latitude: 45.7640, longitude: 4.8357),
+      city: 'Toulouse',
+      approximateLocation: const GeoPointLite(
+        latitude: 43.6047,
+        longitude: 1.4442,
+      ),
       profilePhotos: [
         'https://picsum.photos/seed/pullup-user-$photoSeed/900/1200',
         'https://picsum.photos/seed/pullup-user-${photoSeed + 1}/900/1200',
@@ -674,6 +704,10 @@ class DemoSeed {
       lastActiveAt: now.subtract(const Duration(minutes: 9)),
       accountStatus: AccountStatus.active,
       onboardingCompleted: onboarded,
+      accountType: professionalProfile == null
+          ? AccountType.personal
+          : AccountType.professional,
+      professionalProfile: professionalProfile,
     );
   }
 
@@ -709,15 +743,20 @@ class DemoSeed {
     required List<String> genres,
     required bool boosted,
     required String exactAddress,
+    List<ProfessionalCategory> professionalNeeds = const [],
   }) {
     final now = DateTime.now();
     final photoPaths = _eventPhotoPaths[id]!;
-    final point = city == 'Paris'
-        ? GeoPointLite(
-            latitude: 48.8566 + imageId % 7 / 1000,
-            longitude: 2.3522 + imageId % 9 / 1000,
-          )
-        : const GeoPointLite(latitude: 43.5528, longitude: 7.0174);
+    final point = GeoPointLite(
+      latitude: 43.6047 + imageId % 7 / 1000,
+      longitude: 1.4442 + imageId % 9 / 1000,
+    );
+    final professional = host.professionalProfile;
+    final organizerType = professional == null
+        ? EventOrganizerType.privateHost
+        : professional.isVenue
+        ? EventOrganizerType.venue
+        : EventOrganizerType.professional;
     return PartyEvent(
       id: id,
       hostId: host.id,
@@ -727,6 +766,9 @@ class DemoSeed {
         photoUrl: host.mainPhotoUrl ?? host.profilePhotos.first,
         badges: host.badges,
         hostedEventCount: host.hostedEventCount,
+        accountType: host.accountType,
+        professionalCategory: professional?.category,
+        businessName: professional?.businessName,
       ),
       title: title,
       description:
@@ -784,6 +826,100 @@ class DemoSeed {
       createdAt: now.subtract(Duration(hours: imageId % 12 + 1)),
       updatedAt: now,
       expiresAt: end.add(const Duration(hours: 2)),
+      organizerType: organizerType,
+      guestInteractionMode: organizerType == EventOrganizerType.venue
+          ? GuestInteractionMode.openInterest
+          : GuestInteractionMode.approvalRequest,
+      professionalNeeds: professionalNeeds,
+    );
+  }
+
+  static ProfessionalProfile _ninaProfessionalProfile() {
+    return const ProfessionalProfile(
+      category: ProfessionalCategory.dj,
+      businessName: 'Nina Volt',
+      headline: 'Open-format DJ for private nights and rooftops',
+      description:
+          'House, techno and Afro sets built for late-night crowds and premium private events.',
+      services: ['DJ set', 'Music curation', 'Sound check', 'After party'],
+      portfolioItems: [
+        ProfessionalPortfolioItem(
+          id: 'nina-photo-1',
+          title: 'Neon private set',
+          url: 'assets/demo/events/private-dj-set.jpg',
+          type: PortfolioMediaType.image,
+        ),
+        ProfessionalPortfolioItem(
+          id: 'nina-mix-1',
+          title: 'Midnight rooftop mix',
+          url: 'https://soundcloud.com/ninavolt/midnight-rooftop',
+          type: PortfolioMediaType.audio,
+        ),
+      ],
+      completedProjects: [
+        'Rooftop closing set - Toulouse',
+        'Private fashion afterparty',
+        'Villa pool session',
+      ],
+      establishments: ['Le Halo', 'Studio 31', 'Rooftop Garonne'],
+      socialLinks: {
+        'Instagram': '@ninavolt',
+        'SoundCloud': 'soundcloud.com/ninavolt',
+        'Spotify': 'open.spotify.com/ninavolt',
+      },
+      website: 'ninavolt.example',
+      travelRadiusKm: 80,
+      indicativeRate: 'From 300 EUR',
+      availability: 'Thursday to Sunday nights',
+      yearsExperience: 6,
+      isVerified: true,
+    );
+  }
+
+  static ProfessionalProfile _barProfessionalProfile() {
+    return const ProfessionalProfile(
+      category: ProfessionalCategory.bar,
+      businessName: 'Le Halo Toulouse',
+      headline: 'Cocktail bar, DJ booth and late-night rooftop',
+      description:
+          'A fictional Toulouse venue for testing public professional events, open entry and service recruitment.',
+      services: ['Cocktail bar', 'Rooftop', 'DJ booth', 'Private booking'],
+      portfolioItems: [
+        ProfessionalPortfolioItem(
+          id: 'halo-photo-1',
+          title: 'Rooftop night',
+          url: 'assets/demo/events/rooftop-night.jpg',
+          type: PortfolioMediaType.image,
+        ),
+        ProfessionalPortfolioItem(
+          id: 'halo-photo-2',
+          title: 'Pool edition',
+          url: 'assets/demo/events/villa-pool-party.jpg',
+          type: PortfolioMediaType.image,
+        ),
+        ProfessionalPortfolioItem(
+          id: 'halo-video-1',
+          title: 'Venue showreel',
+          url: 'https://video.example/le-halo-showreel',
+          type: PortfolioMediaType.video,
+        ),
+      ],
+      completedProjects: [
+        'Halo opening weekend',
+        'Garonne sunset sessions',
+        'Toulouse student closing party',
+      ],
+      establishments: ['Le Halo Toulouse'],
+      socialLinks: {
+        'Instagram': '@lehalotoulouse',
+        'TikTok': '@lehalotoulouse',
+      },
+      website: 'lehalo.example',
+      travelRadiusKm: 10,
+      indicativeRate: 'Venue booking on request',
+      availability: 'Open Wednesday to Sunday',
+      yearsExperience: 8,
+      isVerified: true,
     );
   }
 

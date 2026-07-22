@@ -14,7 +14,7 @@ class ApproximateMap extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final center = events.isEmpty
-        ? const LatLng(48.8566, 2.3522)
+        ? const LatLng(43.6047, 1.4442)
         : LatLng(
             events.first.approximateGeoPoint.latitude,
             events.first.approximateGeoPoint.longitude,

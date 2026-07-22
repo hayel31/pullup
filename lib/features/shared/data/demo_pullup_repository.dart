@@ -7,6 +7,7 @@ import '../../../models/geo_point_lite.dart';
 import '../../../models/notification_item.dart';
 import '../../../models/party_event.dart';
 import '../../../models/pullup_match.dart';
+import '../../../models/professional_profile.dart';
 import '../../../models/report.dart';
 import '../../../models/user_profile.dart';
 import '../domain/app_drafts.dart';
@@ -30,6 +31,8 @@ class DemoPullupRepository implements PullupRepository {
     _djProfiles = [...seed.djProfiles];
     _swipedEventIds = Map<String, Set<String>>.from(seed.swipedEventIds);
     _rejectedEventIds = Map<String, Set<String>>.from(seed.rejectedEventIds);
+    _seedUsersById = {for (final user in seed.users) user.id: user};
+    _seedEventsById = {for (final event in seed.events) event.id: event};
   }
 
   late List<UserProfile> _users;
@@ -43,6 +46,8 @@ class DemoPullupRepository implements PullupRepository {
   late List<DjProfile> _djProfiles;
   late Map<String, Set<String>> _swipedEventIds;
   late Map<String, Set<String>> _rejectedEventIds;
+  late final Map<String, UserProfile> _seedUsersById;
+  late final Map<String, PartyEvent> _seedEventsById;
   final DemoLocalStore _localStore;
   final Set<String> _createdEventIds = {};
   List<StoredCredential> _credentials = const [];
@@ -160,7 +165,26 @@ class DemoPullupRepository implements PullupRepository {
       throw const AppException('Password must contain at least 8 characters.');
     }
     final now = DateTime.now();
-    final id = 'user-${now.microsecondsSinceEpoch}';
+    final id = draft.accountType == AccountType.professional
+        ? 'pro-${now.microsecondsSinceEpoch}'
+        : 'user-${now.microsecondsSinceEpoch}';
+    final initialProfessionalProfile =
+        draft.accountType == AccountType.professional
+        ? ProfessionalProfile(
+            category: draft.professionalCategory ?? ProfessionalCategory.other,
+            businessName: draft.displayName,
+            headline: '',
+            description: '',
+            services: const [],
+            portfolioItems: const [],
+            completedProjects: const [],
+            establishments: const [],
+            socialLinks: const {},
+            travelRadiusKm: 25,
+            availability: '',
+            isVerified: false,
+          )
+        : null;
     final user = UserProfile(
       id: id,
       email: draft.email,
@@ -171,8 +195,8 @@ class DemoPullupRepository implements PullupRepository {
       gender: draft.gender,
       city: draft.city,
       approximateLocation: const GeoPointLite(
-        latitude: 48.8566,
-        longitude: 2.3522,
+        latitude: 43.6047,
+        longitude: 1.4442,
       ),
       profilePhotos: const [],
       mainPhotoUrl: null,
@@ -184,7 +208,7 @@ class DemoPullupRepository implements PullupRepository {
       selfieVerified: false,
       identityVerified: false,
       isPremium: false,
-      isDj: false,
+      isDj: draft.professionalCategory == ProfessionalCategory.dj,
       isHost: false,
       hostRating: 0,
       hostedEventCount: 0,
@@ -196,6 +220,8 @@ class DemoPullupRepository implements PullupRepository {
       lastActiveAt: now,
       accountStatus: AccountStatus.active,
       onboardingCompleted: false,
+      accountType: draft.accountType,
+      professionalProfile: initialProfessionalProfile,
     );
     _users.add(user);
     final credential = StoredCredential.create(
@@ -231,6 +257,8 @@ class DemoPullupRepository implements PullupRepository {
             : draft.profilePhotos.first,
         occupation: draft.occupation,
         instagramHandle: draft.instagramHandle,
+        professionalProfile:
+            draft.professionalProfile ?? user.professionalProfile,
         updatedAt: DateTime.now(),
       ),
     );
@@ -328,6 +356,14 @@ class DemoPullupRepository implements PullupRepository {
     await _ensureHydrated();
     final host = _userById(hostId);
     final now = DateTime.now();
+    final professionalProfile = draft.publishAsProfessional
+        ? host.professionalProfile
+        : null;
+    final organizerType = professionalProfile == null
+        ? EventOrganizerType.privateHost
+        : professionalProfile.isVenue
+        ? EventOrganizerType.venue
+        : EventOrganizerType.professional;
     final event = PartyEvent(
       id: 'event-created-${now.microsecondsSinceEpoch}',
       hostId: hostId,
@@ -339,6 +375,9 @@ class DemoPullupRepository implements PullupRepository {
             'https://picsum.photos/seed/${host.id}/900/1200',
         badges: host.badges,
         hostedEventCount: host.hostedEventCount + 1,
+        accountType: host.accountType,
+        professionalCategory: professionalProfile?.category,
+        businessName: professionalProfile?.businessName,
       ),
       title: draft.title,
       description: draft.description,
@@ -378,6 +417,11 @@ class DemoPullupRepository implements PullupRepository {
       createdAt: now,
       updatedAt: now,
       expiresAt: draft.endDateTime.add(const Duration(hours: 2)),
+      organizerType: organizerType,
+      guestInteractionMode: organizerType == EventOrganizerType.venue
+          ? GuestInteractionMode.openInterest
+          : GuestInteractionMode.approvalRequest,
+      professionalNeeds: draft.professionalNeeds,
     );
     _events.add(event);
     _createdEventIds.add(event.id);
@@ -404,6 +448,11 @@ class DemoPullupRepository implements PullupRepository {
     final event = _eventById(eventId);
     if (event.hostId == userId) {
       throw const AppException('Hosts cannot request their own event.');
+    }
+    if (event.acceptsOpenInterest) {
+      throw const AppException(
+        'This professional event accepts likes without approval.',
+      );
     }
     if (draft.groupSize < 1 || draft.groupSize > event.maxGroupSize) {
       throw AppException(
@@ -541,6 +590,91 @@ class DemoPullupRepository implements PullupRepository {
   }
 
   @override
+  Future<void> likeEvent(String userId, String eventId) async {
+    await _ensureHydrated();
+    final event = _eventById(eventId);
+    if (event.hostId == userId) {
+      throw const AppException('Hosts cannot like their own event.');
+    }
+    final swiped = _swipedEventIds.putIfAbsent(userId, () => <String>{});
+    if (!swiped.add(eventId)) return;
+    _replaceEvent(
+      event.copyWith(likeCount: event.likeCount + 1, updatedAt: DateTime.now()),
+    );
+    await _persistEventIfCreated(eventId);
+  }
+
+  @override
+  Future<EventRequest> applyAsProfessional(
+    String userId,
+    String eventId, {
+    required String message,
+  }) async {
+    await _ensureHydrated();
+    final user = _userById(userId);
+    final profile = user.professionalProfile;
+    if (!user.isProfessional || profile == null) {
+      throw const AppException('Complete a professional profile first.');
+    }
+    final event = _eventById(eventId);
+    if (event.hostId == userId) {
+      throw const AppException('Hosts cannot apply to their own event.');
+    }
+    if (!event.professionalNeeds.contains(profile.category)) {
+      throw const AppException(
+        'This event is not looking for your professional category.',
+      );
+    }
+    final duplicate = _requests.any(
+      (request) =>
+          request.eventId == eventId &&
+          request.requesterId == userId &&
+          request.kind == EventRequestKind.professionalService &&
+          request.status != RequestStatus.rejected &&
+          request.status != RequestStatus.withdrawn,
+    );
+    if (duplicate) {
+      throw const AppException(
+        'You already sent a professional application for this event.',
+      );
+    }
+    final now = DateTime.now();
+    final request = EventRequest(
+      id: 'request-${_nextId()}',
+      eventId: eventId,
+      hostId: event.hostId,
+      requesterId: userId,
+      note: message.trim(),
+      groupSize: 1,
+      companionNames: const [],
+      status: RequestStatus.pending,
+      createdAt: now,
+      kind: EventRequestKind.professionalService,
+      professionalCategory: profile.category,
+    );
+    _requests.add(request);
+    _swipedEventIds.putIfAbsent(userId, () => <String>{}).add(eventId);
+    _replaceEvent(
+      event.copyWith(requestCount: event.requestCount + 1, updatedAt: now),
+    );
+    _notifications.add(
+      NotificationItem(
+        id: 'notification-${_nextId()}',
+        userId: event.hostId,
+        type: NotificationType.professionalRequest,
+        title: '${profile.category.label} application',
+        body:
+            '${profile.businessName} sent a professional application for ${event.title}.',
+        createdAt: now,
+        read: false,
+        eventId: event.id,
+      ),
+    );
+    await _persistEventIfCreated(eventId);
+    return request;
+  }
+
+  @override
   Future<void> undoSwipe(String userId, String eventId) async {
     await _ensureHydrated();
     _swipedEventIds[userId]?.remove(eventId);
@@ -558,7 +692,8 @@ class DemoPullupRepository implements PullupRepository {
     if (request.status != RequestStatus.pending) {
       throw const AppException('This request is no longer pending.');
     }
-    if (event.availableSpots < request.groupSize) {
+    final seatsRequired = request.reservedSpots;
+    if (event.availableSpots < seatsRequired) {
       throw const AppException('Not enough spots left.');
     }
     final now = DateTime.now();
@@ -567,7 +702,7 @@ class DemoPullupRepository implements PullupRepository {
       decidedAt: now,
     );
     _replaceRequest(updatedRequest);
-    final remaining = event.availableSpots - request.groupSize;
+    final remaining = event.availableSpots - seatsRequired;
     final acceptedUserIds = {request.requesterId, ...request.companionUserIds};
     _replaceEvent(
       event.copyWith(
@@ -579,7 +714,9 @@ class DemoPullupRepository implements PullupRepository {
             .where((id) => id != request.requesterId)
             .toList(),
         availableSpots: remaining,
-        status: remaining == 0 ? EventStatus.full : event.status,
+        status: seatsRequired > 0 && remaining == 0
+            ? EventStatus.full
+            : event.status,
         matchCount: event.matchCount + 1,
         updatedAt: now,
       ),
@@ -603,8 +740,9 @@ class DemoPullupRepository implements PullupRepository {
         conversationId: conversation.id,
         senderId: 'system',
         type: MessageType.system,
-        text:
-            'Group confirmed for ${event.title}. This chat is available for 12 hours.',
+        text: request.kind == EventRequestKind.professionalService
+            ? '${request.professionalCategory?.label ?? 'Professional'} application accepted for ${event.title}. This chat is available for 12 hours.'
+            : 'Group confirmed for ${event.title}. This chat is available for 12 hours.',
         createdAt: now,
         readByUserIds: [hostId],
       ),
@@ -963,15 +1101,53 @@ class DemoPullupRepository implements PullupRepository {
   Future<void> _hydrate() async {
     final persisted = await _localStore.load();
     _credentials = persisted.credentials;
-    for (final user in persisted.users) {
+    for (final storedUser in persisted.users) {
+      final seedUser = _seedUsersById[storedUser.id];
+      final user = storedUser.copyWith(
+        city: 'Toulouse',
+        approximateLocation: const GeoPointLite(
+          latitude: 43.6047,
+          longitude: 1.4442,
+        ),
+        accountType: seedUser?.accountType ?? storedUser.accountType,
+        professionalProfile:
+            seedUser?.professionalProfile ?? storedUser.professionalProfile,
+        isDj: seedUser?.isDj ?? storedUser.isDj,
+      );
       final index = _users.indexWhere((item) => item.id == user.id);
       if (index == -1) {
         _users.add(user);
       } else {
         _users[index] = user;
       }
+      await _localStore.saveUser(user);
     }
-    for (final event in persisted.events) {
+    for (final storedEvent in persisted.events) {
+      final seedEvent = _seedEventsById[storedEvent.id];
+      final wasAlreadyInToulouse =
+          storedEvent.city.trim().toLowerCase() == 'toulouse';
+      final event = storedEvent.copyWith(
+        city: 'Toulouse',
+        areaName:
+            seedEvent?.areaName ??
+            (wasAlreadyInToulouse ? storedEvent.areaName : 'Centre-ville'),
+        approximateGeoPoint:
+            seedEvent?.approximateGeoPoint ??
+            (wasAlreadyInToulouse
+                ? storedEvent.approximateGeoPoint
+                : const GeoPointLite(latitude: 43.6047, longitude: 1.4442)),
+        exactAddress:
+            seedEvent?.exactAddress ??
+            (wasAlreadyInToulouse
+                ? storedEvent.exactAddress
+                : 'Private address to confirm, Toulouse'),
+        hostPreview: seedEvent?.hostPreview ?? storedEvent.hostPreview,
+        organizerType: seedEvent?.organizerType ?? storedEvent.organizerType,
+        guestInteractionMode:
+            seedEvent?.guestInteractionMode ?? storedEvent.guestInteractionMode,
+        professionalNeeds:
+            seedEvent?.professionalNeeds ?? storedEvent.professionalNeeds,
+      );
       final index = _events.indexWhere((item) => item.id == event.id);
       if (index == -1) {
         _events.add(event);
@@ -979,6 +1155,7 @@ class DemoPullupRepository implements PullupRepository {
         _events[index] = event;
       }
       _createdEventIds.add(event.id);
+      await _localStore.saveEvent(event);
     }
   }
 

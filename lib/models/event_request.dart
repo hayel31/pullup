@@ -16,6 +16,8 @@ class EventRequest {
     this.guestWomenCount = 0,
     this.decidedAt,
     this.decisionReason,
+    this.kind = EventRequestKind.guest,
+    this.professionalCategory,
   });
 
   final String id;
@@ -32,6 +34,11 @@ class EventRequest {
   final DateTime createdAt;
   final DateTime? decidedAt;
   final String? decisionReason;
+  final EventRequestKind kind;
+  final ProfessionalCategory? professionalCategory;
+
+  int get reservedSpots =>
+      kind == EventRequestKind.professionalService ? 0 : groupSize;
 
   EventRequest copyWith({
     String? id,
@@ -48,6 +55,8 @@ class EventRequest {
     DateTime? createdAt,
     DateTime? decidedAt,
     String? decisionReason,
+    EventRequestKind? kind,
+    ProfessionalCategory? professionalCategory,
   }) {
     return EventRequest(
       id: id ?? this.id,
@@ -64,6 +73,8 @@ class EventRequest {
       createdAt: createdAt ?? this.createdAt,
       decidedAt: decidedAt ?? this.decidedAt,
       decisionReason: decisionReason ?? this.decisionReason,
+      kind: kind ?? this.kind,
+      professionalCategory: professionalCategory ?? this.professionalCategory,
     );
   }
 }

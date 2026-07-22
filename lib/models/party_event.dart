@@ -9,6 +9,9 @@ class HostPreview {
     required this.photoUrl,
     required this.badges,
     required this.hostedEventCount,
+    this.accountType = AccountType.personal,
+    this.professionalCategory,
+    this.businessName,
   });
 
   final String id;
@@ -16,6 +19,9 @@ class HostPreview {
   final String photoUrl;
   final List<VerificationBadge> badges;
   final int hostedEventCount;
+  final AccountType accountType;
+  final ProfessionalCategory? professionalCategory;
+  final String? businessName;
 
   Map<String, dynamic> toJson() => {
     'id': id,
@@ -23,6 +29,9 @@ class HostPreview {
     'photoUrl': photoUrl,
     'badges': badges.map((badge) => badge.name).toList(),
     'hostedEventCount': hostedEventCount,
+    'accountType': accountType.name,
+    'professionalCategory': professionalCategory?.name,
+    'businessName': businessName,
   };
 
   factory HostPreview.fromJson(Map<String, dynamic> json) {
@@ -40,6 +49,19 @@ class HostPreview {
           )
           .toList(),
       hostedEventCount: json['hostedEventCount'] as int? ?? 0,
+      accountType: _enumValue(
+        AccountType.values,
+        json['accountType'],
+        AccountType.personal,
+      ),
+      professionalCategory: json['professionalCategory'] == null
+          ? null
+          : _enumValue(
+              ProfessionalCategory.values,
+              json['professionalCategory'],
+              ProfessionalCategory.other,
+            ),
+      businessName: json['businessName'] as String?,
     );
   }
 }
@@ -82,6 +104,9 @@ class PartyEvent {
     required this.createdAt,
     required this.updatedAt,
     required this.expiresAt,
+    this.organizerType = EventOrganizerType.privateHost,
+    this.guestInteractionMode = GuestInteractionMode.approvalRequest,
+    this.professionalNeeds = const [],
     this.exactAddress,
     this.accessInstructions,
     this.dressCode,
@@ -132,6 +157,9 @@ class PartyEvent {
   final DateTime createdAt;
   final DateTime updatedAt;
   final DateTime expiresAt;
+  final EventOrganizerType organizerType;
+  final GuestInteractionMode guestInteractionMode;
+  final List<ProfessionalCategory> professionalNeeds;
 
   bool get isPublished =>
       status == EventStatus.published || status == EventStatus.ongoing;
@@ -139,6 +167,13 @@ class PartyEvent {
   bool get hasSpots => availableSpots > 0;
   bool get isFewSpotsLeft => availableSpots <= 3 && availableSpots > 0;
   bool get isLastMinute => eventTags.contains(EventTag.lastMinute);
+  bool get isProfessionalEvent =>
+      organizerType != EventOrganizerType.privateHost;
+  bool get isVenueEvent => organizerType == EventOrganizerType.venue;
+  bool get acceptsOpenInterest =>
+      guestInteractionMode == GuestInteractionMode.openInterest;
+  bool needsProfessional(ProfessionalCategory? category) =>
+      category != null && professionalNeeds.contains(category);
   bool get isStartingSoon {
     final diff = startDateTime.difference(DateTime.now());
     return !isOngoing && diff.inMinutes >= 0 && diff.inHours < 3;
@@ -205,6 +240,9 @@ class PartyEvent {
     DateTime? createdAt,
     DateTime? updatedAt,
     DateTime? expiresAt,
+    EventOrganizerType? organizerType,
+    GuestInteractionMode? guestInteractionMode,
+    List<ProfessionalCategory>? professionalNeeds,
   }) {
     return PartyEvent(
       id: id ?? this.id,
@@ -252,6 +290,9 @@ class PartyEvent {
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       expiresAt: expiresAt ?? this.expiresAt,
+      organizerType: organizerType ?? this.organizerType,
+      guestInteractionMode: guestInteractionMode ?? this.guestInteractionMode,
+      professionalNeeds: professionalNeeds ?? this.professionalNeeds,
     );
   }
 
@@ -298,6 +339,9 @@ class PartyEvent {
     'createdAt': createdAt.toIso8601String(),
     'updatedAt': updatedAt.toIso8601String(),
     'expiresAt': expiresAt.toIso8601String(),
+    'organizerType': organizerType.name,
+    'guestInteractionMode': guestInteractionMode.name,
+    'professionalNeeds': professionalNeeds.map((item) => item.name).toList(),
   };
 
   factory PartyEvent.fromJson(Map<String, dynamic> json) {
@@ -382,6 +426,25 @@ class PartyEvent {
       createdAt: DateTime.parse(json['createdAt'] as String),
       updatedAt: DateTime.parse(json['updatedAt'] as String),
       expiresAt: DateTime.parse(json['expiresAt'] as String),
+      organizerType: _enumValue(
+        EventOrganizerType.values,
+        json['organizerType'],
+        EventOrganizerType.privateHost,
+      ),
+      guestInteractionMode: _enumValue(
+        GuestInteractionMode.values,
+        json['guestInteractionMode'],
+        GuestInteractionMode.approvalRequest,
+      ),
+      professionalNeeds: (json['professionalNeeds'] as List? ?? const [])
+          .map(
+            (name) => _enumValue(
+              ProfessionalCategory.values,
+              name,
+              ProfessionalCategory.other,
+            ),
+          )
+          .toList(),
     );
   }
 }

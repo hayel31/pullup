@@ -74,6 +74,14 @@ abstract class PullupRepository {
 
   Future<void> passEvent(String userId, String eventId);
 
+  Future<void> likeEvent(String userId, String eventId);
+
+  Future<EventRequest> applyAsProfessional(
+    String userId,
+    String eventId, {
+    required String message,
+  });
+
   Future<void> undoSwipe(String userId, String eventId);
 
   Future<PullupMatch> acceptRequest(String hostId, String requestId);

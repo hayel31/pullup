@@ -41,10 +41,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       refreshNotifier.refresh();
     },
   );
-  ref.listen(
-    preLoginEntranceSeenProvider,
-    (_, _) => refreshNotifier.refresh(),
-  );
+  ref.listen(preLoginEntranceSeenProvider, (_, _) => refreshNotifier.refresh());
 
   return GoRouter(
     initialLocation: '/splash',

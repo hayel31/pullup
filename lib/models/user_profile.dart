@@ -1,6 +1,7 @@
 import '../core/utils/age_utils.dart';
 import 'enums.dart';
 import 'geo_point_lite.dart';
+import 'professional_profile.dart';
 
 class UserProfile {
   const UserProfile({
@@ -39,6 +40,8 @@ class UserProfile {
     this.mainPhotoUrl,
     this.occupation,
     this.instagramHandle,
+    this.accountType = AccountType.personal,
+    this.professionalProfile,
   });
 
   final String id;
@@ -76,8 +79,13 @@ class UserProfile {
   final DateTime lastActiveAt;
   final AccountStatus accountStatus;
   final bool onboardingCompleted;
+  final AccountType accountType;
+  final ProfessionalProfile? professionalProfile;
 
   int get age => AgeUtils.ageFromBirthDate(birthDate);
+  bool get isProfessional => accountType == AccountType.professional;
+  ProfessionalCategory? get professionalCategory =>
+      professionalProfile?.category;
 
   List<VerificationBadge> get badges {
     final result = <VerificationBadge>[];
@@ -89,6 +97,13 @@ class UserProfile {
     if (identityVerified) result.add(VerificationBadge.identityVerified);
     if (isHost) result.add(VerificationBadge.verifiedHost);
     if (isDj) result.add(VerificationBadge.verifiedDj);
+    if (professionalProfile?.isVerified ?? false) {
+      result.add(
+        professionalProfile!.isVenue
+            ? VerificationBadge.verifiedVenue
+            : VerificationBadge.verifiedProfessional,
+      );
+    }
     if (hostedEventCount >= 10 && reportCount == 0) {
       result.add(VerificationBadge.superHost);
     }
@@ -131,6 +146,8 @@ class UserProfile {
     DateTime? lastActiveAt,
     AccountStatus? accountStatus,
     bool? onboardingCompleted,
+    AccountType? accountType,
+    ProfessionalProfile? professionalProfile,
   }) {
     return UserProfile(
       id: id ?? this.id,
@@ -168,6 +185,8 @@ class UserProfile {
       lastActiveAt: lastActiveAt ?? this.lastActiveAt,
       accountStatus: accountStatus ?? this.accountStatus,
       onboardingCompleted: onboardingCompleted ?? this.onboardingCompleted,
+      accountType: accountType ?? this.accountType,
+      professionalProfile: professionalProfile ?? this.professionalProfile,
     );
   }
 
@@ -208,6 +227,8 @@ class UserProfile {
     'lastActiveAt': lastActiveAt.toIso8601String(),
     'accountStatus': accountStatus.name,
     'onboardingCompleted': onboardingCompleted,
+    'accountType': accountType.name,
+    'professionalProfile': professionalProfile?.toJson(),
   };
 
   factory UserProfile.fromJson(Map<String, dynamic> json) {
@@ -263,6 +284,16 @@ class UserProfile {
         AccountStatus.active,
       ),
       onboardingCompleted: json['onboardingCompleted'] as bool? ?? false,
+      accountType: _enumValue(
+        AccountType.values,
+        json['accountType'],
+        AccountType.personal,
+      ),
+      professionalProfile: json['professionalProfile'] == null
+          ? null
+          : ProfessionalProfile.fromJson(
+              Map<String, dynamic>.from(json['professionalProfile'] as Map),
+            ),
     );
   }
 }

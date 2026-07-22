@@ -8,6 +8,8 @@ class DiscoverFilter {
     required this.categories,
     required this.musicGenres,
     required this.tags,
+    required this.organizerTypes,
+    required this.professionalNeeds,
     required this.verifiedHostsOnly,
     required this.availableSpotsOnly,
     required this.tonightOnly,
@@ -20,6 +22,8 @@ class DiscoverFilter {
   final Set<EventCategory> categories;
   final Set<String> musicGenres;
   final Set<EventTag> tags;
+  final Set<EventOrganizerType> organizerTypes;
+  final Set<ProfessionalCategory> professionalNeeds;
   final bool verifiedHostsOnly;
   final bool availableSpotsOnly;
   final bool tonightOnly;
@@ -32,6 +36,8 @@ class DiscoverFilter {
     categories: {},
     musicGenres: {},
     tags: {},
+    organizerTypes: {},
+    professionalNeeds: {},
     verifiedHostsOnly: false,
     availableSpotsOnly: true,
     tonightOnly: false,
@@ -45,6 +51,8 @@ class DiscoverFilter {
     Set<EventCategory>? categories,
     Set<String>? musicGenres,
     Set<EventTag>? tags,
+    Set<EventOrganizerType>? organizerTypes,
+    Set<ProfessionalCategory>? professionalNeeds,
     bool? verifiedHostsOnly,
     bool? availableSpotsOnly,
     bool? tonightOnly,
@@ -57,6 +65,8 @@ class DiscoverFilter {
       categories: categories ?? this.categories,
       musicGenres: musicGenres ?? this.musicGenres,
       tags: tags ?? this.tags,
+      organizerTypes: organizerTypes ?? this.organizerTypes,
+      professionalNeeds: professionalNeeds ?? this.professionalNeeds,
       verifiedHostsOnly: verifiedHostsOnly ?? this.verifiedHostsOnly,
       availableSpotsOnly: availableSpotsOnly ?? this.availableSpotsOnly,
       tonightOnly: tonightOnly ?? this.tonightOnly,

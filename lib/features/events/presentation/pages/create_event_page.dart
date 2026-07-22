@@ -49,9 +49,11 @@ class _CreateEventPageState extends ConsumerState<CreateEventPage> {
   final _description = TextEditingController(
     text: 'Private guest list, good music, address only after approval.',
   );
-  final _city = TextEditingController(text: 'Paris');
-  final _area = TextEditingController(text: 'Bastille');
-  final _address = TextEditingController(text: '14 Rue Keller, 75011 Paris');
+  final _city = TextEditingController(text: 'Toulouse');
+  final _area = TextEditingController(text: 'Carmes');
+  final _address = TextEditingController(
+    text: '12 Rue des Filatiers, Toulouse',
+  );
   final _access = TextEditingController(
     text: 'Use the side entrance. Do not share the address.',
   );
@@ -75,9 +77,18 @@ class _CreateEventPageState extends ConsumerState<CreateEventPage> {
     EventTag.dancing,
   };
   final _genres = <String>{'House', 'Afro', 'Rap'};
+  final _professionalNeeds = <ProfessionalCategory>{};
   final List<String> _selectedPhotoSources = [];
   GeoPointLite? _selectedAddressLocation;
   bool _isPickingMedia = false;
+  bool _publishAsProfessional = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _publishAsProfessional =
+        ref.read(appControllerProvider).currentUser?.isProfessional ?? false;
+  }
 
   @override
   void dispose() {
@@ -95,22 +106,45 @@ class _CreateEventPageState extends ConsumerState<CreateEventPage> {
 
   @override
   Widget build(BuildContext context) {
+    final currentUser = ref.watch(appControllerProvider).currentUser;
+    final professional = currentUser?.professionalProfile;
+    final isVenuePublisher =
+        _publishAsProfessional && (professional?.isVenue ?? false);
     final steps = <_CreateStep>[
       _CreateStep(
         title: 'Choose the format',
         description: 'Set the type of night guests will discover first.',
-        child: DropdownButtonFormField<EventCategory>(
-          initialValue: _category,
-          isExpanded: true,
-          items: [
-            for (final category in EventCategory.values)
-              DropdownMenuItem(value: category, child: Text(category.label)),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            if (professional != null) ...[
+              _PublishingIdentitySelector(
+                profileName: professional.businessName,
+                category: professional.category,
+                publishAsProfessional: _publishAsProfessional,
+                onChanged: (value) =>
+                    setState(() => _publishAsProfessional = value),
+              ),
+              const SizedBox(height: 16),
+            ],
+            DropdownButtonFormField<EventCategory>(
+              initialValue: _category,
+              isExpanded: true,
+              items: [
+                for (final category in EventCategory.values)
+                  DropdownMenuItem(
+                    value: category,
+                    child: Text(category.label),
+                  ),
+              ],
+              onChanged: (value) =>
+                  setState(() => _category = value ?? _category),
+              decoration: InputDecoration(
+                labelText: context.tr('Night plan type'),
+                prefixIcon: const Icon(Icons.nightlife_outlined),
+              ),
+            ),
           ],
-          onChanged: (value) => setState(() => _category = value ?? _category),
-          decoration: InputDecoration(
-            labelText: context.tr('Night plan type'),
-            prefixIcon: Icon(Icons.nightlife_outlined),
-          ),
         ),
       ),
       _CreateStep(
@@ -296,6 +330,20 @@ class _CreateEventPageState extends ConsumerState<CreateEventPage> {
             Text('Music', style: Theme.of(context).textTheme.titleMedium),
             const SizedBox(height: 10),
             _GenrePicker(selected: _genres),
+            const SizedBox(height: 22),
+            Text(
+              context.tr('Professionals needed'),
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+            const SizedBox(height: 5),
+            Text(
+              context.tr(
+                'Selected professionals can apply with their portfolio.',
+              ),
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+            const SizedBox(height: 10),
+            _ProfessionalNeedsPicker(selected: _professionalNeeds),
             const SizedBox(height: 18),
             _EditableEventField(
               key: const Key('create-event-dress-code'),
@@ -354,6 +402,13 @@ class _CreateEventPageState extends ConsumerState<CreateEventPage> {
                     icon: Icons.nightlife_outlined,
                     text: _category.label,
                   ),
+                  if (_publishAsProfessional && professional != null)
+                    _ReviewRow(
+                      icon: professional.isVenue
+                          ? Icons.storefront_outlined
+                          : Icons.workspace_premium_outlined,
+                      text: 'Professional event · ${professional.businessName}',
+                    ),
                   _ReviewRow(
                     icon: Icons.schedule_rounded,
                     text: DateFormat(
@@ -369,24 +424,54 @@ class _CreateEventPageState extends ConsumerState<CreateEventPage> {
                     icon: Icons.lock_outline_rounded,
                     text: 'Exact address hidden until approval',
                   ),
+                  if (_professionalNeeds.isNotEmpty)
+                    _ReviewRow(
+                      icon: Icons.handyman_outlined,
+                      text:
+                          'Looking for ${_professionalNeeds.map((item) => item.label).join(', ')}',
+                    ),
                 ],
               ),
             ),
             const SizedBox(height: 16),
-            DropdownButtonFormField<ApprovalMode>(
-              initialValue: _approval,
-              isExpanded: true,
-              items: [
-                for (final mode in ApprovalMode.values)
-                  DropdownMenuItem(value: mode, child: Text(mode.label)),
-              ],
-              onChanged: (value) =>
-                  setState(() => _approval = value ?? _approval),
-              decoration: InputDecoration(
-                labelText: context.tr('Request approval'),
-                prefixIcon: Icon(Icons.how_to_reg_outlined),
+            if (isVenuePublisher)
+              Container(
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: AppColors.blue.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: AppColors.blue.withValues(alpha: 0.42),
+                  ),
+                ),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Icon(Icons.favorite_outline_rounded, color: AppColors.blue),
+                    const SizedBox(width: 10),
+                    const Expanded(
+                      child: Text(
+                        'Open venue event: guests show interest instantly. No individual approval is required.',
+                      ),
+                    ),
+                  ],
+                ),
+              )
+            else
+              DropdownButtonFormField<ApprovalMode>(
+                initialValue: _approval,
+                isExpanded: true,
+                items: [
+                  for (final mode in ApprovalMode.values)
+                    DropdownMenuItem(value: mode, child: Text(mode.label)),
+                ],
+                onChanged: (value) =>
+                    setState(() => _approval = value ?? _approval),
+                decoration: InputDecoration(
+                  labelText: context.tr('Request approval'),
+                  prefixIcon: const Icon(Icons.how_to_reg_outlined),
+                ),
               ),
-            ),
             const SizedBox(height: 12),
             DropdownButtonFormField<EventVisibility>(
               initialValue: _visibility,
@@ -592,7 +677,7 @@ class _CreateEventPageState extends ConsumerState<CreateEventPage> {
     final currentUser = ref.read(appControllerProvider).currentUser;
     final fallbackLocation =
         currentUser?.approximateLocation ??
-        const GeoPointLite(latitude: 48.8566, longitude: 2.3522);
+        const GeoPointLite(latitude: 43.6047, longitude: 1.4442);
     final eventLocation =
         _selectedAddressLocation ??
         CityLocationResolver.resolve(city, fallback: fallbackLocation);
@@ -630,6 +715,8 @@ class _CreateEventPageState extends ConsumerState<CreateEventPage> {
                 : SmokingPolicy.outdoorOnly,
             visibility: _visibility,
             approvalMode: _approval,
+            publishAsProfessional: _publishAsProfessional,
+            professionalNeeds: _professionalNeeds.toList(),
           ),
         );
     if (mounted) context.go('/host');
@@ -955,6 +1042,126 @@ class _ReviewRow extends StatelessWidget {
       ),
     );
   }
+}
+
+class _PublishingIdentitySelector extends StatelessWidget {
+  const _PublishingIdentitySelector({
+    required this.profileName,
+    required this.category,
+    required this.publishAsProfessional,
+    required this.onChanged,
+  });
+
+  final String profileName;
+  final ProfessionalCategory category;
+  final bool publishAsProfessional;
+  final ValueChanged<bool> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(14, 10, 8, 10),
+      decoration: BoxDecoration(
+        color: publishAsProfessional
+            ? AppColors.blue.withValues(alpha: 0.12)
+            : AppColors.surface,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(
+          color: publishAsProfessional
+              ? AppColors.blue.withValues(alpha: 0.52)
+              : AppColors.border,
+        ),
+      ),
+      child: Row(
+        children: [
+          Icon(
+            category == ProfessionalCategory.bar ||
+                    category == ProfessionalCategory.venue
+                ? Icons.storefront_outlined
+                : Icons.workspace_premium_outlined,
+            color: publishAsProfessional
+                ? AppColors.blue
+                : AppColors.textSecondary,
+          ),
+          const SizedBox(width: 11),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  publishAsProfessional ? profileName : context.tr('Personal'),
+                  style: Theme.of(context).textTheme.titleSmall,
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  publishAsProfessional
+                      ? '${category.label} · professional event'
+                      : context.tr('Publish as a private host'),
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+              ],
+            ),
+          ),
+          Switch(value: publishAsProfessional, onChanged: onChanged),
+        ],
+      ),
+    );
+  }
+}
+
+class _ProfessionalNeedsPicker extends StatefulWidget {
+  const _ProfessionalNeedsPicker({required this.selected});
+
+  final Set<ProfessionalCategory> selected;
+
+  @override
+  State<_ProfessionalNeedsPicker> createState() =>
+      _ProfessionalNeedsPickerState();
+}
+
+class _ProfessionalNeedsPickerState extends State<_ProfessionalNeedsPicker> {
+  static const _categories = [
+    ProfessionalCategory.dj,
+    ProfessionalCategory.photographer,
+    ProfessionalCategory.videographer,
+    ProfessionalCategory.bartender,
+    ProfessionalCategory.security,
+    ProfessionalCategory.promoter,
+    ProfessionalCategory.eventPlanner,
+    ProfessionalCategory.other,
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    return Wrap(
+      spacing: 8,
+      runSpacing: 8,
+      children: [
+        for (final category in _categories)
+          FilterChip(
+            avatar: Icon(_iconFor(category), size: 17),
+            selected: widget.selected.contains(category),
+            label: Text(category.label),
+            onSelected: (_) => setState(() {
+              widget.selected.contains(category)
+                  ? widget.selected.remove(category)
+                  : widget.selected.add(category);
+            }),
+          ),
+      ],
+    );
+  }
+
+  IconData _iconFor(ProfessionalCategory category) => switch (category) {
+    ProfessionalCategory.dj => Icons.graphic_eq_rounded,
+    ProfessionalCategory.photographer => Icons.photo_camera_outlined,
+    ProfessionalCategory.videographer => Icons.videocam_outlined,
+    ProfessionalCategory.bartender => Icons.local_bar_outlined,
+    ProfessionalCategory.security => Icons.security_outlined,
+    ProfessionalCategory.promoter => Icons.campaign_outlined,
+    ProfessionalCategory.eventPlanner => Icons.event_note_outlined,
+    _ => Icons.handyman_outlined,
+  };
 }
 
 class _TagPicker extends StatefulWidget {

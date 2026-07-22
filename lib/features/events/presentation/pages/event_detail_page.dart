@@ -96,6 +96,48 @@ class EventDetailPage extends ConsumerWidget {
             ),
           ),
           const SizedBox(height: 18),
+          if (event.isProfessionalEvent) ...[
+            Container(
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: AppColors.blue.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(
+                  color: AppColors.blue.withValues(alpha: 0.46),
+                ),
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    event.isVenueEvent
+                        ? Icons.storefront_outlined
+                        : Icons.workspace_premium_outlined,
+                    color: AppColors.blue,
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          event.isVenueEvent
+                              ? 'Professional venue event'
+                              : 'Professional event',
+                          style: Theme.of(context).textTheme.titleSmall,
+                        ),
+                        Text(
+                          event.hostPreview.businessName ??
+                              event.hostPreview.firstName,
+                          style: Theme.of(context).textTheme.bodySmall,
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 14),
+          ],
           Text(event.title, style: Theme.of(context).textTheme.headlineMedium),
           const SizedBox(height: 8),
           Wrap(
@@ -107,10 +149,16 @@ class EventDetailPage extends ConsumerWidget {
                 icon: Icons.nightlife_rounded,
               ),
               PullupChip(label: event.areaName, icon: Icons.place_outlined),
-              PullupChip(
-                label: '${event.availableSpots} spots left',
-                icon: Icons.people_alt_rounded,
-              ),
+              if (event.acceptsOpenInterest)
+                const PullupChip(
+                  label: 'Open entry',
+                  icon: Icons.confirmation_number_outlined,
+                )
+              else
+                PullupChip(
+                  label: '${event.availableSpots} spots left',
+                  icon: Icons.people_alt_rounded,
+                ),
               for (final badge in event.hostPreview.badges.take(2))
                 PullupChip(label: badge.label, icon: Icons.verified_rounded),
             ],
@@ -140,6 +188,13 @@ class EventDetailPage extends ConsumerWidget {
             title: 'Vibe',
             values: event.eventTags.map((tag) => tag.label).toList(),
           ),
+          if (event.professionalNeeds.isNotEmpty)
+            _Chips(
+              title: 'Professionals needed',
+              values: event.professionalNeeds
+                  .map((role) => '${role.label} needed')
+                  .toList(),
+            ),
           NightCard(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -168,7 +223,8 @@ class EventDetailPage extends ConsumerWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        event.hostPreview.firstName,
+                        event.hostPreview.businessName ??
+                            event.hostPreview.firstName,
                         style: Theme.of(context).textTheme.titleMedium,
                       ),
                       Text(
@@ -258,9 +314,9 @@ class EventDetailPage extends ConsumerWidget {
             )
           else
             GradientButton(
-              label: 'Request to join',
+              label: eventEngagementLabel(context, user, event),
               icon: Icons.favorite_rounded,
-              onPressed: () => showJoinEventSheet(context, event: event),
+              onPressed: () => showEventEngagementSheet(context, event: event),
             ),
         ],
       ),

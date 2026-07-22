@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../app/providers/app_state.dart';
 import '../../../../app/providers/entrance_flow_provider.dart';
 import '../../../../app/theme/app_colors.dart';
+import '../../../../app/constants/app_constants.dart';
 import '../../../../core/utils/age_utils.dart';
 import '../../../../core/widgets/gradient_button.dart';
 import '../../../../core/widgets/pullup_logo.dart';
@@ -207,7 +208,7 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
   final _firstName = TextEditingController();
   final _lastName = TextEditingController();
   final _displayName = TextEditingController();
-  final _city = TextEditingController(text: 'Paris');
+  final _city = TextEditingController(text: AppConstants.demoCity);
   final _email = TextEditingController();
   final _password = TextEditingController();
   DateTime _birthDate = DateTime(2000, 1, 1);
@@ -215,6 +216,8 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
   bool _acceptedTerms = false;
   bool _confirmedAge = false;
   bool _obscurePassword = true;
+  AccountType _accountType = AccountType.personal;
+  ProfessionalCategory _professionalCategory = ProfessionalCategory.dj;
 
   @override
   void dispose() {
@@ -244,6 +247,42 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
                 message:
                     'A clear profile helps hosts make confident decisions.',
               ),
+              _AccountTypeSelector(
+                selected: _accountType,
+                onChanged: (value) => setState(() => _accountType = value),
+              ),
+              AnimatedSwitcher(
+                duration: const Duration(milliseconds: 220),
+                child: _accountType == AccountType.professional
+                    ? Padding(
+                        key: const ValueKey('professional-category-field'),
+                        padding: const EdgeInsets.only(top: 12),
+                        child: DropdownButtonFormField<ProfessionalCategory>(
+                          initialValue: _professionalCategory,
+                          isExpanded: true,
+                          items: [
+                            for (final category in professionalCategoryOptions)
+                              DropdownMenuItem(
+                                value: category,
+                                child: Text(category.label),
+                              ),
+                          ],
+                          onChanged: (value) => setState(
+                            () => _professionalCategory =
+                                value ?? _professionalCategory,
+                          ),
+                          decoration: InputDecoration(
+                            labelText: context.tr('Professional activity'),
+                            helperText: context.tr(
+                              'You will complete your portfolio after registration.',
+                            ),
+                            prefixIcon: const Icon(Icons.work_outline_rounded),
+                          ),
+                        ),
+                      )
+                    : const SizedBox.shrink(),
+              ),
+              const SizedBox(height: 16),
               TextFormField(
                 controller: _firstName,
                 textInputAction: TextInputAction.next,
@@ -447,8 +486,116 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
             password: _password.text,
             acceptedTerms: _acceptedTerms,
             confirmedMinimumAge: _confirmedAge,
+            accountType: _accountType,
+            professionalCategory: _accountType == AccountType.professional
+                ? _professionalCategory
+                : null,
           ),
         );
+  }
+}
+
+class _AccountTypeSelector extends StatelessWidget {
+  const _AccountTypeSelector({required this.selected, required this.onChanged});
+
+  final AccountType selected;
+  final ValueChanged<AccountType> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      container: true,
+      label: context.tr('Choose your account type'),
+      child: Row(
+        children: [
+          Expanded(
+            child: _AccountTypeOption(
+              key: const Key('account-type-personal'),
+              selected: selected == AccountType.personal,
+              icon: Icons.local_activity_outlined,
+              title: context.tr('Client'),
+              subtitle: context.tr('Join and create night plans'),
+              onTap: () => onChanged(AccountType.personal),
+            ),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: _AccountTypeOption(
+              key: const Key('account-type-professional'),
+              selected: selected == AccountType.professional,
+              icon: Icons.workspace_premium_outlined,
+              title: context.tr('Professional'),
+              subtitle: context.tr('Showcase services and apply'),
+              onTap: () => onChanged(AccountType.professional),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _AccountTypeOption extends StatelessWidget {
+  const _AccountTypeOption({
+    required this.selected,
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.onTap,
+    super.key,
+  });
+
+  final bool selected;
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      button: true,
+      selected: selected,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(8),
+        onTap: onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          constraints: const BoxConstraints(minHeight: 118),
+          padding: const EdgeInsets.all(13),
+          decoration: BoxDecoration(
+            color: selected
+                ? AppColors.primary.withValues(alpha: 0.2)
+                : AppColors.surface,
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(
+              color: selected ? AppColors.primaryBright : AppColors.border,
+              width: selected ? 1.5 : 1,
+            ),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Icon(
+                icon,
+                color: selected
+                    ? AppColors.primaryBright
+                    : AppColors.textSecondary,
+              ),
+              const SizedBox(height: 9),
+              Text(title, style: Theme.of(context).textTheme.titleSmall),
+              const SizedBox(height: 3),
+              Text(
+                subtitle,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }
 
