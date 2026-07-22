@@ -69,9 +69,9 @@ class HostDashboardPage extends ConsumerWidget {
           ],
         ),
         bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(60),
+          preferredSize: const Size.fromHeight(54),
           child: Padding(
-            padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
+            padding: const EdgeInsets.fromLTRB(16, 2, 16, 6),
             child: ExperienceModeSwitcher(
               selected: AppExperience.host,
               pendingHostRequests: pending,

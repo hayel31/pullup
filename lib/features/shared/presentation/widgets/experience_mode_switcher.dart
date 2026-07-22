@@ -1,9 +1,13 @@
+import 'dart:async';
+import 'dart:math' as math;
+
+import 'package:flutter/services.dart';
 import 'package:pullup/l10n/app_material.dart';
 
 import '../../../../app/providers/app_state.dart';
 import '../../../../app/theme/app_colors.dart';
 
-class ExperienceModeSwitcher extends StatelessWidget {
+class ExperienceModeSwitcher extends StatefulWidget {
   const ExperienceModeSwitcher({
     required this.selected,
     required this.onGuestSelected,
@@ -18,56 +22,245 @@ class ExperienceModeSwitcher extends StatelessWidget {
   final int pendingHostRequests;
 
   @override
+  State<ExperienceModeSwitcher> createState() => _ExperienceModeSwitcherState();
+}
+
+class _ExperienceModeSwitcherState extends State<ExperienceModeSwitcher>
+    with SingleTickerProviderStateMixin {
+  static const _animationDuration = Duration(milliseconds: 240);
+
+  late final AnimationController _positionController;
+  bool _dragging = false;
+  bool _settling = false;
+  double _trackWidth = 320;
+
+  double get _selectedPosition => widget.selected == AppExperience.host ? 1 : 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _positionController = AnimationController.unbounded(
+      vsync: this,
+      value: _selectedPosition,
+    );
+  }
+
+  @override
+  void didUpdateWidget(covariant ExperienceModeSwitcher oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.selected != widget.selected && !_dragging && !_settling) {
+      unawaited(
+        _positionController.animateTo(
+          _selectedPosition,
+          duration: _animationDuration,
+          curve: Curves.easeOutCubic,
+        ),
+      );
+    }
+  }
+
+  @override
+  void dispose() {
+    _positionController.dispose();
+    super.dispose();
+  }
+
+  void _handleDragStart(DragStartDetails details) {
+    if (_settling) return;
+    _positionController.stop();
+    _dragging = true;
+  }
+
+  void _handleDragUpdate(DragUpdateDetails details) {
+    if (!_dragging || _settling) return;
+    final travel = math.max(1.0, (_trackWidth - 8) / 2);
+    _positionController.value =
+        (_positionController.value + details.delta.dx / travel).clamp(0.0, 1.0);
+  }
+
+  void _handleDragEnd(DragEndDetails details) {
+    if (!_dragging || _settling) return;
+    final velocity = details.velocity.pixelsPerSecond.dx;
+    final target = velocity.abs() > 320
+        ? (velocity > 0 ? AppExperience.host : AppExperience.guest)
+        : (_positionController.value >= 0.5
+              ? AppExperience.host
+              : AppExperience.guest);
+    unawaited(_settleOn(target));
+  }
+
+  void _handleDragCancel() {
+    if (!_dragging || _settling) return;
+    unawaited(_settleOn(widget.selected));
+  }
+
+  Future<void> _select(AppExperience experience) async {
+    if (_settling || (experience == widget.selected && !_dragging)) return;
+    await _settleOn(experience);
+  }
+
+  Future<void> _settleOn(AppExperience experience) async {
+    if (_settling) return;
+    final changed = experience != widget.selected;
+    _dragging = false;
+    _settling = true;
+
+    if (changed) {
+      unawaited(HapticFeedback.selectionClick());
+    }
+
+    await _positionController.animateTo(
+      experience == AppExperience.host ? 1 : 0,
+      duration: _animationDuration,
+      curve: Curves.easeOutCubic,
+    );
+    if (!mounted) return;
+
+    _settling = false;
+    if (!changed) return;
+    if (experience == AppExperience.host) {
+      widget.onHostSelected();
+    } else {
+      widget.onGuestSelected();
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final hostSelected = selected == AppExperience.host;
-    return Semantics(
-      container: true,
-      label: context.tr('Choose your PULLUP space'),
-      child: Container(
-        key: const Key('experience-mode-switcher'),
-        height: 48,
-        padding: const EdgeInsets.all(4),
-        decoration: BoxDecoration(
-          color: AppColors.surface,
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(
-            color: hostSelected
-                ? AppColors.magenta.withValues(alpha: 0.5)
-                : AppColors.border,
-          ),
-          boxShadow: hostSelected
-              ? [
-                  BoxShadow(
-                    color: AppColors.primary.withValues(alpha: 0.18),
-                    blurRadius: 16,
-                    offset: const Offset(0, 5),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final width = math.min(constraints.maxWidth, 340.0);
+        _trackWidth = width;
+        return Center(
+          child: Semantics(
+            container: true,
+            label: context.tr('Choose your PULLUP space'),
+            child: RepaintBoundary(
+              key: const Key('experience-mode-switcher'),
+              child: SizedBox(
+                width: width,
+                height: 46,
+                child: MouseRegion(
+                  cursor: SystemMouseCursors.click,
+                  child: GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onHorizontalDragStart: _handleDragStart,
+                    onHorizontalDragUpdate: _handleDragUpdate,
+                    onHorizontalDragEnd: _handleDragEnd,
+                    onHorizontalDragCancel: _handleDragCancel,
+                    child: AnimatedBuilder(
+                      animation: _positionController,
+                      builder: (context, child) {
+                        final position = _positionController.value.clamp(
+                          0.0,
+                          1.0,
+                        );
+                        final segmentWidth = (width - 8) / 2;
+                        final indicatorLeft = 4 + segmentWidth * position;
+                        final glowColor = Color.lerp(
+                          AppColors.blue,
+                          AppColors.magenta,
+                          position,
+                        )!;
+                        final gradientEnd = Color.lerp(
+                          AppColors.blue,
+                          AppColors.magenta,
+                          position,
+                        )!;
+
+                        return DecoratedBox(
+                          decoration: BoxDecoration(
+                            color: Color.alphaBlend(
+                              AppColors.primary.withValues(alpha: 0.06),
+                              AppColors.surface,
+                            ),
+                            borderRadius: BorderRadius.circular(23),
+                            border: Border.all(color: AppColors.borderBright),
+                            boxShadow: [
+                              BoxShadow(
+                                color: AppColors.background.withValues(
+                                  alpha: 0.5,
+                                ),
+                                blurRadius: 14,
+                                offset: const Offset(0, 5),
+                              ),
+                            ],
+                          ),
+                          child: Stack(
+                            children: [
+                              Positioned(
+                                key: const Key('experience-mode-indicator'),
+                                left: indicatorLeft,
+                                top: 4,
+                                width: segmentWidth,
+                                bottom: 4,
+                                child: DecoratedBox(
+                                  decoration: BoxDecoration(
+                                    gradient: LinearGradient(
+                                      colors: [AppColors.primary, gradientEnd],
+                                    ),
+                                    borderRadius: BorderRadius.circular(19),
+                                    border: Border.all(
+                                      color: AppColors.textPrimary.withValues(
+                                        alpha: 0.14,
+                                      ),
+                                    ),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: glowColor.withValues(alpha: 0.3),
+                                        blurRadius: 15,
+                                        spreadRadius: -2,
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                              Positioned.fill(
+                                child: Padding(
+                                  padding: const EdgeInsets.all(4),
+                                  child: Row(
+                                    children: [
+                                      _ModeOption(
+                                        key: const Key('switch-to-guest'),
+                                        label: context.tr('Guest'),
+                                        icon: Icons.explore_rounded,
+                                        activation: 1 - position,
+                                        selected:
+                                            widget.selected ==
+                                            AppExperience.guest,
+                                        onTap: () => unawaited(
+                                          _select(AppExperience.guest),
+                                        ),
+                                      ),
+                                      _ModeOption(
+                                        key: const Key('switch-to-host'),
+                                        label: context.tr('Host'),
+                                        icon: Icons.home_work_rounded,
+                                        activation: position,
+                                        selected:
+                                            widget.selected ==
+                                            AppExperience.host,
+                                        badgeCount: widget.pendingHostRequests,
+                                        onTap: () => unawaited(
+                                          _select(AppExperience.host),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      },
+                    ),
                   ),
-                ]
-              : null,
-        ),
-        child: Row(
-          children: [
-            _ModeOption(
-              key: const Key('switch-to-guest'),
-              label: context.tr('Guest'),
-              icon: Icons.explore_outlined,
-              selected: !hostSelected,
-              hostOption: false,
-              onTap: onGuestSelected,
+                ),
+              ),
             ),
-            const SizedBox(width: 4),
-            _ModeOption(
-              key: const Key('switch-to-host'),
-              label: context.tr('Host'),
-              icon: Icons.home_work_outlined,
-              selected: hostSelected,
-              hostOption: true,
-              badgeCount: pendingHostRequests,
-              onTap: onHostSelected,
-            ),
-          ],
-        ),
-      ),
+          ),
+        );
+      },
     );
   }
 }
@@ -76,8 +269,8 @@ class _ModeOption extends StatelessWidget {
   const _ModeOption({
     required this.label,
     required this.icon,
+    required this.activation,
     required this.selected,
-    required this.hostOption,
     required this.onTap,
     this.badgeCount = 0,
     super.key,
@@ -85,46 +278,35 @@ class _ModeOption extends StatelessWidget {
 
   final String label;
   final IconData icon;
+  final double activation;
   final bool selected;
-  final bool hostOption;
   final VoidCallback onTap;
   final int badgeCount;
 
   @override
   Widget build(BuildContext context) {
+    final foreground = Color.lerp(
+      AppColors.textSecondary,
+      AppColors.textPrimary,
+      activation,
+    )!;
+
     return Expanded(
       child: Semantics(
         button: true,
         selected: selected,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 240),
-          curve: Curves.easeOutCubic,
-          decoration: BoxDecoration(
-            color: selected && !hostOption
-                ? AppColors.surfaceElevated
-                : Colors.transparent,
-            gradient: selected && hostOption
-                ? LinearGradient(colors: [AppColors.primary, AppColors.magenta])
-                : null,
-            borderRadius: BorderRadius.circular(6),
-            border: selected && !hostOption
-                ? Border.all(
-                    color: AppColors.primaryBright.withValues(alpha: 0.42),
-                  )
-                : null,
-          ),
+        label: label,
+        child: Material(
+          color: Colors.transparent,
           child: InkWell(
-            borderRadius: BorderRadius.circular(6),
+            borderRadius: BorderRadius.circular(19),
             onTap: onTap,
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(
-                  icon,
-                  size: 18,
-                  color: selected
-                      ? AppColors.textPrimary
-                      : AppColors.textSecondary,
+                Transform.scale(
+                  scale: 0.92 + activation * 0.08,
+                  child: Icon(icon, size: 18, color: foreground),
                 ),
                 const SizedBox(width: 7),
                 Flexible(
@@ -133,11 +315,11 @@ class _ModeOption extends StatelessWidget {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
-                      color: selected
-                          ? AppColors.textPrimary
-                          : AppColors.textSecondary,
+                      color: foreground,
                       fontSize: 13,
-                      fontWeight: FontWeight.w900,
+                      fontWeight: activation > 0.5
+                          ? FontWeight.w900
+                          : FontWeight.w700,
                     ),
                   ),
                 ),
@@ -151,10 +333,15 @@ class _ModeOption extends StatelessWidget {
                     padding: const EdgeInsets.symmetric(horizontal: 5),
                     alignment: Alignment.center,
                     decoration: BoxDecoration(
-                      color: selected
-                          ? AppColors.background.withValues(alpha: 0.72)
-                          : AppColors.magenta,
+                      color: Color.lerp(
+                        AppColors.magenta,
+                        AppColors.background.withValues(alpha: 0.72),
+                        activation,
+                      ),
                       borderRadius: BorderRadius.circular(99),
+                      border: Border.all(
+                        color: AppColors.textPrimary.withValues(alpha: 0.1),
+                      ),
                     ),
                     child: Text(
                       badgeCount > 9 ? '9+' : '$badgeCount',
