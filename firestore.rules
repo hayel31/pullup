@@ -76,6 +76,29 @@ service cloud.firestore {
         );
     }
 
+    function validEventPracticalDetails(data) {
+      return data.entryFeeCents is int
+        && data.entryFeeCents >= 0
+        && data.illegalSubstancesProhibited == true
+        && data.attendance.initialMenCount is int
+        && data.attendance.initialWomenCount is int
+        && data.attendance.initialOtherCount is int
+        && data.attendance.currentMenCount == data.attendance.initialMenCount
+        && data.attendance.currentWomenCount == data.attendance.initialWomenCount
+        && data.attendance.currentOtherCount == data.attendance.initialOtherCount
+        && data.attendance.initialMenCount >= 0
+        && data.attendance.initialWomenCount >= 0
+        && data.attendance.initialOtherCount >= 0
+        && data.attendance.initialMenCount
+          + data.attendance.initialWomenCount
+          + data.attendance.initialOtherCount >= 1
+        && data.availableSpots ==
+          data.maxParticipants
+          - data.attendance.initialMenCount
+          - data.attendance.initialWomenCount
+          - data.attendance.initialOtherCount;
+    }
+
     match /users/{userId} {
       allow read: if signedIn() && !isBlockedBy(userId);
       allow create: if isUser(userId)
@@ -118,7 +141,8 @@ service cloud.firestore {
       allow create: if signedIn()
         && request.resource.data.hostId == request.auth.uid
         && !('exactAddress' in request.resource.data)
-        && validEventOrganizer(request.resource.data);
+        && validEventOrganizer(request.resource.data)
+        && validEventPracticalDetails(request.resource.data);
       allow update: if signedIn()
         && resource.data.hostId == request.auth.uid
         && request.resource.data.hostId == resource.data.hostId
@@ -128,10 +152,12 @@ service cloud.firestore {
           'waitingParticipantIds',
           'rejectedParticipantIds',
           'availableSpots',
+          'attendance',
           'matchCount',
           'requestCount',
           'isBoosted',
-          'boostEndDate'
+          'boostEndDate',
+          'illegalSubstancesProhibited'
         ]);
       allow delete: if signedIn() && resource.data.hostId == request.auth.uid;
 

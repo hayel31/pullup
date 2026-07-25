@@ -15,6 +15,7 @@ import '../../../../models/enums.dart';
 import '../../../discovery/presentation/pages/discover_page.dart';
 import '../../../shared/presentation/withdraw_request_flow.dart';
 import '../widgets/approximate_map.dart';
+import '../widgets/event_practical_info.dart';
 
 class EventDetailPage extends ConsumerWidget {
   const EventDetailPage({required this.eventId, super.key});
@@ -183,6 +184,15 @@ class EventDetailPage extends ConsumerWidget {
             ),
           ),
           const SizedBox(height: 16),
+          NightCard(child: EventPracticalOverview(event: event)),
+          const SizedBox(height: 16),
+          NightCard(
+            child: AttendanceMixPanel(
+              attendance: event.attendance,
+              capacity: event.maxParticipants,
+            ),
+          ),
+          const SizedBox(height: 16),
           _Chips(title: 'Music', values: event.musicGenres),
           _Chips(
             title: 'Vibe',
@@ -204,7 +214,10 @@ class EventDetailPage extends ConsumerWidget {
                 Text(event.houseRules ?? 'Respect the host and the address.'),
                 const SizedBox(height: 8),
                 Text('Dress code: ${event.dressCode ?? 'Free'}'),
-                Text('Contribution: ${event.contributionText ?? 'None'}'),
+                if (event.contributionText?.trim().isNotEmpty ?? false)
+                  Text(
+                    '${context.tr('Other contribution')}: ${event.contributionText}',
+                  ),
               ],
             ),
           ),

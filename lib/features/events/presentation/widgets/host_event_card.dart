@@ -7,6 +7,7 @@ import '../../../../core/widgets/pullup_chip.dart';
 import '../../../../core/widgets/pullup_image.dart';
 import '../../../../models/enums.dart';
 import '../../../../models/party_event.dart';
+import 'event_practical_info.dart';
 
 class HostEventCard extends StatelessWidget {
   const HostEventCard({
@@ -27,8 +28,6 @@ class HostEventCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final capacity = event.maxParticipants <= 0 ? 1 : event.maxParticipants;
-    final occupied = (capacity - event.availableSpots).clamp(0, capacity);
-    final fill = occupied / capacity;
     return NightCard(
       padding: EdgeInsets.zero,
       child: Column(
@@ -113,17 +112,11 @@ class HostEventCard extends StatelessWidget {
                   ],
                 ),
                 const SizedBox(height: 12),
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(3),
-                  child: LinearProgressIndicator(value: fill, minHeight: 5),
-                ),
-                const SizedBox(height: 6),
-                Align(
-                  alignment: Alignment.centerRight,
-                  child: Text(
-                    '$occupied / $capacity confirmed capacity',
-                    style: Theme.of(context).textTheme.bodySmall,
-                  ),
+                AttendanceMixPanel(
+                  attendance: event.attendance,
+                  capacity: capacity,
+                  showInitialCount: false,
+                  compact: true,
                 ),
                 const SizedBox(height: 12),
                 Row(

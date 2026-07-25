@@ -1,4 +1,5 @@
 import '../../../models/chat.dart';
+import '../../../models/attendance_breakdown.dart';
 import '../../../models/dj.dart';
 import '../../../models/enums.dart';
 import '../../../models/event_request.dart';
@@ -494,6 +495,11 @@ class DemoSeed {
     events[loftIndex] = events[loftIndex].copyWith(
       acceptedParticipantIds: const ['user-001', 'user-002'],
       availableSpots: events[loftIndex].availableSpots - 2,
+      attendance: events[loftIndex].attendance.addAcceptedGroup(
+        men: 1,
+        women: 1,
+        other: 0,
+      ),
     );
 
     final conversation = ChatConversation(
@@ -669,7 +675,7 @@ class DemoSeed {
       firstName: firstName,
       lastName: lastName,
       birthDate: DateTime(birthYear, 4, 12),
-      gender: Gender.preferNotToSay,
+      gender: _genderForUser(id),
       bio: 'Night plans, good music, respectful energy.',
       city: 'Toulouse',
       approximateLocation: const GeoPointLite(
@@ -752,6 +758,16 @@ class DemoSeed {
       longitude: 1.4442 + imageId % 9 / 1000,
     );
     final professional = host.professionalProfile;
+    final occupied = (max - spots).clamp(0, max);
+    final otherCount = occupied >= 10 ? 1 : 0;
+    final genderedCount = occupied - otherCount;
+    final womenCount = (genderedCount * (0.46 + (imageId % 3) * 0.04))
+        .round()
+        .clamp(0, genderedCount);
+    final menCount = genderedCount - womenCount;
+    final alcoholPolicy = _alcoholPolicyFor(id, tags);
+    final foodPolicy = _foodPolicyFor(id);
+    final entryFeeCents = _entryFeeFor(id);
     final organizerType = professional == null
         ? EventOrganizerType.privateHost
         : professional.isVenue
@@ -802,12 +818,10 @@ class DemoSeed {
       dressCode: tags.contains(EventTag.dressCode)
           ? 'All black, clean sneakers.'
           : 'Night casual.',
-      contributionText: 'Bring drinks if you can.',
+      contributionText: _customContributionFor(id),
       houseRules:
           'Respect the address, no harassment, no public address sharing.',
-      alcoholPolicy: tags.contains(EventTag.noAlcohol)
-          ? AlcoholPolicy.notAllowed
-          : AlcoholPolicy.byob,
+      alcoholPolicy: alcoholPolicy,
       smokingPolicy: tags.contains(EventTag.smokeFriendly)
           ? SmokingPolicy.smokeFriendly
           : SmokingPolicy.outdoorOnly,
@@ -831,8 +845,64 @@ class DemoSeed {
           ? GuestInteractionMode.openInterest
           : GuestInteractionMode.approvalRequest,
       professionalNeeds: professionalNeeds,
+      attendance: AttendanceBreakdown.initial(
+        men: menCount,
+        women: womenCount,
+        other: otherCount,
+      ),
+      entryFeeCents: entryFeeCents,
+      foodPolicy: foodPolicy,
+      illegalSubstancesProhibited: true,
     );
   }
+
+  static Gender _genderForUser(String id) => switch (id) {
+    'user-001' ||
+    'host-002' ||
+    'dj-001' ||
+    'dj-003' ||
+    'user-003' ||
+    'user-005' => Gender.woman,
+    'host-001' ||
+    'host-003' ||
+    'dj-002' ||
+    'user-002' ||
+    'user-004' ||
+    'user-006' => Gender.man,
+    _ => Gender.preferNotToSay,
+  };
+
+  static int _entryFeeFor(String eventId) => switch (eventId) {
+    'event-002' || 'event-006' || 'event-009' => 1000,
+    'event-004' => 1500,
+    'event-008' => 500,
+    _ => 0,
+  };
+
+  static AlcoholPolicy _alcoholPolicyFor(String eventId, List<EventTag> tags) {
+    if (tags.contains(EventTag.noAlcohol)) return AlcoholPolicy.notAllowed;
+    return switch (eventId) {
+      'event-002' ||
+      'event-004' ||
+      'event-006' ||
+      'event-007' ||
+      'event-008' ||
+      'event-009' => AlcoholPolicy.provided,
+      _ => AlcoholPolicy.byob,
+    };
+  }
+
+  static FoodPolicy _foodPolicyFor(String eventId) => switch (eventId) {
+    'event-002' || 'event-007' => FoodPolicy.provided,
+    'event-001' || 'event-003' || 'event-005' => FoodPolicy.bringFood,
+    _ => FoodPolicy.noneRequired,
+  };
+
+  static String? _customContributionFor(String eventId) => switch (eventId) {
+    'event-003' => 'Ice and soft drinks appreciated.',
+    'event-010' => 'Bring a towel for the pool.',
+    _ => null,
+  };
 
   static ProfessionalProfile _ninaProfessionalProfile() {
     return const ProfessionalProfile(

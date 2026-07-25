@@ -35,6 +35,10 @@ export const createMatchFromAcceptedRequest = onCall(async (request) => {
     const guestMenCount = Number(joinRequest.guestMenCount ?? 0);
     const guestWomenCount = Number(joinRequest.guestWomenCount ?? 0);
     const companionNames = (joinRequest.companionNames ?? []) as string[];
+    const identifiedGuestIds = [
+      joinRequest.requesterId,
+      ...companionUserIds
+    ];
     const expectedGroupSize =
       1 +
       companionUserIds.length +
@@ -92,15 +96,69 @@ export const createMatchFromAcceptedRequest = onCall(async (request) => {
         );
       }
     }
+    let acceptedMenCount = 0;
+    let acceptedWomenCount = 0;
+    let acceptedOtherCount = 0;
+    if (!isProfessionalService) {
+      acceptedMenCount = guestMenCount;
+      acceptedWomenCount = guestWomenCount;
+      acceptedOtherCount = companionNames.length;
+      const guestProfiles = await Promise.all(
+        identifiedGuestIds.map((guestId) =>
+          tx.get(db.doc(`users/${guestId}`))
+        )
+      );
+      guestProfiles.forEach((profileSnap) => {
+        const gender = profileSnap.data()?.gender;
+        if (gender === "man") {
+          acceptedMenCount += 1;
+        } else if (gender === "woman") {
+          acceptedWomenCount += 1;
+        } else {
+          acceptedOtherCount += 1;
+        }
+      });
+      const unclassified =
+        reservedSpots -
+        acceptedMenCount -
+        acceptedWomenCount -
+        acceptedOtherCount;
+      if (unclassified > 0) acceptedOtherCount += unclassified;
+    }
 
     const matchRef = db.collection("matches").doc();
     const conversationRef = db.collection("conversations").doc();
-    const identifiedGuestIds = [
-      joinRequest.requesterId,
-      ...companionUserIds
-    ];
     const memberIds = [uid, ...identifiedGuestIds];
     const remaining = event.availableSpots - reservedSpots;
+    const existingAttendance = event.attendance ?? {};
+    const occupiedFallback = Math.max(
+      0,
+      Number(event.maxParticipants ?? 0) - Number(event.availableSpots ?? 0)
+    );
+    const currentMenCount = Number(
+      existingAttendance.currentMenCount ?? 0
+    );
+    const currentWomenCount = Number(
+      existingAttendance.currentWomenCount ?? 0
+    );
+    const currentOtherCount = Number(
+      existingAttendance.currentOtherCount ??
+      (
+        currentMenCount + currentWomenCount === 0 ?
+          occupiedFallback :
+          0
+      )
+    );
+    const nextAttendance = {
+      initialMenCount: Number(existingAttendance.initialMenCount ?? 0),
+      initialWomenCount: Number(existingAttendance.initialWomenCount ?? 0),
+      initialOtherCount: Number(
+        existingAttendance.initialOtherCount ?? occupiedFallback
+      ),
+      currentMenCount: currentMenCount + acceptedMenCount,
+      currentWomenCount: currentWomenCount + acceptedWomenCount,
+      currentOtherCount: currentOtherCount + acceptedOtherCount
+    };
     const expiresAt = admin.firestore.Timestamp.fromMillis(
       Date.now() + 12 * 60 * 60 * 1000
     );
@@ -112,6 +170,7 @@ export const createMatchFromAcceptedRequest = onCall(async (request) => {
       ),
       waitingParticipantIds: admin.firestore.FieldValue.arrayRemove(joinRequest.requesterId),
       availableSpots: remaining,
+      attendance: nextAttendance,
       matchCount: admin.firestore.FieldValue.increment(1),
       status: reservedSpots > 0 && remaining === 0 ? "full" : event.status,
       updatedAt: admin.firestore.FieldValue.serverTimestamp()

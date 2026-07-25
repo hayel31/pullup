@@ -83,6 +83,12 @@ void main() {
     expect(covers, isNot(anyElement(contains('picsum.photos'))));
     for (final event in events) {
       expect(event.photoUrls, contains(event.coverPhotoUrl));
+      expect(
+        event.attendance.currentTotal,
+        event.maxParticipants - event.availableSpots,
+        reason: '${event.id} attendance must match occupied capacity.',
+      );
+      expect(event.illegalSubstancesProhibited, isTrue);
     }
   });
 
@@ -272,7 +278,13 @@ void main() {
       expect(request.guestWomenCount, 1);
 
       final acceptedAt = DateTime.now();
+      final eventBefore = repository.snapshot.events.firstWhere(
+        (event) => event.id == 'event-002',
+      );
       final match = await repository.acceptRequest('host-002', request.id);
+      final eventAfter = repository.snapshot.events.firstWhere(
+        (event) => event.id == 'event-002',
+      );
       final conversation = repository.snapshot.conversations.firstWhere(
         (item) => item.id == match.conversationId,
       );
@@ -287,6 +299,18 @@ void main() {
       expect(
         conversation.expiresAt!.difference(acceptedAt).inMinutes,
         inInclusiveRange(719, 720),
+      );
+      expect(
+        eventAfter.attendance.currentMenCount,
+        eventBefore.attendance.currentMenCount + 2,
+      );
+      expect(
+        eventAfter.attendance.currentWomenCount,
+        eventBefore.attendance.currentWomenCount + 2,
+      );
+      expect(
+        eventAfter.attendance.currentTotal,
+        eventBefore.attendance.currentTotal + request.groupSize,
       );
     },
   );

@@ -356,6 +356,17 @@ class DemoPullupRepository implements PullupRepository {
     await _ensureHydrated();
     final host = _userById(hostId);
     final now = DateTime.now();
+    if (!draft.attendance.isValid ||
+        draft.attendance.initialTotal < 1 ||
+        draft.attendance.currentTotal != draft.attendance.initialTotal ||
+        draft.attendance.initialTotal > draft.maxParticipants) {
+      throw const AppException(
+        'The initial guest mix must fit within the event capacity.',
+      );
+    }
+    if (draft.entryFeeCents < 0) {
+      throw const AppException('The entry price cannot be negative.');
+    }
     final professionalProfile = draft.publishAsProfessional
         ? host.professionalProfile
         : null;
@@ -394,7 +405,7 @@ class DemoPullupRepository implements PullupRepository {
       timezone: draft.timezone,
       ageRequirement: draft.ageRequirement,
       maxParticipants: draft.maxParticipants,
-      availableSpots: draft.maxParticipants,
+      availableSpots: draft.maxParticipants - draft.attendance.initialTotal,
       acceptedParticipantIds: const [],
       waitingParticipantIds: const [],
       rejectedParticipantIds: const [],
@@ -422,6 +433,10 @@ class DemoPullupRepository implements PullupRepository {
           ? GuestInteractionMode.openInterest
           : GuestInteractionMode.approvalRequest,
       professionalNeeds: draft.professionalNeeds,
+      attendance: draft.attendance,
+      entryFeeCents: draft.entryFeeCents,
+      foodPolicy: draft.foodPolicy,
+      illegalSubstancesProhibited: true,
     );
     _events.add(event);
     _createdEventIds.add(event.id);
@@ -697,6 +712,7 @@ class DemoPullupRepository implements PullupRepository {
       throw const AppException('Not enough spots left.');
     }
     final now = DateTime.now();
+    final acceptedAttendance = _attendanceForRequest(request);
     final updatedRequest = request.copyWith(
       status: RequestStatus.accepted,
       decidedAt: now,
@@ -714,6 +730,11 @@ class DemoPullupRepository implements PullupRepository {
             .where((id) => id != request.requesterId)
             .toList(),
         availableSpots: remaining,
+        attendance: event.attendance.addAcceptedGroup(
+          men: acceptedAttendance.men,
+          women: acceptedAttendance.women,
+          other: acceptedAttendance.other,
+        ),
         status: seatsRequired > 0 && remaining == 0
             ? EventStatus.full
             : event.status,
@@ -1147,6 +1168,10 @@ class DemoPullupRepository implements PullupRepository {
             seedEvent?.guestInteractionMode ?? storedEvent.guestInteractionMode,
         professionalNeeds:
             seedEvent?.professionalNeeds ?? storedEvent.professionalNeeds,
+        attendance: seedEvent?.attendance ?? storedEvent.attendance,
+        entryFeeCents: seedEvent?.entryFeeCents ?? storedEvent.entryFeeCents,
+        foodPolicy: seedEvent?.foodPolicy ?? storedEvent.foodPolicy,
+        illegalSubstancesProhibited: true,
       );
       final index = _events.indexWhere((item) => item.id == event.id);
       if (index == -1) {
@@ -1169,5 +1194,31 @@ class DemoPullupRepository implements PullupRepository {
   Future<void> _persistEventIfCreated(String eventId) async {
     if (!_createdEventIds.contains(eventId)) return;
     await _localStore.saveEvent(_eventById(eventId));
+  }
+
+  ({int men, int women, int other}) _attendanceForRequest(
+    EventRequest request,
+  ) {
+    if (request.kind == EventRequestKind.professionalService) {
+      return (men: 0, women: 0, other: 0);
+    }
+    var men = request.guestMenCount;
+    var women = request.guestWomenCount;
+    var other = request.companionNames.length;
+    for (final userId in {request.requesterId, ...request.companionUserIds}) {
+      switch (_userById(userId).gender) {
+        case Gender.man:
+          men++;
+        case Gender.woman:
+          women++;
+        case Gender.nonBinary:
+        case Gender.other:
+        case Gender.preferNotToSay:
+          other++;
+      }
+    }
+    final unclassified = request.groupSize - men - women - other;
+    if (unclassified > 0) other += unclassified;
+    return (men: men, women: women, other: other);
   }
 }

@@ -9,6 +9,7 @@ import '../../../../core/widgets/pullup_image.dart';
 import '../../../../models/enums.dart';
 import '../../../../models/party_event.dart';
 import '../../../../models/user_profile.dart';
+import '../../../events/presentation/widgets/event_practical_info.dart';
 
 class EventCard extends StatelessWidget {
   const EventCard({
@@ -205,6 +206,8 @@ class EventCard extends StatelessWidget {
                         ),
                     ],
                   ),
+                  const SizedBox(height: 10),
+                  EventQuickFacts(event: event),
                   const SizedBox(height: 14),
                   Row(
                     children: [

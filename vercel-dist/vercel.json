@@ -1,4 +1,6 @@
 {
+  "buildCommand": "node build.cjs",
+  "outputDirectory": "public",
   "cleanUrls": true,
   "rewrites": [
     {

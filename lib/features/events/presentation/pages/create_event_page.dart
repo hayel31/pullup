@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:math' as math;
 
 import 'package:pullup/l10n/app_material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -15,6 +16,7 @@ import '../../../../core/widgets/pullup_chip.dart';
 import '../../../../core/widgets/pullup_image.dart';
 import '../../../../core/widgets/wizard_scaffold.dart';
 import '../../../../models/enums.dart';
+import '../../../../models/attendance_breakdown.dart';
 import '../../../../models/geo_point_lite.dart';
 import '../../data/address_search_service.dart';
 import '../../../shared/domain/app_drafts.dart';
@@ -61,10 +63,13 @@ class _CreateEventPageState extends ConsumerState<CreateEventPage> {
   final _rules = TextEditingController(
     text: 'Respect the address, no public posts, no harassment.',
   );
-  final _contribution = TextEditingController(text: 'BYOB appreciated');
+  final _contribution = TextEditingController();
   DateTime _start = DateTime.now().add(const Duration(hours: 2));
   DateTime _end = DateTime.now().add(const Duration(hours: 6));
   int _maxParticipants = 18;
+  int _initialMenCount = 0;
+  int _initialWomenCount = 0;
+  int _initialOtherCount = 1;
   int _ageRequirement = 18;
   bool _allowsGroups = true;
   int _maxGroupSize = 3;
@@ -82,12 +87,29 @@ class _CreateEventPageState extends ConsumerState<CreateEventPage> {
   GeoPointLite? _selectedAddressLocation;
   bool _isPickingMedia = false;
   bool _publishAsProfessional = false;
+  bool _isPaidEntry = false;
+  int _entryFeeEuros = 10;
+  AlcoholPolicy _alcoholPolicy = AlcoholPolicy.byob;
+  FoodPolicy _foodPolicy = FoodPolicy.noneRequired;
+
+  int get _initialAttendanceTotal =>
+      _initialMenCount + _initialWomenCount + _initialOtherCount;
 
   @override
   void initState() {
     super.initState();
     _publishAsProfessional =
         ref.read(appControllerProvider).currentUser?.isProfessional ?? false;
+    final gender = ref.read(appControllerProvider).currentUser?.gender;
+    _initialMenCount = gender == Gender.man ? 1 : 0;
+    _initialWomenCount = gender == Gender.woman ? 1 : 0;
+    _initialOtherCount =
+        gender == null ||
+            gender == Gender.nonBinary ||
+            gender == Gender.other ||
+            gender == Gender.preferNotToSay
+        ? 1
+        : 0;
   }
 
   @override
@@ -204,11 +226,23 @@ class _CreateEventPageState extends ConsumerState<CreateEventPage> {
             NumberStepper(
               label: 'Maximum guests',
               value: _maxParticipants,
-              minValue: 2,
+              minValue: math.max(2, _initialAttendanceTotal),
               maxValue: 200,
               onChanged: (value) => setState(
                 () => _maxParticipants = value.clamp(2, 200).toInt(),
               ),
+            ),
+            const SizedBox(height: 18),
+            _InitialAttendanceEditor(
+              menCount: _initialMenCount,
+              womenCount: _initialWomenCount,
+              otherCount: _initialOtherCount,
+              maxParticipants: _maxParticipants,
+              onMenChanged: (value) => setState(() => _initialMenCount = value),
+              onWomenChanged: (value) =>
+                  setState(() => _initialWomenCount = value),
+              onOtherChanged: (value) =>
+                  setState(() => _initialOtherCount = value),
             ),
             const SizedBox(height: 8),
             NumberStepper(
@@ -327,6 +361,34 @@ class _CreateEventPageState extends ConsumerState<CreateEventPage> {
             const SizedBox(height: 10),
             _TagPicker(selected: _tags),
             const SizedBox(height: 22),
+            Text(
+              context.tr("Entry & what's included"),
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+            const SizedBox(height: 5),
+            Text(
+              context.tr(
+                'Make the price and guest contribution clear before they swipe.',
+              ),
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+            const SizedBox(height: 12),
+            _EntryAndSuppliesEditor(
+              isPaid: _isPaidEntry,
+              entryFeeEuros: _entryFeeEuros,
+              alcoholPolicy: _alcoholPolicy,
+              foodPolicy: _foodPolicy,
+              customContribution: _contribution.text.trim(),
+              onPaidChanged: (value) => setState(() => _isPaidEntry = value),
+              onEntryFeeChanged: (value) =>
+                  setState(() => _entryFeeEuros = value),
+              onAlcoholChanged: (value) =>
+                  setState(() => _alcoholPolicy = value),
+              onFoodChanged: (value) => setState(() => _foodPolicy = value),
+            ),
+            const SizedBox(height: 12),
+            const _SubstanceSafetyNotice(),
+            const SizedBox(height: 22),
             Text('Music', style: Theme.of(context).textTheme.titleMedium),
             const SizedBox(height: 10),
             _GenrePicker(selected: _genres),
@@ -359,11 +421,13 @@ class _CreateEventPageState extends ConsumerState<CreateEventPage> {
             _EditableEventField(
               key: const Key('create-event-contribution'),
               controller: _contribution,
-              label: context.tr('What guests should bring'),
-              icon: Icons.local_bar_outlined,
+              label: context.tr('Other contribution (optional)'),
+              hintText: context.tr('Ice, soft drinks, a specific snack...'),
+              icon: Icons.add_shopping_cart_outlined,
               onTap: () => _editField(
                 controller: _contribution,
-                label: context.tr('What guests should bring'),
+                label: context.tr('Other contribution (optional)'),
+                hintText: context.tr('Ice, soft drinks, a specific snack...'),
               ),
             ),
             const SizedBox(height: 12),
@@ -419,6 +483,47 @@ class _CreateEventPageState extends ConsumerState<CreateEventPage> {
                   _ReviewRow(
                     icon: Icons.place_outlined,
                     text: '${_area.text}, ${_city.text}',
+                  ),
+                  _ReviewRow(
+                    icon: Icons.groups_2_outlined,
+                    text: context.tr(
+                      '{count} already coming · {spots} open spots',
+                      values: {
+                        'count': _initialAttendanceTotal,
+                        'spots': _maxParticipants - _initialAttendanceTotal,
+                      },
+                    ),
+                  ),
+                  _ReviewRow(
+                    icon: Icons.payments_outlined,
+                    text: _isPaidEntry
+                        ? context.tr(
+                            '€{amount} entry',
+                            values: {'amount': _entryFeeEuros},
+                          )
+                        : context.tr('Free entry'),
+                  ),
+                  _ReviewRow(
+                    icon: Icons.local_bar_outlined,
+                    text: switch (_alcoholPolicy) {
+                      AlcoholPolicy.provided => context.tr('Alcohol included'),
+                      AlcoholPolicy.byob => context.tr('BYOB required'),
+                      AlcoholPolicy.notAllowed => context.tr('No alcohol'),
+                      AlcoholPolicy.allowed => context.tr('Alcohol allowed'),
+                      AlcoholPolicy.unspecified => context.tr('Not specified'),
+                    },
+                  ),
+                  _ReviewRow(
+                    icon: Icons.restaurant_outlined,
+                    text: switch (_foodPolicy) {
+                      FoodPolicy.provided => context.tr('Food included'),
+                      FoodPolicy.bringFood => context.tr('Bring food'),
+                      FoodPolicy.noneRequired => context.tr('Nothing required'),
+                    },
+                  ),
+                  _ReviewRow(
+                    icon: Icons.health_and_safety_outlined,
+                    text: context.tr('Illegal substances prohibited'),
                   ),
                   const _ReviewRow(
                     icon: Icons.lock_outline_rounded,
@@ -658,6 +763,14 @@ class _CreateEventPageState extends ConsumerState<CreateEventPage> {
       _showMessage('Add a title and description before continuing.');
       return;
     }
+    if (_step == 1 &&
+        (_initialAttendanceTotal < 1 ||
+            _initialAttendanceTotal > _maxParticipants)) {
+      _showMessage(
+        'Add at least one person already attending and keep the total within capacity.',
+      );
+      return;
+    }
     if (_step == 2 &&
         (_city.text.trim().isEmpty ||
             _area.text.trim().isEmpty ||
@@ -681,6 +794,32 @@ class _CreateEventPageState extends ConsumerState<CreateEventPage> {
     final eventLocation =
         _selectedAddressLocation ??
         CityLocationResolver.resolve(city, fallback: fallbackLocation);
+    final eventTags = {..._tags}
+      ..removeAll({
+        EventTag.alcoholAllowed,
+        EventTag.noAlcohol,
+        EventTag.byob,
+        EventTag.bringFood,
+      });
+    switch (_alcoholPolicy) {
+      case AlcoholPolicy.provided:
+      case AlcoholPolicy.allowed:
+        eventTags.add(EventTag.alcoholAllowed);
+        break;
+      case AlcoholPolicy.notAllowed:
+        eventTags.add(EventTag.noAlcohol);
+        break;
+      case AlcoholPolicy.byob:
+        eventTags
+          ..add(EventTag.alcoholAllowed)
+          ..add(EventTag.byob);
+        break;
+      case AlcoholPolicy.unspecified:
+        break;
+    }
+    if (_foodPolicy == FoodPolicy.bringFood) {
+      eventTags.add(EventTag.bringFood);
+    }
     await ref
         .read(appControllerProvider.notifier)
         .createEvent(
@@ -702,14 +841,12 @@ class _CreateEventPageState extends ConsumerState<CreateEventPage> {
             maxParticipants: _maxParticipants,
             allowsGroups: _allowsGroups,
             maxGroupSize: _maxGroupSize,
-            eventTags: _tags.toList(),
+            eventTags: eventTags.toList(),
             musicGenres: _genres.toList(),
             dressCode: _dressCode.text.trim(),
             contributionText: _contribution.text.trim(),
             houseRules: _rules.text.trim(),
-            alcoholPolicy: _tags.contains(EventTag.noAlcohol)
-                ? AlcoholPolicy.notAllowed
-                : AlcoholPolicy.byob,
+            alcoholPolicy: _alcoholPolicy,
             smokingPolicy: _tags.contains(EventTag.smokeFriendly)
                 ? SmokingPolicy.smokeFriendly
                 : SmokingPolicy.outdoorOnly,
@@ -717,6 +854,13 @@ class _CreateEventPageState extends ConsumerState<CreateEventPage> {
             approvalMode: _approval,
             publishAsProfessional: _publishAsProfessional,
             professionalNeeds: _professionalNeeds.toList(),
+            attendance: AttendanceBreakdown.initial(
+              men: _initialMenCount,
+              women: _initialWomenCount,
+              other: _initialOtherCount,
+            ),
+            entryFeeCents: _isPaidEntry ? _entryFeeEuros * 100 : 0,
+            foodPolicy: _foodPolicy,
           ),
         );
     if (mounted) context.go('/host');
@@ -1044,6 +1188,386 @@ class _ReviewRow extends StatelessWidget {
   }
 }
 
+class _InitialAttendanceEditor extends StatelessWidget {
+  const _InitialAttendanceEditor({
+    required this.menCount,
+    required this.womenCount,
+    required this.otherCount,
+    required this.maxParticipants,
+    required this.onMenChanged,
+    required this.onWomenChanged,
+    required this.onOtherChanged,
+  });
+
+  final int menCount;
+  final int womenCount;
+  final int otherCount;
+  final int maxParticipants;
+  final ValueChanged<int> onMenChanged;
+  final ValueChanged<int> onWomenChanged;
+  final ValueChanged<int> onOtherChanged;
+
+  int get total => menCount + womenCount + otherCount;
+
+  @override
+  Widget build(BuildContext context) {
+    final openSpots = math.max(0, maxParticipants - total);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Row(
+          children: [
+            Icon(Icons.groups_2_outlined, color: AppColors.primaryBright),
+            const SizedBox(width: 9),
+            Expanded(
+              child: Text(
+                context.tr('Who is already coming?'),
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 5),
+        Text(
+          context.tr(
+            'Include yourself and everyone confirmed before publication.',
+          ),
+          style: Theme.of(context).textTheme.bodySmall,
+        ),
+        const SizedBox(height: 12),
+        NumberStepper(
+          label: context.tr('Men already coming'),
+          value: menCount,
+          minValue: 0,
+          maxValue: maxParticipants - womenCount - otherCount,
+          onChanged: onMenChanged,
+        ),
+        const SizedBox(height: 8),
+        NumberStepper(
+          label: context.tr('Women already coming'),
+          value: womenCount,
+          minValue: 0,
+          maxValue: maxParticipants - menCount - otherCount,
+          onChanged: onWomenChanged,
+        ),
+        const SizedBox(height: 8),
+        NumberStepper(
+          label: context.tr('Other / not specified'),
+          value: otherCount,
+          minValue: 0,
+          maxValue: maxParticipants - menCount - womenCount,
+          onChanged: onOtherChanged,
+        ),
+        const SizedBox(height: 10),
+        Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: AppColors.primary.withValues(alpha: 0.1),
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(
+              color: AppColors.primaryBright.withValues(alpha: 0.34),
+            ),
+          ),
+          child: Row(
+            children: [
+              Expanded(
+                child: _AttendanceSummaryMetric(
+                  value: '$total',
+                  label: context.tr('Already coming'),
+                  color: AppColors.primaryBright,
+                ),
+              ),
+              Container(width: 1, height: 34, color: AppColors.border),
+              Expanded(
+                child: _AttendanceSummaryMetric(
+                  value: '$openSpots',
+                  label: context.tr('Open spots'),
+                  color: AppColors.success,
+                ),
+              ),
+              Container(width: 1, height: 34, color: AppColors.border),
+              Expanded(
+                child: _AttendanceSummaryMetric(
+                  value: '♂ $menCount · ♀ $womenCount',
+                  label: context.tr('Current mix'),
+                  color: AppColors.textPrimary,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _AttendanceSummaryMetric extends StatelessWidget {
+  const _AttendanceSummaryMetric({
+    required this.value,
+    required this.label,
+    required this.color,
+  });
+
+  final String value;
+  final String label;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Text(
+            value,
+            maxLines: 1,
+            style: TextStyle(color: color, fontWeight: FontWeight.w900),
+          ),
+        ),
+        const SizedBox(height: 3),
+        Text(
+          label,
+          maxLines: 2,
+          textAlign: TextAlign.center,
+          overflow: TextOverflow.ellipsis,
+          style: Theme.of(context).textTheme.bodySmall,
+        ),
+      ],
+    );
+  }
+}
+
+class _EntryAndSuppliesEditor extends StatelessWidget {
+  const _EntryAndSuppliesEditor({
+    required this.isPaid,
+    required this.entryFeeEuros,
+    required this.alcoholPolicy,
+    required this.foodPolicy,
+    required this.customContribution,
+    required this.onPaidChanged,
+    required this.onEntryFeeChanged,
+    required this.onAlcoholChanged,
+    required this.onFoodChanged,
+  });
+
+  final bool isPaid;
+  final int entryFeeEuros;
+  final AlcoholPolicy alcoholPolicy;
+  final FoodPolicy foodPolicy;
+  final String customContribution;
+  final ValueChanged<bool> onPaidChanged;
+  final ValueChanged<int> onEntryFeeChanged;
+  final ValueChanged<AlcoholPolicy> onAlcoholChanged;
+  final ValueChanged<FoodPolicy> onFoodChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final requiredItems = <String>[
+      if (alcoholPolicy == AlcoholPolicy.byob) context.tr('drinks'),
+      if (foodPolicy == FoodPolicy.bringFood) context.tr('food'),
+      if (customContribution.isNotEmpty) customContribution,
+    ];
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        SegmentedButton<bool>(
+          segments: [
+            ButtonSegment(
+              value: false,
+              icon: const Icon(Icons.money_off_rounded),
+              label: Text(context.tr('Free entry')),
+            ),
+            ButtonSegment(
+              value: true,
+              icon: const Icon(Icons.payments_outlined),
+              label: Text(context.tr('Paid entry')),
+            ),
+          ],
+          selected: {isPaid},
+          onSelectionChanged: (selection) =>
+              onPaidChanged(selection.firstOrNull ?? false),
+        ),
+        if (isPaid) ...[
+          const SizedBox(height: 10),
+          NumberStepper(
+            key: const Key('create-event-entry-fee'),
+            label: context.tr('Entry price'),
+            value: entryFeeEuros,
+            minValue: 1,
+            maxValue: 100,
+            suffix: ' €',
+            onChanged: onEntryFeeChanged,
+          ),
+        ],
+        const SizedBox(height: 16),
+        Text(
+          context.tr('Drinks'),
+          style: Theme.of(context).textTheme.titleSmall,
+        ),
+        const SizedBox(height: 8),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: [
+            _PolicyChoice<AlcoholPolicy>(
+              value: AlcoholPolicy.provided,
+              selectedValue: alcoholPolicy,
+              label: '🍸 ${context.tr('Provided')}',
+              onSelected: onAlcoholChanged,
+            ),
+            _PolicyChoice<AlcoholPolicy>(
+              value: AlcoholPolicy.byob,
+              selectedValue: alcoholPolicy,
+              label: '🥂 ${context.tr('Bring your own')}',
+              onSelected: onAlcoholChanged,
+            ),
+            _PolicyChoice<AlcoholPolicy>(
+              value: AlcoholPolicy.notAllowed,
+              selectedValue: alcoholPolicy,
+              label: '🚫🍸 ${context.tr('No alcohol')}',
+              onSelected: onAlcoholChanged,
+            ),
+          ],
+        ),
+        const SizedBox(height: 16),
+        Text(context.tr('Food'), style: Theme.of(context).textTheme.titleSmall),
+        const SizedBox(height: 8),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: [
+            _PolicyChoice<FoodPolicy>(
+              value: FoodPolicy.provided,
+              selectedValue: foodPolicy,
+              label: '🍕 ${context.tr('Provided')}',
+              onSelected: onFoodChanged,
+            ),
+            _PolicyChoice<FoodPolicy>(
+              value: FoodPolicy.bringFood,
+              selectedValue: foodPolicy,
+              label: '🥡 ${context.tr('Bring food')}',
+              onSelected: onFoodChanged,
+            ),
+            _PolicyChoice<FoodPolicy>(
+              value: FoodPolicy.noneRequired,
+              selectedValue: foodPolicy,
+              label: '✓ ${context.tr('Nothing required')}',
+              onSelected: onFoodChanged,
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          decoration: BoxDecoration(
+            color: requiredItems.isEmpty
+                ? AppColors.success.withValues(alpha: 0.1)
+                : AppColors.warning.withValues(alpha: 0.1),
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(
+              color:
+                  (requiredItems.isEmpty
+                          ? AppColors.success
+                          : AppColors.warning)
+                      .withValues(alpha: 0.36),
+            ),
+          ),
+          child: Row(
+            children: [
+              Icon(
+                requiredItems.isEmpty
+                    ? Icons.check_circle_outline_rounded
+                    : Icons.shopping_bag_outlined,
+                color: requiredItems.isEmpty
+                    ? AppColors.success
+                    : AppColors.warning,
+              ),
+              const SizedBox(width: 9),
+              Expanded(
+                child: Text(
+                  requiredItems.isEmpty
+                      ? context.tr('Guests do not need to bring anything.')
+                      : context.tr(
+                          'Guests should bring: {items}.',
+                          values: {'items': requiredItems.join(' + ')},
+                        ),
+                  style: const TextStyle(fontWeight: FontWeight.w700),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _PolicyChoice<T> extends StatelessWidget {
+  const _PolicyChoice({
+    required this.value,
+    required this.selectedValue,
+    required this.label,
+    required this.onSelected,
+  });
+
+  final T value;
+  final T selectedValue;
+  final String label;
+  final ValueChanged<T> onSelected;
+
+  @override
+  Widget build(BuildContext context) {
+    return ChoiceChip(
+      selected: value == selectedValue,
+      label: Text(label),
+      onSelected: (_) => onSelected(value),
+    );
+  }
+}
+
+class _SubstanceSafetyNotice extends StatelessWidget {
+  const _SubstanceSafetyNotice();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: AppColors.danger.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: AppColors.danger.withValues(alpha: 0.3)),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text('🚫💊', style: TextStyle(fontSize: 22)),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  context.tr('Illegal substances prohibited'),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.titleSmall?.copyWith(color: AppColors.danger),
+                ),
+                const SizedBox(height: 3),
+                Text(
+                  context.tr(
+                    'This safety rule applies to every PULLUP event and cannot be disabled.',
+                  ),
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _PublishingIdentitySelector extends StatelessWidget {
   const _PublishingIdentitySelector({
     required this.profileName,
@@ -1177,15 +1701,12 @@ class _TagPickerState extends State<_TagPicker> {
   @override
   Widget build(BuildContext context) {
     const tags = [
-      EventTag.alcoholAllowed,
-      EventTag.noAlcohol,
       EventTag.smokeFriendly,
       EventTag.noSmoking,
       EventTag.dj,
       EventTag.pool,
       EventTag.outdoor,
       EventTag.indoor,
-      EventTag.byob,
       EventTag.dressCode,
       EventTag.securityPresent,
       EventTag.invitationOnly,

@@ -1,6 +1,7 @@
 import '../../../models/enums.dart';
 import '../../../models/geo_point_lite.dart';
 import '../../../models/professional_profile.dart';
+import '../../../models/attendance_breakdown.dart';
 
 class SignUpDraft {
   const SignUpDraft({
@@ -84,6 +85,9 @@ class CreateEventDraft {
     required this.smokingPolicy,
     required this.visibility,
     required this.approvalMode,
+    required this.attendance,
+    required this.entryFeeCents,
+    required this.foodPolicy,
     this.accessInstructions,
     this.dressCode,
     this.contributionText,
@@ -118,6 +122,9 @@ class CreateEventDraft {
   final SmokingPolicy smokingPolicy;
   final EventVisibility visibility;
   final ApprovalMode approvalMode;
+  final AttendanceBreakdown attendance;
+  final int entryFeeCents;
+  final FoodPolicy foodPolicy;
   final bool publishAsProfessional;
   final List<ProfessionalCategory> professionalNeeds;
 }

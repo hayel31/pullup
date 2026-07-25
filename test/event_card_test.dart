@@ -30,5 +30,11 @@ void main() {
     expect(find.text('House party'), findsNothing);
     expect(find.text('Rooftop'), findsOneWidget);
     expect(find.textContaining('spots left'), findsWidgets);
+    expect(find.byKey(const Key('event-entry-fact')), findsOneWidget);
+    expect(find.byKey(const Key('event-alcohol-fact')), findsOneWidget);
+    expect(find.byKey(const Key('event-food-fact')), findsOneWidget);
+    expect(find.byKey(const Key('event-attendance-fact')), findsOneWidget);
+    expect(find.text('Free entry'), findsOneWidget);
+    expect(find.text('Your drinks'), findsOneWidget);
   });
 }

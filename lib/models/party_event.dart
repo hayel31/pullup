@@ -1,4 +1,5 @@
 import '../core/utils/time_utils.dart';
+import 'attendance_breakdown.dart';
 import 'enums.dart';
 import 'geo_point_lite.dart';
 
@@ -107,6 +108,10 @@ class PartyEvent {
     this.organizerType = EventOrganizerType.privateHost,
     this.guestInteractionMode = GuestInteractionMode.approvalRequest,
     this.professionalNeeds = const [],
+    this.attendance = const AttendanceBreakdown.empty(),
+    this.entryFeeCents = 0,
+    this.foodPolicy = FoodPolicy.noneRequired,
+    this.illegalSubstancesProhibited = true,
     this.exactAddress,
     this.accessInstructions,
     this.dressCode,
@@ -160,6 +165,10 @@ class PartyEvent {
   final EventOrganizerType organizerType;
   final GuestInteractionMode guestInteractionMode;
   final List<ProfessionalCategory> professionalNeeds;
+  final AttendanceBreakdown attendance;
+  final int entryFeeCents;
+  final FoodPolicy foodPolicy;
+  final bool illegalSubstancesProhibited;
 
   bool get isPublished =>
       status == EventStatus.published || status == EventStatus.ongoing;
@@ -172,6 +181,11 @@ class PartyEvent {
   bool get isVenueEvent => organizerType == EventOrganizerType.venue;
   bool get acceptsOpenInterest =>
       guestInteractionMode == GuestInteractionMode.openInterest;
+  bool get isFreeEntry => entryFeeCents <= 0;
+  bool get guestsBringNothing =>
+      alcoholPolicy != AlcoholPolicy.byob &&
+      foodPolicy != FoodPolicy.bringFood &&
+      (contributionText?.trim().isEmpty ?? true);
   bool needsProfessional(ProfessionalCategory? category) =>
       category != null && professionalNeeds.contains(category);
   bool get isStartingSoon {
@@ -243,6 +257,10 @@ class PartyEvent {
     EventOrganizerType? organizerType,
     GuestInteractionMode? guestInteractionMode,
     List<ProfessionalCategory>? professionalNeeds,
+    AttendanceBreakdown? attendance,
+    int? entryFeeCents,
+    FoodPolicy? foodPolicy,
+    bool? illegalSubstancesProhibited,
   }) {
     return PartyEvent(
       id: id ?? this.id,
@@ -293,6 +311,11 @@ class PartyEvent {
       organizerType: organizerType ?? this.organizerType,
       guestInteractionMode: guestInteractionMode ?? this.guestInteractionMode,
       professionalNeeds: professionalNeeds ?? this.professionalNeeds,
+      attendance: attendance ?? this.attendance,
+      entryFeeCents: entryFeeCents ?? this.entryFeeCents,
+      foodPolicy: foodPolicy ?? this.foodPolicy,
+      illegalSubstancesProhibited:
+          illegalSubstancesProhibited ?? this.illegalSubstancesProhibited,
     );
   }
 
@@ -342,6 +365,10 @@ class PartyEvent {
     'organizerType': organizerType.name,
     'guestInteractionMode': guestInteractionMode.name,
     'professionalNeeds': professionalNeeds.map((item) => item.name).toList(),
+    'attendance': attendance.toJson(),
+    'entryFeeCents': entryFeeCents,
+    'foodPolicy': foodPolicy.name,
+    'illegalSubstancesProhibited': illegalSubstancesProhibited,
   };
 
   factory PartyEvent.fromJson(Map<String, dynamic> json) {
@@ -445,6 +472,23 @@ class PartyEvent {
             ),
           )
           .toList(),
+      attendance: AttendanceBreakdown.fromJson(
+        json['attendance'] == null
+            ? null
+            : Map<String, dynamic>.from(json['attendance'] as Map),
+        fallbackCurrentOtherCount:
+            ((json['maxParticipants'] as int) - (json['availableSpots'] as int))
+                .clamp(0, json['maxParticipants'] as int)
+                .toInt(),
+      ),
+      entryFeeCents: json['entryFeeCents'] as int? ?? 0,
+      foodPolicy: _enumValue(
+        FoodPolicy.values,
+        json['foodPolicy'],
+        FoodPolicy.noneRequired,
+      ),
+      illegalSubstancesProhibited:
+          json['illegalSubstancesProhibited'] as bool? ?? true,
     );
   }
 }

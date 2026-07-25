@@ -18,6 +18,8 @@ Completed in the Flutter app:
 - Personal/professional account choice with dedicated professional onboarding, services, portfolio media, social links, rates and references.
 - User profile, edit profile, settings, sign out and delete account flow.
 - Party event creation flow with type, info, location, media placeholder, vibe/rules and publishing.
+- Event entry pricing, supplied drinks/food, guest contributions and a mandatory no-illegal-substances safety policy.
+- Initial attendee composition and aggregate men/women/other counters updated atomically after every accepted request.
 - Private, professional and venue event identities, with professional-needs tags and filters.
 - Discover feed with swipe gestures, pass/request actions, Premium undo simulation and a structured join-request modal.
 - Reciprocal PULLUP friends with search, add/remove actions and local persistence.
@@ -123,6 +125,7 @@ for shared accounts and data across devices.
 - `ProfessionalProfile`
 - `ProfessionalPortfolioItem`
 - `PartyEvent`
+- `AttendanceBreakdown`
 - `EventRequest`
 - `PullupMatch`
 - `ChatConversation`

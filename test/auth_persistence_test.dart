@@ -4,6 +4,7 @@ import 'package:pullup/features/shared/domain/app_drafts.dart';
 import 'package:pullup/features/shared/domain/demo_account.dart';
 import 'package:pullup/models/enums.dart';
 import 'package:pullup/models/geo_point_lite.dart';
+import 'package:pullup/models/attendance_breakdown.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
@@ -75,6 +76,9 @@ void main() {
           smokingPolicy: SmokingPolicy.noSmoking,
           visibility: EventVisibility.public,
           approvalMode: ApprovalMode.manual,
+          attendance: AttendanceBreakdown.initial(men: 1, women: 2, other: 0),
+          entryFeeCents: 1000,
+          foodPolicy: FoodPolicy.provided,
         ),
       );
 
@@ -89,6 +93,10 @@ void main() {
       expect(restoredEvent.photoUrls, const [selectedPhoto]);
       expect(restoredEvent.city, 'Toulouse');
       expect(restoredEvent.areaName, 'Saint-Cyprien');
+      expect(restoredEvent.availableSpots, 9);
+      expect(restoredEvent.attendance.currentWomenCount, 2);
+      expect(restoredEvent.entryFeeCents, 1000);
+      expect(restoredEvent.foodPolicy, FoodPolicy.provided);
       expect(
         restoredEvent.approximateGeoPoint.latitude,
         closeTo(43.6047, 0.0001),

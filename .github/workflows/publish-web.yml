@@ -68,8 +68,19 @@ jobs:
           --exclude=.gitignore
           --exclude=.vercel/
           --exclude=canvaskit/
+          --exclude=build.cjs
+          --exclude=main.dart.js.gz
+          --exclude=public/
+          --exclude=vercel.json
           build/web/
           vercel-dist/
+
+      - name: Compress the generated application bundle
+        shell: bash
+        run: |
+          gzip --best --stdout build/web/main.dart.js \
+            > vercel-dist/main.dart.js.gz
+          rm -f vercel-dist/main.dart.js
 
       - name: Publish source and generated web bundle
         shell: bash
