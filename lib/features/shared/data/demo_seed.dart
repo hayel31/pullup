@@ -766,6 +766,7 @@ class DemoSeed {
         .clamp(0, genderedCount);
     final menCount = genderedCount - womenCount;
     final alcoholPolicy = _alcoholPolicyFor(id, tags);
+    final pillPolicy = _pillPolicyFor(id);
     final foodPolicy = _foodPolicyFor(id);
     final entryFeeCents = _entryFeeFor(id);
     final organizerType = professional == null
@@ -852,6 +853,7 @@ class DemoSeed {
       ),
       entryFeeCents: entryFeeCents,
       foodPolicy: foodPolicy,
+      pillPolicy: pillPolicy,
       illegalSubstancesProhibited: true,
     );
   }
@@ -896,6 +898,14 @@ class DemoSeed {
     'event-002' || 'event-007' => FoodPolicy.provided,
     'event-001' || 'event-003' || 'event-005' => FoodPolicy.bringFood,
     _ => FoodPolicy.noneRequired,
+  };
+
+  static PillPolicy _pillPolicyFor(String eventId) => switch (eventId) {
+    'event-002' ||
+    'event-004' ||
+    'event-007' ||
+    'event-009' => PillPolicy.available,
+    _ => PillPolicy.notAvailable,
   };
 
   static String? _customContributionFor(String eventId) => switch (eventId) {

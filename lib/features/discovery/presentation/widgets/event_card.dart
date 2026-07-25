@@ -1,10 +1,8 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:pullup/l10n/app_material.dart';
 
 import '../../../../app/theme/app_colors.dart';
 import '../../../../core/utils/distance_utils.dart';
 import '../../../../core/utils/time_utils.dart';
-import '../../../../core/widgets/pullup_chip.dart';
 import '../../../../core/widgets/pullup_image.dart';
 import '../../../../models/enums.dart';
 import '../../../../models/party_event.dart';
@@ -28,6 +26,8 @@ class EventCard extends StatelessWidget {
     final professionalRole = viewer.professionalCategory;
     final matchingProfessional =
         professionalRole != null && event.needsProfessional(professionalRole);
+    final showsProfessionalBanner =
+        event.isProfessionalEvent || matchingProfessional;
     final distance = DistanceUtils.kilometersBetween(
       viewer.approximateLocation,
       event.approximateGeoPoint,
@@ -35,220 +35,123 @@ class EventCard extends StatelessWidget {
     final countdown = context.tr(
       TimeUtils.tonightCountdown(event.startDateTime, event.endDateTime),
     );
+
     return Semantics(
       label: '${event.title}, ${context.tr(event.category.label)}',
       child: ClipRRect(
         borderRadius: BorderRadius.circular(8),
-        child: Stack(
-          fit: StackFit.expand,
-          children: [
-            PullupImage(
-              source: event.coverPhotoUrl,
-              fit: BoxFit.cover,
-              placeholder: ColoredBox(
-                color: AppColors.surfaceSecondary,
-                child: Center(child: CircularProgressIndicator()),
-              ),
-              errorWidget: ColoredBox(color: AppColors.surfaceSecondary),
-            ),
-            DecoratedBox(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [
-                    Colors.black.withValues(alpha: 0.18),
-                    Colors.black.withValues(alpha: 0.12),
-                    Colors.black.withValues(alpha: 0.88),
-                  ],
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final compact = constraints.maxHeight < 500;
+            return Stack(
+              fit: StackFit.expand,
+              children: [
+                PullupImage(
+                  source: event.coverPhotoUrl,
+                  fit: BoxFit.cover,
+                  placeholder: ColoredBox(
+                    color: AppColors.surfaceSecondary,
+                    child: const Center(child: CircularProgressIndicator()),
+                  ),
+                  errorWidget: ColoredBox(color: AppColors.surfaceSecondary),
                 ),
-              ),
-            ),
-            if (event.isProfessionalEvent || matchingProfessional)
-              Positioned(
-                top: 0,
-                left: 0,
-                right: 0,
-                child: Container(
-                  height: 42,
-                  padding: const EdgeInsets.symmetric(horizontal: 14),
-                  color: matchingProfessional
-                      ? AppColors.success.withValues(alpha: 0.94)
-                      : AppColors.blue.withValues(alpha: 0.94),
-                  child: Row(
-                    children: [
-                      Icon(
-                        matchingProfessional
-                            ? Icons.work_history_outlined
-                            : event.isVenueEvent
-                            ? Icons.storefront_outlined
-                            : Icons.workspace_premium_outlined,
-                        size: 19,
-                        color: Colors.white,
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          matchingProfessional
-                              ? 'PRO OPPORTUNITY · ${viewer.professionalCategory!.label.toUpperCase()} NEEDED'
-                              : 'PRO EVENT · ${event.hostPreview.professionalCategory?.label.toUpperCase() ?? 'PROFESSIONAL'} · ${event.hostPreview.businessName ?? event.hostPreview.firstName}',
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 11,
-                            fontWeight: FontWeight.w900,
-                          ),
-                        ),
-                      ),
-                    ],
+                DecoratedBox(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      stops: const [0, 0.42, 0.72, 1],
+                      colors: [
+                        Colors.black.withValues(alpha: 0.28),
+                        Colors.black.withValues(alpha: 0.08),
+                        Colors.black.withValues(alpha: 0.72),
+                        Colors.black.withValues(alpha: 0.96),
+                      ],
+                    ),
                   ),
                 ),
-              ),
-            Positioned(
-              top: event.isProfessionalEvent || matchingProfessional ? 54 : 16,
-              left: 16,
-              right: 16,
-              child: Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: [
-                  PullupChip(
-                    label: event.category.label,
-                    icon: Icons.nightlife_rounded,
-                  ),
-                  PullupChip(
-                    label: '${distance.toStringAsFixed(1)} km',
-                    icon: Icons.near_me_rounded,
-                  ),
-                  if (event.isLastMinute)
-                    const PullupChip(
-                      label: 'Last minute',
-                      icon: Icons.flash_on_rounded,
-                    ),
-                  if (event.isStartingSoon)
-                    const PullupChip(
-                      label: 'Starting soon',
-                      icon: Icons.timer_rounded,
-                    ),
-                  if (event.isFewSpotsLeft)
-                    PullupChip(
-                      label: '${event.availableSpots} spots left',
-                      icon: Icons.local_fire_department_rounded,
-                    ),
-                  if (event.isBoosted)
-                    const PullupChip(
-                      label: 'Boosted',
-                      icon: Icons.rocket_launch_rounded,
-                    ),
-                  for (final role in event.professionalNeeds.take(2))
-                    PullupChip(
-                      label: '${role.label} needed',
-                      icon: Icons.handyman_outlined,
-                      color: matchingProfessional
-                          ? AppColors.success.withValues(alpha: 0.86)
-                          : AppColors.blue.withValues(alpha: 0.74),
-                    ),
-                ],
-              ),
-            ),
-            Positioned(
-              left: 18,
-              right: 18,
-              bottom: 18,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    event.title,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      fontSize: 30,
-                      fontWeight: FontWeight.w900,
-                      height: 1.04,
-                      letterSpacing: 0,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    '${event.areaName}, ${event.city} | $countdown',
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.w700,
-                      height: 1.25,
-                      letterSpacing: 0,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: [
-                      for (final genre in event.musicGenres.take(3))
-                        PullupChip(label: genre),
-                      if (event.acceptsOpenInterest)
-                        const PullupChip(
-                          label: 'Open entry',
-                          icon: Icons.confirmation_number_outlined,
-                        )
-                      else
-                        PullupChip(
-                          label: context.tr(
-                            '{available}/{maximum} open',
-                            values: {
-                              'available': event.availableSpots,
-                              'maximum': event.maxParticipants,
-                            },
-                          ),
-                        ),
-                    ],
-                  ),
-                  const SizedBox(height: 10),
-                  EventQuickFacts(event: event),
-                  const SizedBox(height: 14),
-                  Row(
-                    children: [
-                      CircleAvatar(
-                        backgroundImage: CachedNetworkImageProvider(
-                          event.hostPreview.photoUrl,
-                        ),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    if (showsProfessionalBanner)
+                      _ProfessionalBanner(
+                        event: event,
+                        viewer: viewer,
+                        matchingProfessional: matchingProfessional,
                       ),
-                      const SizedBox(width: 10),
-                      Expanded(
+                    Expanded(
+                      child: Padding(
+                        padding: EdgeInsets.fromLTRB(
+                          14,
+                          compact ? 10 : 12,
+                          14,
+                          compact ? 11 : 14,
+                        ),
                         child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
+                            _PrimaryFactsRow(event: event, distance: distance),
+                            if (event.professionalNeeds.isNotEmpty &&
+                                !matchingProfessional) ...[
+                              const SizedBox(height: 8),
+                              _ProfessionalNeedsStrip(event: event),
+                            ],
+                            const Spacer(),
                             Text(
-                              event.hostPreview.businessName ??
-                                  event.hostPreview.firstName,
-                              style: const TextStyle(
-                                fontWeight: FontWeight.w800,
+                              event.title,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                fontSize: compact ? 24 : 27,
+                                fontWeight: FontWeight.w900,
+                                height: 1.04,
+                                letterSpacing: 0,
                               ),
                             ),
-                            Text(
-                              _hostTrust(event),
-                              style: const TextStyle(
-                                color: AppColors.textSecondary,
-                                fontSize: 12,
-                              ),
+                            const SizedBox(height: 5),
+                            Row(
+                              children: [
+                                const Icon(
+                                  Icons.place_outlined,
+                                  size: 15,
+                                  color: Colors.white70,
+                                ),
+                                const SizedBox(width: 5),
+                                Expanded(
+                                  child: Text(
+                                    '${event.areaName}, ${event.city} · $countdown',
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w700,
+                                      height: 1.2,
+                                      letterSpacing: 0,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            SizedBox(height: compact ? 7 : 9),
+                            _MusicAndAvailabilityRow(event: event),
+                            SizedBox(height: compact ? 7 : 9),
+                            EventQuickFacts(event: event),
+                            SizedBox(height: compact ? 8 : 11),
+                            _HostSummary(
+                              event: event,
+                              trustLabel: _hostTrust(event),
+                              onDetails: onDetails,
                             ),
                           ],
                         ),
                       ),
-                      if (onDetails != null)
-                        IconButton.filledTonal(
-                          onPressed: onDetails,
-                          icon: const Icon(Icons.info_outline_rounded),
-                        ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ],
+                    ),
+                  ],
+                ),
+              ],
+            );
+          },
         ),
       ),
     );
@@ -277,5 +180,334 @@ class EventCard extends StatelessWidget {
       return 'Frequently hosts';
     }
     return 'New host';
+  }
+}
+
+class _ProfessionalBanner extends StatelessWidget {
+  const _ProfessionalBanner({
+    required this.event,
+    required this.viewer,
+    required this.matchingProfessional,
+  });
+
+  final PartyEvent event;
+  final UserProfile viewer;
+  final bool matchingProfessional;
+
+  @override
+  Widget build(BuildContext context) {
+    final role = viewer.professionalCategory;
+    final label = matchingProfessional
+        ? 'PRO OPPORTUNITY · ${role!.label.toUpperCase()} NEEDED'
+        : 'PRO EVENT · ${event.hostPreview.professionalCategory?.label.toUpperCase() ?? 'PROFESSIONAL'} · ${event.hostPreview.businessName ?? event.hostPreview.firstName}';
+    return Container(
+      height: 42,
+      padding: const EdgeInsets.symmetric(horizontal: 14),
+      color: matchingProfessional
+          ? AppColors.success.withValues(alpha: 0.96)
+          : AppColors.blue.withValues(alpha: 0.96),
+      child: Row(
+        children: [
+          Icon(
+            matchingProfessional
+                ? Icons.work_history_outlined
+                : event.isVenueEvent
+                ? Icons.storefront_outlined
+                : Icons.workspace_premium_outlined,
+            size: 18,
+            color: Colors.white,
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 10.5,
+                fontWeight: FontWeight.w900,
+                letterSpacing: 0,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _PrimaryFactsRow extends StatelessWidget {
+  const _PrimaryFactsRow({required this.event, required this.distance});
+
+  final PartyEvent event;
+  final double distance;
+
+  @override
+  Widget build(BuildContext context) {
+    final timing = event.isOngoing
+        ? (Icons.bolt_rounded, context.tr('Happening now'))
+        : event.isLastMinute
+        ? (Icons.flash_on_rounded, context.tr('Last minute'))
+        : event.isStartingSoon
+        ? (Icons.timer_rounded, context.tr('Starting soon'))
+        : (Icons.schedule_rounded, context.tr('Tonight'));
+    final visibility = event.isBoosted
+        ? (Icons.rocket_launch_rounded, context.tr('Boosted'))
+        : (
+            Icons.local_fire_department_outlined,
+            context.tr(
+              '{count} spots left',
+              values: {'count': event.availableSpots},
+            ),
+          );
+    final facts = <(IconData, String)>[
+      (Icons.nightlife_rounded, context.tr(event.category.label)),
+      (Icons.near_me_rounded, '${distance.toStringAsFixed(1)} km'),
+      timing,
+      visibility,
+    ];
+
+    return Row(
+      children: [
+        for (var index = 0; index < facts.length; index++) ...[
+          if (index > 0) const SizedBox(width: 6),
+          Expanded(
+            child: _FactPill(icon: facts[index].$1, label: facts[index].$2),
+          ),
+        ],
+      ],
+    );
+  }
+}
+
+class _FactPill extends StatelessWidget {
+  const _FactPill({required this.icon, required this.label});
+
+  final IconData icon;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: 33,
+      padding: const EdgeInsets.symmetric(horizontal: 7),
+      decoration: BoxDecoration(
+        color: const Color(0xD91B0D2B),
+        borderRadius: BorderRadius.circular(7),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(icon, size: 14, color: Colors.white),
+          const SizedBox(width: 4),
+          Flexible(
+            child: Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 10.5,
+                fontWeight: FontWeight.w800,
+                letterSpacing: 0,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ProfessionalNeedsStrip extends StatelessWidget {
+  const _ProfessionalNeedsStrip({required this.event});
+
+  final PartyEvent event;
+
+  @override
+  Widget build(BuildContext context) {
+    final roles = event.professionalNeeds
+        .take(3)
+        .map((role) => context.tr(role.label))
+        .join(' · ');
+    return Container(
+      height: 32,
+      padding: const EdgeInsets.symmetric(horizontal: 10),
+      decoration: BoxDecoration(
+        color: AppColors.blue.withValues(alpha: 0.88),
+        borderRadius: BorderRadius.circular(7),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.18)),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.handyman_outlined, size: 15, color: Colors.white),
+          const SizedBox(width: 6),
+          Expanded(
+            child: Text(
+              '${context.tr('Professionals needed')}: $roles',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 10.5,
+                fontWeight: FontWeight.w800,
+                letterSpacing: 0,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _MusicAndAvailabilityRow extends StatelessWidget {
+  const _MusicAndAvailabilityRow({required this.event});
+
+  final PartyEvent event;
+
+  @override
+  Widget build(BuildContext context) {
+    final labels = <(String, IconData?)>[
+      for (final genre in event.musicGenres.take(2)) (genre, null),
+      if (event.acceptsOpenInterest)
+        (context.tr('Open entry'), Icons.confirmation_number_outlined)
+      else
+        (
+          context.tr(
+            '{available}/{maximum} open',
+            values: {
+              'available': event.availableSpots,
+              'maximum': event.maxParticipants,
+            },
+          ),
+          Icons.event_seat_outlined,
+        ),
+    ];
+    return Row(
+      children: [
+        for (var index = 0; index < labels.length; index++) ...[
+          if (index > 0) const SizedBox(width: 6),
+          Expanded(
+            child: _MetaPill(label: labels[index].$1, icon: labels[index].$2),
+          ),
+        ],
+      ],
+    );
+  }
+}
+
+class _MetaPill extends StatelessWidget {
+  const _MetaPill({required this.label, this.icon});
+
+  final String label;
+  final IconData? icon;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: 31,
+      padding: const EdgeInsets.symmetric(horizontal: 8),
+      decoration: BoxDecoration(
+        color: const Color(0xCC24113A),
+        borderRadius: BorderRadius.circular(7),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.16)),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          if (icon != null) ...[
+            Icon(icon, size: 13, color: Colors.white),
+            const SizedBox(width: 4),
+          ],
+          Flexible(
+            child: Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 11,
+                fontWeight: FontWeight.w800,
+                letterSpacing: 0,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _HostSummary extends StatelessWidget {
+  const _HostSummary({
+    required this.event,
+    required this.trustLabel,
+    required this.onDetails,
+  });
+
+  final PartyEvent event;
+  final String trustLabel;
+  final VoidCallback? onDetails;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: 42,
+      child: Row(
+        children: [
+          ClipOval(
+            child: SizedBox(
+              width: 40,
+              height: 40,
+              child: PullupImage(
+                source: event.hostPreview.photoUrl,
+                fit: BoxFit.cover,
+              ),
+            ),
+          ),
+          const SizedBox(width: 9),
+          Expanded(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  event.hostPreview.businessName ?? event.hostPreview.firstName,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                Text(
+                  context.tr(trustLabel),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: AppColors.textSecondary,
+                    fontSize: 11.5,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          if (onDetails != null)
+            SizedBox(
+              width: 42,
+              height: 42,
+              child: IconButton.filledTonal(
+                tooltip: context.tr('View event'),
+                onPressed: onDetails,
+                icon: const Icon(Icons.info_outline_rounded),
+              ),
+            ),
+        ],
+      ),
+    );
   }
 }

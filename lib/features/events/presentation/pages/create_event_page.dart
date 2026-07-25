@@ -90,6 +90,7 @@ class _CreateEventPageState extends ConsumerState<CreateEventPage> {
   bool _isPaidEntry = false;
   int _entryFeeEuros = 10;
   AlcoholPolicy _alcoholPolicy = AlcoholPolicy.byob;
+  PillPolicy _pillPolicy = PillPolicy.notAvailable;
   FoodPolicy _foodPolicy = FoodPolicy.noneRequired;
 
   int get _initialAttendanceTotal =>
@@ -377,6 +378,7 @@ class _CreateEventPageState extends ConsumerState<CreateEventPage> {
               isPaid: _isPaidEntry,
               entryFeeEuros: _entryFeeEuros,
               alcoholPolicy: _alcoholPolicy,
+              pillPolicy: _pillPolicy,
               foodPolicy: _foodPolicy,
               customContribution: _contribution.text.trim(),
               onPaidChanged: (value) => setState(() => _isPaidEntry = value),
@@ -384,10 +386,9 @@ class _CreateEventPageState extends ConsumerState<CreateEventPage> {
                   setState(() => _entryFeeEuros = value),
               onAlcoholChanged: (value) =>
                   setState(() => _alcoholPolicy = value),
+              onPillChanged: (value) => setState(() => _pillPolicy = value),
               onFoodChanged: (value) => setState(() => _foodPolicy = value),
             ),
-            const SizedBox(height: 12),
-            const _SubstanceSafetyNotice(),
             const SizedBox(height: 22),
             Text('Music', style: Theme.of(context).textTheme.titleMedium),
             const SizedBox(height: 10),
@@ -514,16 +515,16 @@ class _CreateEventPageState extends ConsumerState<CreateEventPage> {
                     },
                   ),
                   _ReviewRow(
+                    icon: Icons.label_outline_rounded,
+                    text: _pillPolicy == PillPolicy.available ? '💊' : '🚫💊',
+                  ),
+                  _ReviewRow(
                     icon: Icons.restaurant_outlined,
                     text: switch (_foodPolicy) {
                       FoodPolicy.provided => context.tr('Food included'),
                       FoodPolicy.bringFood => context.tr('Bring food'),
                       FoodPolicy.noneRequired => context.tr('Nothing required'),
                     },
-                  ),
-                  _ReviewRow(
-                    icon: Icons.health_and_safety_outlined,
-                    text: context.tr('Illegal substances prohibited'),
                   ),
                   const _ReviewRow(
                     icon: Icons.lock_outline_rounded,
@@ -861,6 +862,7 @@ class _CreateEventPageState extends ConsumerState<CreateEventPage> {
             ),
             entryFeeCents: _isPaidEntry ? _entryFeeEuros * 100 : 0,
             foodPolicy: _foodPolicy,
+            pillPolicy: _pillPolicy,
           ),
         );
     if (mounted) context.go('/host');
@@ -1342,22 +1344,26 @@ class _EntryAndSuppliesEditor extends StatelessWidget {
     required this.isPaid,
     required this.entryFeeEuros,
     required this.alcoholPolicy,
+    required this.pillPolicy,
     required this.foodPolicy,
     required this.customContribution,
     required this.onPaidChanged,
     required this.onEntryFeeChanged,
     required this.onAlcoholChanged,
+    required this.onPillChanged,
     required this.onFoodChanged,
   });
 
   final bool isPaid;
   final int entryFeeEuros;
   final AlcoholPolicy alcoholPolicy;
+  final PillPolicy pillPolicy;
   final FoodPolicy foodPolicy;
   final String customContribution;
   final ValueChanged<bool> onPaidChanged;
   final ValueChanged<int> onEntryFeeChanged;
   final ValueChanged<AlcoholPolicy> onAlcoholChanged;
+  final ValueChanged<PillPolicy> onPillChanged;
   final ValueChanged<FoodPolicy> onFoodChanged;
 
   @override
@@ -1410,6 +1416,12 @@ class _EntryAndSuppliesEditor extends StatelessWidget {
           runSpacing: 8,
           children: [
             _PolicyChoice<AlcoholPolicy>(
+              value: AlcoholPolicy.allowed,
+              selectedValue: alcoholPolicy,
+              label: '🍸 ${context.tr('Allowed')}',
+              onSelected: onAlcoholChanged,
+            ),
+            _PolicyChoice<AlcoholPolicy>(
               value: AlcoholPolicy.provided,
               selectedValue: alcoholPolicy,
               label: '🍸 ${context.tr('Provided')}',
@@ -1426,6 +1438,25 @@ class _EntryAndSuppliesEditor extends StatelessWidget {
               selectedValue: alcoholPolicy,
               label: '🚫🍸 ${context.tr('No alcohol')}',
               onSelected: onAlcoholChanged,
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: [
+            _PolicyChoice<PillPolicy>(
+              value: PillPolicy.available,
+              selectedValue: pillPolicy,
+              label: '💊',
+              onSelected: onPillChanged,
+            ),
+            _PolicyChoice<PillPolicy>(
+              value: PillPolicy.notAvailable,
+              selectedValue: pillPolicy,
+              label: '🚫💊',
+              onSelected: onPillChanged,
             ),
           ],
         ),
@@ -1521,49 +1552,6 @@ class _PolicyChoice<T> extends StatelessWidget {
       selected: value == selectedValue,
       label: Text(label),
       onSelected: (_) => onSelected(value),
-    );
-  }
-}
-
-class _SubstanceSafetyNotice extends StatelessWidget {
-  const _SubstanceSafetyNotice();
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: AppColors.danger.withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: AppColors.danger.withValues(alpha: 0.3)),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text('🚫💊', style: TextStyle(fontSize: 22)),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  context.tr('Illegal substances prohibited'),
-                  style: Theme.of(
-                    context,
-                  ).textTheme.titleSmall?.copyWith(color: AppColors.danger),
-                ),
-                const SizedBox(height: 3),
-                Text(
-                  context.tr(
-                    'This safety rule applies to every PULLUP event and cannot be disabled.',
-                  ),
-                  style: Theme.of(context).textTheme.bodySmall,
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
     );
   }
 }

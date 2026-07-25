@@ -79,6 +79,7 @@ void main() {
           attendance: AttendanceBreakdown.initial(men: 1, women: 2, other: 0),
           entryFeeCents: 1000,
           foodPolicy: FoodPolicy.provided,
+          pillPolicy: PillPolicy.available,
         ),
       );
 
@@ -97,6 +98,7 @@ void main() {
       expect(restoredEvent.attendance.currentWomenCount, 2);
       expect(restoredEvent.entryFeeCents, 1000);
       expect(restoredEvent.foodPolicy, FoodPolicy.provided);
+      expect(restoredEvent.pillPolicy, PillPolicy.available);
       expect(
         restoredEvent.approximateGeoPoint.latitude,
         closeTo(43.6047, 0.0001),

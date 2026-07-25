@@ -9,6 +9,7 @@ import 'package:pullup/features/shared/domain/demo_account.dart';
 import 'package:pullup/models/discover_filter.dart';
 import 'package:pullup/models/enums.dart';
 import 'package:pullup/models/geo_point_lite.dart';
+import 'package:pullup/models/party_event.dart';
 
 void main() {
   test('validates minimum age', () {
@@ -90,6 +91,18 @@ void main() {
       );
       expect(event.illegalSubstancesProhibited, isTrue);
     }
+  });
+
+  test('pill policy persists and old events use a safe fallback', () {
+    final event = DemoPullupRepository().snapshot.events.first;
+    final json = event.toJson(includePrivateAddress: true);
+    final restored = PartyEvent.fromJson(json);
+
+    expect(restored.pillPolicy, event.pillPolicy);
+
+    json.remove('pillPolicy');
+    final legacyEvent = PartyEvent.fromJson(json);
+    expect(legacyEvent.pillPolicy, PillPolicy.notAvailable);
   });
 
   test(

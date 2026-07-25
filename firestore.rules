@@ -79,6 +79,10 @@ service cloud.firestore {
     function validEventPracticalDetails(data) {
       return data.entryFeeCents is int
         && data.entryFeeCents >= 0
+        && (
+          !('pillPolicy' in data) ||
+          data.pillPolicy in ['available', 'notAvailable']
+        )
         && data.illegalSubstancesProhibited == true
         && data.attendance.initialMenCount is int
         && data.attendance.initialWomenCount is int

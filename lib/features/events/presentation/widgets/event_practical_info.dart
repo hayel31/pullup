@@ -88,6 +88,14 @@ class EventQuickFacts extends StatelessWidget {
           const _QuickDivider(),
           Expanded(
             child: _QuickFact(
+              key: const Key('event-pill-fact'),
+              emoji: event.pillPolicy == PillPolicy.available ? '💊' : '🚫💊',
+              label: '',
+            ),
+          ),
+          const _QuickDivider(),
+          Expanded(
+            child: _QuickFact(
               key: const Key('event-food-fact'),
               emoji: switch (event.foodPolicy) {
                 FoodPolicy.provided => '🍕',
@@ -144,20 +152,22 @@ class _QuickFact extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Text(emoji, style: const TextStyle(fontSize: 14)),
-          const SizedBox(width: 5),
-          Flexible(
-            child: Text(
-              label,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 10,
-                fontWeight: FontWeight.w800,
-                height: 1.12,
+          if (label.isNotEmpty) ...[
+            const SizedBox(width: 5),
+            Flexible(
+              child: Text(
+                label,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 10,
+                  fontWeight: FontWeight.w800,
+                  height: 1.12,
+                ),
               ),
             ),
-          ),
+          ],
         ],
       ),
     );
@@ -193,6 +203,10 @@ class EventPracticalOverview extends StatelessWidget {
           title: eventAlcoholLabel(context, event.alcoholPolicy),
           subtitle: eventFoodLabel(context, event.foodPolicy),
           color: AppColors.primaryBright,
+          trailing: Text(
+            event.pillPolicy == PillPolicy.available ? '💊' : '🚫💊',
+            style: const TextStyle(fontSize: 24),
+          ),
         ),
         const SizedBox(height: 10),
         _DetailFact(
@@ -202,13 +216,6 @@ class EventPracticalOverview extends StatelessWidget {
           color: event.guestsBringNothing
               ? AppColors.success
               : AppColors.warning,
-        ),
-        const SizedBox(height: 10),
-        _DetailFact(
-          icon: Icons.health_and_safety_outlined,
-          title: '🚫💊 ${context.tr('Illegal substances prohibited')}',
-          subtitle: context.tr('Mandatory PULLUP safety rule'),
-          color: AppColors.danger,
         ),
       ],
     );
@@ -221,12 +228,14 @@ class _DetailFact extends StatelessWidget {
     required this.title,
     required this.subtitle,
     required this.color,
+    this.trailing,
   });
 
   final IconData icon;
   final String title;
   final String subtitle;
   final Color color;
+  final Widget? trailing;
 
   @override
   Widget build(BuildContext context) {
@@ -253,6 +262,7 @@ class _DetailFact extends StatelessWidget {
             ],
           ),
         ),
+        if (trailing != null) ...[const SizedBox(width: 10), trailing!],
       ],
     );
   }

@@ -436,6 +436,7 @@ class DemoPullupRepository implements PullupRepository {
       attendance: draft.attendance,
       entryFeeCents: draft.entryFeeCents,
       foodPolicy: draft.foodPolicy,
+      pillPolicy: draft.pillPolicy,
       illegalSubstancesProhibited: true,
     );
     _events.add(event);

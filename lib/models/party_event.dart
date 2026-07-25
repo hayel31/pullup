@@ -111,6 +111,7 @@ class PartyEvent {
     this.attendance = const AttendanceBreakdown.empty(),
     this.entryFeeCents = 0,
     this.foodPolicy = FoodPolicy.noneRequired,
+    this.pillPolicy = PillPolicy.notAvailable,
     this.illegalSubstancesProhibited = true,
     this.exactAddress,
     this.accessInstructions,
@@ -168,6 +169,7 @@ class PartyEvent {
   final AttendanceBreakdown attendance;
   final int entryFeeCents;
   final FoodPolicy foodPolicy;
+  final PillPolicy pillPolicy;
   final bool illegalSubstancesProhibited;
 
   bool get isPublished =>
@@ -260,6 +262,7 @@ class PartyEvent {
     AttendanceBreakdown? attendance,
     int? entryFeeCents,
     FoodPolicy? foodPolicy,
+    PillPolicy? pillPolicy,
     bool? illegalSubstancesProhibited,
   }) {
     return PartyEvent(
@@ -314,6 +317,7 @@ class PartyEvent {
       attendance: attendance ?? this.attendance,
       entryFeeCents: entryFeeCents ?? this.entryFeeCents,
       foodPolicy: foodPolicy ?? this.foodPolicy,
+      pillPolicy: pillPolicy ?? this.pillPolicy,
       illegalSubstancesProhibited:
           illegalSubstancesProhibited ?? this.illegalSubstancesProhibited,
     );
@@ -368,6 +372,7 @@ class PartyEvent {
     'attendance': attendance.toJson(),
     'entryFeeCents': entryFeeCents,
     'foodPolicy': foodPolicy.name,
+    'pillPolicy': pillPolicy.name,
     'illegalSubstancesProhibited': illegalSubstancesProhibited,
   };
 
@@ -486,6 +491,11 @@ class PartyEvent {
         FoodPolicy.values,
         json['foodPolicy'],
         FoodPolicy.noneRequired,
+      ),
+      pillPolicy: _enumValue(
+        PillPolicy.values,
+        json['pillPolicy'],
+        PillPolicy.notAvailable,
       ),
       illegalSubstancesProhibited:
           json['illegalSubstancesProhibited'] as bool? ?? true,

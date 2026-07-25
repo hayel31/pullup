@@ -82,6 +82,8 @@ enum EventTag {
 
 enum AlcoholPolicy { provided, allowed, notAllowed, byob, unspecified }
 
+enum PillPolicy { available, notAvailable }
+
 enum FoodPolicy { provided, bringFood, noneRequired }
 
 enum SmokingPolicy { smokeFriendly, noSmoking, outdoorOnly, unspecified }
@@ -178,6 +180,10 @@ extension PullupEnumLabel on Enum {
         return 'No alcohol';
       case AlcoholPolicy.byob:
         return 'Bring your own drinks';
+      case PillPolicy.available:
+        return '💊';
+      case PillPolicy.notAvailable:
+        return '🚫💊';
       case FoodPolicy.provided:
         return 'Food provided';
       case FoodPolicy.bringFood:

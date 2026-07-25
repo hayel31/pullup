@@ -413,16 +413,6 @@ const eventTranslationRows = <String, TranslationRow>{
   'drinks': (fr: 'boissons', es: 'bebidas', de: 'Getränke'),
   'Your drinks': (fr: 'Vos boissons', es: 'Tus bebidas', de: 'Deine Getränke'),
   'food': (fr: 'nourriture', es: 'comida', de: 'Essen'),
-  'Illegal substances prohibited': (
-    fr: 'Substances illégales interdites',
-    es: 'Sustancias ilegales prohibidas',
-    de: 'Illegale Substanzen verboten',
-  ),
-  'This safety rule applies to every PULLUP event and cannot be disabled.': (
-    fr: 'Cette règle de sécurité s’applique à toutes les soirées PULLUP et ne peut pas être désactivée.',
-    es: 'Esta norma de seguridad se aplica a todos los eventos PULLUP y no puede desactivarse.',
-    de: 'Diese Sicherheitsregel gilt für alle PULLUP-Events und kann nicht deaktiviert werden.',
-  ),
   'Other contribution (optional)': (
     fr: 'Autre contribution (facultatif)',
     es: 'Otra contribución (opcional)',

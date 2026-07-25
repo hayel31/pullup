@@ -88,6 +88,7 @@ class CreateEventDraft {
     required this.attendance,
     required this.entryFeeCents,
     required this.foodPolicy,
+    required this.pillPolicy,
     this.accessInstructions,
     this.dressCode,
     this.contributionText,
@@ -125,6 +126,7 @@ class CreateEventDraft {
   final AttendanceBreakdown attendance;
   final int entryFeeCents;
   final FoodPolicy foodPolicy;
+  final PillPolicy pillPolicy;
   final bool publishAsProfessional;
   final List<ProfessionalCategory> professionalNeeds;
 }
