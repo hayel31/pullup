@@ -268,15 +268,28 @@ class _PrimaryFactsRow extends StatelessWidget {
       visibility,
     ];
 
-    return Row(
-      children: [
-        for (var index = 0; index < facts.length; index++) ...[
-          if (index > 0) const SizedBox(width: 6),
+    Widget factPair(int startIndex) {
+      return Row(
+        children: [
           Expanded(
-            child: _FactPill(icon: facts[index].$1, label: facts[index].$2),
+            child: _FactPill(
+              icon: facts[startIndex].$1,
+              label: facts[startIndex].$2,
+            ),
+          ),
+          const SizedBox(width: 6),
+          Expanded(
+            child: _FactPill(
+              icon: facts[startIndex + 1].$1,
+              label: facts[startIndex + 1].$2,
+            ),
           ),
         ],
-      ],
+      );
+    }
+
+    return Column(
+      children: [factPair(0), const SizedBox(height: 6), factPair(2)],
     );
   }
 }
